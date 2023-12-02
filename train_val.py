@@ -59,7 +59,7 @@ def train_avg(trained_model_num, action_recognition=True):
                 outputs = net(inputs)
                 # labels_onehot = functional.one_hot(labels.to(int64))
                 loss = CrossEntropyLoss()
-                loss(outputs, lables)
+                loss(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
