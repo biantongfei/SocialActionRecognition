@@ -10,6 +10,8 @@ def draw_performance(hyperparam_dict):
     plt.legend(['accuracy'])
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
+    plt.savefig('accuracy.png')
+    plt.show()
 
 
 
