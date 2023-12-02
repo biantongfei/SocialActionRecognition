@@ -84,6 +84,7 @@ def train_avg(action_recognition=True):
             total_correct += correct
         acc = total_correct / len(val_loader.dataset)
         print('key: %s, acc: %s' % (key, '{.2f}' % (acc * 100)))
+        print('----------------------------------------------------')
     return train_dict
 
 
