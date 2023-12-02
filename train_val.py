@@ -28,16 +28,16 @@ def train_avg(action_recognition=True):
         optimizer = optim.SGD(net.parameters(), lr=1e-4)
         # optimizer = optim.adam(net.parameters(), lr=1e-4)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
-                                            'tra_files': tra_files,
-                                            'testset': testset, 'net': net, 'optimizer': optimizer}
+                                            'tra_files': tra_files, 'testset': testset, 'net': net,
+                                            'optimizer': optimizer}
 
     print('data loaded')
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
     epoch = 0
     unimproved_epoches = 0
     while int(unimproved_epoches / len(train_dict.keys())) + 1 < 5:
-        for key in train_dict.keys():
-            random.shuffle(train_dict['tra_files'])
+        for hyperparameter_group in train_dict.keys():
+            random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict['tra_files'][:int(len(tra_files) * valset_rate)],
                                   action_recognition=action_recognition,
                                   is_crop=train_dict['is_crop'], is_coco=train_dict['is_coco'], dimension=dimension)
@@ -67,16 +67,16 @@ def train_avg(action_recognition=True):
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
-            accuracy_dict[key].append(acc)
-            if acc <= accuracy_dict[key][-2]:
+            accuracy_dict[hyperparameter_group].append(acc)
+            if acc <= accuracy_dict[hyperparameter_group][-2]:
                 unimproved_epoches += 1
             else:
                 unimproved_epoches = 0
-            print('epcoch: %d, key: %s, acc: %s, unimproved_epoch: %d' % (
-                epoch, key, '{.2%f}' % (acc * 100), int(unimproved_epoches / len(train_dict.keys())) + 1))
+            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d' % (
+                epoch, hyperparameter_group, '{.2%f}' % (acc * 100), int(unimproved_epoches / len(train_dict.keys())) + 1))
         break
-    for key in train_dict:
-        test_loader = DataLoader(dataset=train_dict[key]['testset'], batch_size=batch_size)
+    for hyperparameter_group in train_dict:
+        test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = net(inputs)
@@ -84,7 +84,7 @@ def train_avg(action_recognition=True):
             correct = pred.eq(labels).sum().float().item()
             total_correct += correct
         acc = total_correct / len(val_loader.dataset)
-        print('key: %s, acc: %s' % (key, '{.2f}' % (acc * 100)))
+        print('hyperparameter_group: %s, acc: %s' % (hyperparameter_group, '{.2f}' % (acc * 100)))
         print('----------------------------------------------------')
     return train_dict
 
@@ -92,12 +92,12 @@ def train_avg(action_recognition=True):
 def cal_avg_performance(train_log):
     hyperparam_dict = {}
     for log in train_log:
-        for key in log.keys:
-            if key in hyperparam_dict.keys():
-                for index, acc in enumerate(log[key]):
-                    hyperparam_dict[key][index] += acc / len(train_log)
+        for hyperparameter_group in log.keys:
+            if hyperparameter_group in hyperparam_dict.keys():
+                for index, acc in enumerate(log[hyperparameter_group]):
+                    hyperparam_dict[hyperparameter_group][index] += acc / len(train_log)
             else:
-                hyperparam_dict[key] = [a / len(train_log) for a in log[key]]
+                hyperparam_dict[hyperparameter_group] = [a / len(train_log) for a in log[hyperparameter_group]]
     return hyperparam_dict
 
 
