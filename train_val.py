@@ -3,13 +3,14 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim
+from torch import device, cuda, optim, double
 from torch.nn import MSELoss, functional
 import random
 
 batch_size = 128
 valset_rate = 0.1
 device = device("cuda:0" if cuda.is_available() else "cpu")
+dtype = double
 
 
 def train_avg(action_recognition=True):
@@ -40,11 +41,13 @@ def train_avg(action_recognition=True):
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                              :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
-                                  action_recognition=action_recognition, is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                  action_recognition=action_recognition,
+                                  is_crop=train_dict[hyperparameter_group]['is_crop'],
                                   is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                            int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
-                                action_recognition=action_recognition, is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                action_recognition=action_recognition,
+                                is_crop=train_dict[hyperparameter_group]['is_crop'],
                                 is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
@@ -52,7 +55,7 @@ def train_avg(action_recognition=True):
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for idx, data in enumerate(train_loader):
                 inputs, labels = data
-                inputs, labels = inputs.to(device), labels.to(device)
+                inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
                 outputs = net(inputs)
                 labels_onehot = functional.one_hot(labels)
                 loss = MSELoss(outputs, labels_onehot)
@@ -63,8 +66,8 @@ def train_avg(action_recognition=True):
             total_correct = 0
             for idx, data in enumerate(val_loader):
                 inputs, labels = data
+                inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
                 outputs = net(inputs)
-                inputs, labels = inputs.to(device), labels.to(device)
                 pred = outputs.argmax(dim=1)
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
@@ -81,7 +84,8 @@ def train_avg(action_recognition=True):
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = data
+            inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             correct = pred.eq(labels).sum().float().item()
