@@ -9,7 +9,7 @@ attitude_class_num = 3
 
 class FCNN(nn.Module):
     def __init__(self, is_coco, action_recognition, *args, **kwargs):
-        super(Net, self).__init__()
+        super(FCNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
@@ -34,7 +34,7 @@ class FCNN(nn.Module):
 
 class CNN(nn.Module):
     def __init__(self, is_coco, action_recognition, *args, **kwargs):
-        super(Net, self).__init__()
+        super(CNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num

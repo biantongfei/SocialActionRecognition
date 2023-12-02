@@ -110,7 +110,6 @@ class AvgDataset(Dataset):
 
 if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True)
-    dataset = AvgDataset(data_files=tra_files, data_path=data_path, action_recognition=True,
-                         is_crop=True, is_coco=True, dimension=2)
+    dataset = AvgDataset(data_files=tra_files, action_recognition=True, is_crop=True, is_coco=True, dimension=2)
     features, labels = dataset.__getitem__(0)
     print(features.shape, labels)

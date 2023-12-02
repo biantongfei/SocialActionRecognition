@@ -30,6 +30,7 @@ def train_avg(action_recognition=True):
         train_dict[key] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension, 'tra_files': tra_files,
                            'testset': testset, 'net': net, 'optimizer': optimizer}
 
+    print('data loaded')
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
     epoch = 0
     unimproved_epoches = 0
