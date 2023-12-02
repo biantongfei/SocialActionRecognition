@@ -4,7 +4,7 @@ from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
 from torch import device, cuda, optim, float, int64
-from torch.nn import CrossEntropyLoss, functional
+from torch.nn import functional
 import random
 
 batch_size = 128
@@ -58,8 +58,7 @@ def train_avg(trained_model_num, action_recognition=True):
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 # labels_onehot = functional.one_hot(labels.to(int64))
-                loss = CrossEntropyLoss()
-                loss(outputs, labels)
+                loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
