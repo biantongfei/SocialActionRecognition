@@ -3,7 +3,7 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float,int64
+from torch import device, cuda, optim, float, int64
 from torch.nn import MSELoss, functional
 import random
 
@@ -13,7 +13,7 @@ device = device("cuda:0" if cuda.is_available() else "cpu")
 dtype = float
 
 
-def train_avg(action_recognition=True):
+def train_avg(trained_model_num, action_recognition=True):
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     dimension = 1  # FCNN
     # dimension = 2  # CNN
@@ -77,10 +77,9 @@ def train_avg(action_recognition=True):
                 unimproved_epoches += 1
             else:
                 unimproved_epoches = 0
-            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d' % (
+            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
                 epoch, hyperparameter_group, '{.2%f}' % (acc * 100),
-                int(unimproved_epoches / len(train_dict.keys())) + 1))
-        break
+                int(unimproved_epoches / len(train_dict.keys())) + 1, trained_model_num))
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
@@ -110,8 +109,8 @@ def cal_avg_performance(train_log):
 
 if __name__ == '__main__':
     train_log = []
-    for i in range(1):
-        train_dict = train_avg(action_recognition=True)
+    for i in range(5):
+        train_dict = train_avg(trained_model_num=i, action_recognition=True)
         train_log.append(train_dict)
     train_dict = cal_avg_performance(train_log)
     draw_performance(train_dict)
