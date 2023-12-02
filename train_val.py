@@ -57,6 +57,7 @@ def train_avg(action_recognition=True):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
                 outputs = net(inputs)
+                print(labels)
                 labels_onehot = functional.one_hot(labels)
                 loss = MSELoss(outputs, labels_onehot)
                 optimizer.zero_grad()
