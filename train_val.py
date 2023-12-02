@@ -72,6 +72,7 @@ def train_avg(action_recognition=True):
                 unimproved_epoches = 0
             print('epcoch: %d, key: %s, acc: %s, unimproved_epoch: %d' % (
                 epoch, key, '{.2%f}' % (acc * 100), int(unimproved_epoches / len(train_dict.keys())) + 1))
+        break
     for key in train_dict:
         test_loader = DataLoader(dataset=train_dict[key]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
