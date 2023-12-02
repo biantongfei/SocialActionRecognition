@@ -16,9 +16,9 @@ def train_avg(action_recognition=True):
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     dimension = 1  # FCNN
     # dimension = 2  # CNN
-    for key in train_dict.keys():
-        is_crop = True if 'crop' in key else False
-        is_coco = True if 'coco' in key else False
+    for hyperparameter_group in train_dict.keys():
+        is_crop = True if 'crop' in hyperparameter_group else False
+        is_coco = True if 'coco' in hyperparameter_group else False
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, is_coco=is_coco, dimension=dimension)
@@ -27,7 +27,7 @@ def train_avg(action_recognition=True):
         net.to(device)
         optimizer = optim.SGD(net.parameters(lr=1e-3))
         # optimizer = optim.adam(net.parameters(lr=1e-3))
-        train_dict[key] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension, 'tra_files': tra_files,
+        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension, 'tra_files': tra_files,
                            'testset': testset, 'net': net, 'optimizer': optimizer}
 
     print('data loaded')
