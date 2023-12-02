@@ -3,14 +3,14 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, double
+from torch import device, cuda, optim, float
 from torch.nn import MSELoss, functional
 import random
 
 batch_size = 128
 valset_rate = 0.1
 device = device("cuda:0" if cuda.is_available() else "cpu")
-dtype = double
+dtype = float
 
 
 def train_avg(action_recognition=True):
