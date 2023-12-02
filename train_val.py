@@ -40,16 +40,16 @@ def train_avg(action_recognition=True):
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                              :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
-                                  action_recognition=action_recognition, is_crop=train_dict['is_crop'],
-                                  is_coco=train_dict['is_coco'], dimension=dimension)
+                                  action_recognition=action_recognition, is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                  is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                            int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
-                                action_recognition=action_recognition, is_crop=train_dict['is_crop'],
-                                is_coco=train_dict['is_coco'], dimension=dimension)
+                                action_recognition=action_recognition, is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
-            net = train_dict['net']
-            optimizer = train_dict['optimizer']
+            net = train_dict[hyperparameter_group]['net']
+            optimizer = train_dict[hyperparameter_group]['optimizer']
             for idx, data in enumerate(train_loader):
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
