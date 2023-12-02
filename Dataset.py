@@ -64,6 +64,7 @@ def get_tra_test_files(is_crop, is_coco):
 
 class AvgDataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, dimension):
+        super(AvgDataset,self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
         self.action_recognition = action_recognition
