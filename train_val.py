@@ -1,0 +1,91 @@
+from Dataset import AvgDataset, get_data_path, get_tra_test_files
+from Models import FCNN
+from draw_utils import draw_performance
+
+from torch.utils.data import DataLoader
+from torch import optim
+from torch.nn import MSELoss
+import random
+
+batch_size = 128
+valset_rate = 0.1
+
+
+def train_avg(action_recognition=True):
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    dimension = 1  # FCNN
+    # dimension = 2  # CNN
+    for key in train_dict.keys():
+        is_crop = True if 'crop' in key else False
+        is_coco = True if 'coco' in key else False
+        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco)
+        testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
+                             is_crop=is_crop, is_coco=is_coco, dimension=dimension)
+        net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
+        # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        optimizer = optim.SGD(net.parameters())
+        # optimizer = optim.adam(net.parameters())
+        train_dict[key] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension, 'tra_files': tra_files,
+                           'testset': testset, 'test_loader': test_loader, 'net': net, 'optimizer': optimizer}
+
+    accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
+    epoch = 0
+    unimproved_epoches = 0
+    while int(unimproved_epoches / len(train_dict.keys())) + 1 < 5:
+        continue_train = False
+        for key in train_dict.keys():
+            random.shuffle(train_dict['tra_files'])
+            trainset = AvgDataset(data_files=train_dict['tra_files'][:int(len(tra_files) * valset_rate)],
+                                  action_recognition=action_recognition,
+                                  is_crop=train_dict['is_crop'], is_coco=train_dict['is_coco'], dimension=dimension)
+            valset = AvgDataset(data_files=train_dict['tra_files'][int(len(tra_files) * valset_rate):],
+                                action_recognition=action_recognition,
+                                is_crop=train_dict['is_crop'], is_coco=train_dict['is_coco'], dimension=dimension)
+            train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
+            val_loader = DataLoader(dataset=valset, batch_size=batch_size)
+            for idx, data in enumerate(train_loader):
+                inputs, labels = data
+                outputs = net(inputs)
+                labels_onehot = one_hot(labels)
+                loss = MSELoss(outputs, labels_onehot)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+        total_correct = 0
+        for idx, data in enumerate(val_loader):
+            inputs, labels = data
+            outputs = net(inputs)
+            pred = outputs.argmax(dim=1)
+            correct = pred.eq(labels).sum().float().item()
+            total_correct += correct
+        acc = total_correct / len(val_loader.dataset)
+        accuracy_dict[key].append(acc)
+        if acc <= accuracy_dict[key][-2]:
+            unimproved_epoches += 1
+        else:
+            unimproved_epoches = 0
+        print('epcoch: %d, key: %s, acc: %s, unimproved_epoch: %d' % (
+            epoch, key, '{.2f%}' % (acc * 100), int(unimproved_epoches / len(train_dict.keys())) + 1))
+    return train_dict
+
+
+def cal_avg_performance(train_log):
+    hyperparam_dict = {}
+    for log in train_log:
+        for key in log.keys:
+            if key in hyperparam_dict.keys():
+                for index, acc in enumerate(log[key]):
+                    hyperparam_dict[key][index] += acc / len(train_log)
+            else:
+                hyperparam_dict[key] = [a / len(train_log) for a in log[key]]
+    return hyperparam_dict
+
+
+if __name__ == '__main__':
+    train_log = []
+    for i in range(1):
+        train_dict = train_avg(action_recognition == True)
+        train_log.append(train_dict)
+    train_dict = cal_avg_performance(train_log)
+    draw_performance(train_dict)
