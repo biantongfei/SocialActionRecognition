@@ -3,7 +3,7 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float
+from torch import device, cuda, optim, float,int64
 from torch.nn import MSELoss, functional
 import random
 
@@ -57,8 +57,7 @@ def train_avg(action_recognition=True):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
                 outputs = net(inputs)
-                print(labels)
-                labels_onehot = functional.one_hot(labels)
+                labels_onehot = functional.one_hot(labels.to(int64))
                 loss = MSELoss(outputs, labels_onehot)
                 optimizer.zero_grad()
                 loss.backward()
