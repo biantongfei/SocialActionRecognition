@@ -64,7 +64,7 @@ def get_tra_test_files(is_crop, is_coco):
 
 class AvgDataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, dimension):
-        super(AvgDataset,self).__init__()
+        super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
         self.action_recognition = action_recognition
@@ -105,8 +105,8 @@ class AvgDataset(Dataset):
                 label = 0
         return features.mean(axis=0), np.float32(feature_json['action_class'])
 
-        def __len__(self):
-            return len(self.files)
+    def __len__(self):
+        return len(self.files)
 
 
 if __name__ == '__main__':
