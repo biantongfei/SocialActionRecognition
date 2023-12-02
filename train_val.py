@@ -55,7 +55,7 @@ def train_avg(trained_model_num, action_recognition=True):
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for idx, data in enumerate(train_loader):
                 inputs, labels = data
-                inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
+                inputs, labels = inputs.to(dtype).to(device), labels
                 outputs = net(inputs)
                 # labels_onehot = functional.one_hot(labels.to(int64))
                 loss = CrossEntropyLoss()
@@ -67,7 +67,7 @@ def train_avg(trained_model_num, action_recognition=True):
             total_correct = 0
             for idx, data in enumerate(val_loader):
                 inputs, labels = data
-                inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
+                inputs, labels = inputs.to(dtype).to(device), labels
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 correct = pred.eq(labels).sum().float().item()
@@ -85,7 +85,7 @@ def train_avg(trained_model_num, action_recognition=True):
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
             inputs, labels = data
-            inputs, labels = inputs.to(dtype).to(device), labels.to(dtype).to(device)
+            inputs, labels = inputs.to(dtype).to(device), labels
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             correct = pred.eq(labels).sum().float().item()

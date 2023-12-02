@@ -4,7 +4,6 @@ import random
 
 import numpy
 import numpy as np
-from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
 ori_video_dir = '../JPL/jpl_interaction_segmented_iyuv/'
@@ -103,7 +102,7 @@ class AvgDataset(Dataset):
                 label = 2
             else:
                 label = 0
-        return features.mean(axis=0), np.float32(feature_json['action_class'])
+        return features.mean(axis=0), np.int64(feature_json['action_class'])
 
     def __len__(self):
         return len(self.files)
