@@ -26,10 +26,10 @@ class FCNN(nn.Module):
             nn.Linear(32, self.output_size)
         )
 
-        def forward(self, x):
-            x = self.fc(x)
+    def forward(self, x):
+        x = self.fc(x)
 
-            return x
+        return x
 
 
 class CNN(nn.Module):
