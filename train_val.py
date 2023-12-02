@@ -73,7 +73,7 @@ def train_avg(trained_model_num, action_recognition=True):
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
-            if acc <= accuracy_dict[hyperparameter_group][-2]:
+            if len(accuracy_dict[hyperparameter_group]) < 2 and acc <= accuracy_dict[hyperparameter_group][-2]:
                 unimproved_epoches += 1
             else:
                 unimproved_epoches = 0
