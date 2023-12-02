@@ -38,12 +38,14 @@ def train_avg(action_recognition=True):
     while int(unimproved_epoches / len(train_dict.keys())) + 1 < 5:
         for hyperparameter_group in train_dict.keys():
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
-            trainset = AvgDataset(data_files=train_dict['tra_files'][:int(len(tra_files) * valset_rate)],
-                                  action_recognition=action_recognition,
-                                  is_crop=train_dict['is_crop'], is_coco=train_dict['is_coco'], dimension=dimension)
-            valset = AvgDataset(data_files=train_dict['tra_files'][int(len(tra_files) * valset_rate):],
-                                action_recognition=action_recognition,
-                                is_crop=train_dict['is_crop'], is_coco=train_dict['is_coco'], dimension=dimension)
+            trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
+                                             :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
+                                  action_recognition=action_recognition, is_crop=train_dict['is_crop'],
+                                  is_coco=train_dict['is_coco'], dimension=dimension)
+            valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
+                                           int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
+                                action_recognition=action_recognition, is_crop=train_dict['is_crop'],
+                                is_coco=train_dict['is_coco'], dimension=dimension)
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
             net = train_dict['net']
@@ -73,7 +75,8 @@ def train_avg(action_recognition=True):
             else:
                 unimproved_epoches = 0
             print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d' % (
-                epoch, hyperparameter_group, '{.2%f}' % (acc * 100), int(unimproved_epoches / len(train_dict.keys())) + 1))
+                epoch, hyperparameter_group, '{.2%f}' % (acc * 100),
+                int(unimproved_epoches / len(train_dict.keys())) + 1))
         break
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
