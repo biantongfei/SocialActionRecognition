@@ -25,8 +25,8 @@ def train_avg(action_recognition=True):
         net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
         # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.SGD(net.parameters())
-        # optimizer = optim.adam(net.parameters())
+        optimizer = optim.SGD(net.parameters(lr=1e-3))
+        # optimizer = optim.adam(net.parameters(lr=1e-3))
         train_dict[key] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension, 'tra_files': tra_files,
                            'testset': testset, 'net': net, 'optimizer': optimizer}
 
