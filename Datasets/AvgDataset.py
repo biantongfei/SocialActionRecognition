@@ -25,8 +25,8 @@ def get_data_path(is_crop, is_coco, sigma):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco):
-    data_path = get_data_path(is_crop, is_coco)
+def get_tra_test_files(is_crop, is_coco, sigma):
+    data_path = get_data_path(is_crop, is_coco, sigma)
     files = os.listdir(data_path)
     ori_videos_dict = {}
     for file in files:
