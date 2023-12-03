@@ -66,7 +66,6 @@ class AvgDataset(Dataset):
         super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
-        print(self.data_path)
         self.action_recognition = action_recognition
         self.is_crop = is_crop
         self.is_coco = is_coco

@@ -3,7 +3,7 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, int64
+from torch import device, cuda, optim, float, save
 from torch.nn import functional
 import random
 
@@ -11,6 +11,7 @@ batch_size = 128
 valset_rate = 0.1
 device = device("cuda:0" if cuda.is_available() else "cpu")
 dtype = float
+model_save_path = 'models/'
 
 
 def train_avg(trained_model_num, action_recognition=True):
@@ -73,7 +74,7 @@ def train_avg(trained_model_num, action_recognition=True):
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
-            if len(accuracy_dict[hyperparameter_group]) < 2 and acc > accuracy_dict[hyperparameter_group][-2]:
+            if len(accuracy_dict[hyperparameter_group]) > 1 and acc > accuracy_dict[hyperparameter_group][-2]:
                 unimproved_epoches = 0
             else:
                 unimproved_epoches += 1
@@ -90,8 +91,10 @@ def train_avg(trained_model_num, action_recognition=True):
             correct = pred.eq(labels).sum().float().item()
             total_correct += correct
         acc = total_correct / len(val_loader.dataset)
-        print('hyperparameter_group: %s, acc: %s' % (hyperparameter_group, '{.2f}' % (acc * 100)))
+        print('hyperparameter_group: %s, acc: %s, trained_model_num: %d' % (
+            hyperparameter_group, '{.2f}' % (acc * 100), i))
         print('----------------------------------------------------')
+        save(net.state_dict(), model_save_path + 'avg_fcnn_%s_%d.pth' % (hyperparameter_group, i))
     return train_dict
 
 
