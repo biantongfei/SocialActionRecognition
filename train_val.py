@@ -86,6 +86,7 @@ def train_avg(trained_model_num, action_recognition=True):
             unimproved_epoch = 0
         else:
             unimproved_epoch += 1
+        epoch += 1
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
