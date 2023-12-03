@@ -19,6 +19,8 @@ def train_avg(action_recognition=True):
     # train_dict = {'small_noise+coco': {}, 'small_noise+halpe': {}}
     # train_dict = {'medium_noise+coco': {}, 'medium_noise+halpe': {}}
     # train_dict = {'big_noise+coco': {}, 'big_noise+halpe': {}}
+    accuracy_dict = {'crop+coco': [], 'crop+halpe': []}
+
     dimension = 1  # FCNN
     # dimension = 2  # CNN
     for hyperparameter_group in train_dict.keys():
@@ -37,7 +39,6 @@ def train_avg(action_recognition=True):
                                             'optimizer': optimizer, 'best_acc': 0}
 
     print('Start Training!!!')
-    accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
     epoch = 1
     improved = False
     unimproved_epoch = 0
@@ -106,24 +107,10 @@ def train_avg(action_recognition=True):
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
         save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
-    return train_dict
+    return accuracy_dict
 
-
-def cal_avg_performance(train_log):
-    hyperparam_dict = {}
-    for log in train_log:
-        for hyperparameter_group in log.keys:
-            if hyperparameter_group in hyperparam_dict.keys():
-                for index, acc in enumerate(log[hyperparameter_group]):
-                    hyperparam_dict[hyperparameter_group][index] += acc / len(train_log)
-            else:
-                hyperparam_dict[hyperparameter_group] = [a / len(train_log) for a in log[hyperparameter_group]]
-    return hyperparam_dict
 
 
 if __name__ == '__main__':
-    train_log = []
-    train_dict = train_avg(action_recognition=True)
-    train_log.append(train_dict)
-    train_dict = cal_avg_performance(train_log)
-    draw_performance(train_dict)
+    accuracy_dict = train_avg(action_recognition=True)
+    draw_performance(accuracy_dict)
