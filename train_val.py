@@ -42,12 +42,12 @@ def train_avg(trained_model_num, action_recognition=True):
         for hyperparameter_group in train_dict.keys():
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
-                                             :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
+                                             int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
                                   action_recognition=action_recognition,
                                   is_crop=train_dict[hyperparameter_group]['is_crop'],
                                   is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
-                                           int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
+                                           :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
                                 action_recognition=action_recognition,
                                 is_crop=train_dict[hyperparameter_group]['is_crop'],
                                 is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
