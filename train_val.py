@@ -27,8 +27,9 @@ def train_avg(action_recognition=True):
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco)
+        sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
-                             is_crop=is_crop, is_coco=is_coco, dimension=dimension)
+                             is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
         net = AvgFCNN(is_coco=is_coco, action_recognition=action_recognition)
         # net = AvgCNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
@@ -74,7 +75,6 @@ def train_avg(action_recognition=True):
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 correct = pred.eq(labels).sum().float().item()
-                print(idx, '%.2f%%' % (100 * correct / labels.shape[0]))
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)

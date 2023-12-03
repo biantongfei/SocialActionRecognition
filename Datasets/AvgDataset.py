@@ -6,13 +6,12 @@ import numpy
 import numpy as np
 from torch.utils.data import Dataset
 
-sigma = 'medium'
 testset_rate = 0.1
 coco_point_num = 133
 halpe_point_num = 136
 
 
-def get_data_path(is_crop, is_coco):
+def get_data_path(is_crop, is_coco, sigma):
     if is_crop:
         if is_coco:
             data_path = '../jpl_augmented/features/crop/coco_wholebody/'
@@ -61,10 +60,10 @@ def get_tra_test_files(is_crop, is_coco):
 
 
 class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, dimension):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension):
         super(AvgDataset, self).__init__()
         self.files = data_files
-        self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
+        self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
         self.action_recognition = action_recognition
         self.is_crop = is_crop
         self.is_coco = is_coco
