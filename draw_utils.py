@@ -3,7 +3,7 @@ import numpy as np
 
 
 def draw_performance(accuracy_dict):
-    colors = plt.cm.rainbow(np.linspace(0, 1, len(hyperparam_dict.keys())))
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(accuracy_dict.keys())))
     for index, key in enumerate(accuracy_dict.keys()):
         acc = [100 * a for a in accuracy_dict[key]]
         plt.plot(range(0, len(accuracy_dict[key])), acc, color=colors[index])
