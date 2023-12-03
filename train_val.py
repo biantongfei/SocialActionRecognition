@@ -65,7 +65,7 @@ def train_avg(action_recognition=True):
                 labels_onehot = functional.one_hot(labels.to(int64))
                 loss = functional.mse_loss(outputs, labels_onehot)
                 # loss = functional.cross_entropy(outputs, labels)
-                loss = tensor(loss, dtype=float)
+                loss = tensor(loss, dtype=float, requires_grad=True)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
