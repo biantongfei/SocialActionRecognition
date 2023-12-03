@@ -62,8 +62,9 @@ def train_avg(action_recognition=True):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                # labels_onehot = functional.one_hot(labels.to(int64))
-                loss = functional.cross_entropy(outputs, labels)
+                labels_onehot = functional.one_hot(labels.to(int64))
+                loss = functional.mse_loss(outputs, labels)
+                # loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
