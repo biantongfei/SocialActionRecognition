@@ -72,17 +72,17 @@ class AvgDataset(Dataset):
         with open(self.data_path + self.files[idx], 'r') as f:
             feature_json = json.load(f)
         if self.dimension == 1:
-            features = numpy.zeros(
-                (len(feature_json['frames']), 2 * coco_point_num + 4)) if self.is_coco else numpy.zeros(
+            features = np.zeros(
+                (len(feature_json['frames']), 2 * coco_point_num + 4)) if self.is_coco else np.zeros(
                 (len(feature_json['frames']), 2 * halpe_point_num + 4))
         else:
-            features = numpy.zeros(
-                (len(feature_json['frames']), coco_point_num + 2, 2)) if self.is_coco else numpy.zeros(
+            features = np.zeros(
+                (len(feature_json['frames']), coco_point_num + 2, 2)) if self.is_coco else np.zeros(
                 (len(feature_json['frames']), halpe_point_num + 2, 2))
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         for index, frame in enumerate(feature_json['frames']):
             box_width, box_height = frame['box'][2], frame['box'][3]
-            frame_feature = numpy.array(frame['keypoints'])[:, :2]
+            frame_feature = np.array(frame['keypoints'])[:, :2]
             frame_feature[:, 0] = frame_feature[:, 0] / box_width
             frame_feature[:, 1] = frame_feature[:, 1] / box_height
             frame_feature = np.append(frame_feature, [[frame['box'][0] / frame_width, frame['box'][1] / frame_height],
