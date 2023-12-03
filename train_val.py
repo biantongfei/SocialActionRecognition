@@ -3,7 +3,7 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save, int64
+from torch import device, cuda, optim, float, save, int64, tensor
 from torch.nn import functional
 import random
 
@@ -65,6 +65,7 @@ def train_avg(action_recognition=True):
                 labels_onehot = functional.one_hot(labels.to(int64))
                 loss = functional.mse_loss(outputs, labels_onehot)
                 # loss = functional.cross_entropy(outputs, labels)
+                loss = tensor(loss, dtype=float)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -82,8 +83,8 @@ def train_avg(action_recognition=True):
             if acc > train_dict[hyperparameter_group]['best_acc']:
                 improved = True
                 train_dict[hyperparameter_group]['best_acc'] = acc
-            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d' % (
-                epoch, hyperparameter_group, "%.2f%%" % (acc * 100), unimproved_epoch))
+            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, loss: %s' % (
+                epoch, hyperparameter_group, "%.2f%%" % (acc * 100), unimproved_epoch, "%.5f" % loss))
         if improved:
             improved = False
             unimproved_epoch = 0
