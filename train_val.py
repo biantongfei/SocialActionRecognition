@@ -3,7 +3,7 @@ from Models import FCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save
+from torch import device, cuda, optim, float, save, int64
 from torch.nn import functional
 import random
 
