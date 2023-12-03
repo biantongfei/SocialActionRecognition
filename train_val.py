@@ -35,7 +35,7 @@ def train_avg(trained_model_num, action_recognition=True):
 
     print('Start Training!!!')
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
-    epoch = 0
+    epoch = 1
     unimproved_epoches = 0
     while int(unimproved_epoches / len(train_dict.keys())) + 1 < 5:
         for hyperparameter_group in train_dict.keys():
@@ -74,12 +74,12 @@ def train_avg(trained_model_num, action_recognition=True):
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
-            if len(accuracy_dict[hyperparameter_group]) > 1 and acc > accuracy_dict[hyperparameter_group][-2]:
+            if len(accuracy_dict[hyperparameter_group]) < 2 or acc > accuracy_dict[hyperparameter_group][-2]:
                 unimproved_epoches = 0
             else:
                 unimproved_epoches += 1
             print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
-                epoch, hyperparameter_group, '{.2%f}' % (acc * 100),
+                epoch, hyperparameter_group, "%.2f" % (acc * 100),
                 int(unimproved_epoches / len(train_dict.keys())) + 1, trained_model_num))
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
@@ -92,7 +92,7 @@ def train_avg(trained_model_num, action_recognition=True):
             total_correct += correct
         acc = total_correct / len(val_loader.dataset)
         print('hyperparameter_group: %s, acc: %s, trained_model_num: %d' % (
-            hyperparameter_group, '{.2f}' % (acc * 100), i))
+            hyperparameter_group, "%.2f" % (acc * 100), i))
         print('----------------------------------------------------')
         save(net.state_dict(), model_save_path + 'avg_fcnn_%s_%d.pth' % (hyperparameter_group, i))
     return train_dict
