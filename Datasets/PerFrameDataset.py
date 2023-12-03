@@ -1,10 +1,8 @@
-from AvgDataset import get_data_path, get_tra_test_files
+from Datasets.AvgDataset import get_data_path
 
-import os
 import json
 import random
 
-import numpy
 import numpy as np
 from torch.utils.data import Dataset
 
