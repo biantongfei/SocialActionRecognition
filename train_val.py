@@ -41,7 +41,7 @@ def train_avg(trained_model_num, action_recognition=True):
     epoch = 1
     improved = False
     unimproved_epoch = 0
-    while unimproved_epoch < 5:
+    while unimproved_epoch < 3:
         for hyperparameter_group in train_dict.keys():
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
@@ -95,6 +95,7 @@ def train_avg(trained_model_num, action_recognition=True):
         for idx, data in enumerate(test_loader):
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+            net = train_dict[hyperparameter_group]['net'].to(device)
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             correct = pred.eq(labels).sum().float().item()
@@ -121,8 +122,7 @@ def cal_avg_performance(train_log):
 
 if __name__ == '__main__':
     train_log = []
-    for i in range(5):
-        train_dict = train_avg(trained_model_num=i, action_recognition=True)
-        train_log.append(train_dict)
+    train_dict = train_avg(trained_model_num=i, action_recognition=True)
+    train_log.append(train_dict)
     train_dict = cal_avg_performance(train_log)
     draw_performance(train_dict)
