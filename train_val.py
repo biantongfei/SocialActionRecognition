@@ -1,5 +1,5 @@
 from Datasets.AvgDataset import AvgDataset, get_tra_test_files
-from Models import FCNN
+from Models import AvgFCNN, AvgCNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
@@ -29,11 +29,10 @@ def train_avg(action_recognition=True):
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, is_coco=is_coco, dimension=dimension)
-        net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
-        # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        net = AvgFCNN(is_coco=is_coco, action_recognition=action_recognition)
+        # net = AvgCNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        # optimizer = optim.SGD(net.parameters(), lr=1e-4)
-        optimizer = optim.Adam(net.parameters(), lr=1e-4)
+        optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
                                             'tra_files': tra_files, 'testset': testset, 'net': net,
                                             'optimizer': optimizer, 'best_acc': 0}
@@ -63,8 +62,6 @@ def train_avg(action_recognition=True):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                # labels_onehot = functional.one_hot(labels.to(int64))
-                # loss = functional.mse_loss(outputs, labels_onehot).to(dtype).requires_grad_(True)
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
@@ -77,6 +74,7 @@ def train_avg(action_recognition=True):
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 correct = pred.eq(labels).sum().float().item()
+                print(idx, '%.2f%%' % (100 * correct / labels.shape[0]))
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
@@ -108,7 +106,6 @@ def train_avg(action_recognition=True):
         print('----------------------------------------------------')
         save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
     return accuracy_dict
-
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ action_class_num = 9
 attitude_class_num = 3
 
 
-class FCNN(nn.Module):
+class AvgFCNN(nn.Module):
     def __init__(self, is_coco, action_recognition, *args, **kwargs):
         super(FCNN, self).__init__()
         super().__init__(*args, **kwargs)
@@ -32,7 +32,7 @@ class FCNN(nn.Module):
         return x
 
 
-class CNN(nn.Module):
+class AvgCNN(nn.Module):
     def __init__(self, is_coco, action_recognition, *args, **kwargs):
         super(CNN, self).__init__()
         super().__init__(*args, **kwargs)
@@ -52,9 +52,7 @@ class CNN(nn.Module):
             nn.Flatten(),
             nn.Linear(self.input_size * 9, 128),
             nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(128, 32),
             nn.ReLU(),
             nn.Linear(32, self.output_size)
         )
