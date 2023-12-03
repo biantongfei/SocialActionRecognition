@@ -14,7 +14,7 @@ dtype = float
 model_save_path = 'models/'
 
 
-def train_avg(trained_model_num, action_recognition=True):
+def train_avg(action_recognition=True):
     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # train_dict = {'small_noise+coco': {}, 'small_noise+halpe': {}}
     # train_dict = {'medium_noise+coco': {}, 'medium_noise+halpe': {}}
@@ -81,8 +81,8 @@ def train_avg(trained_model_num, action_recognition=True):
             if acc > train_dict[hyperparameter_group]['best_acc']:
                 improved = True
                 train_dict[hyperparameter_group]['best_acc'] = acc
-            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
-                epoch, hyperparameter_group, "%.2f%%" % (acc * 100), unimproved_epoch, trained_model_num))
+            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d' % (
+                epoch, hyperparameter_group, "%.2f%%" % (acc * 100), unimproved_epoch))
         if improved:
             improved = False
             unimproved_epoch = 0
@@ -101,10 +101,10 @@ def train_avg(trained_model_num, action_recognition=True):
             correct = pred.eq(labels).sum().float().item()
             total_correct += correct
         acc = total_correct / len(val_loader.dataset)
-        print('hyperparameter_group: %s, acc: %s, trained_model_num: %d' % (
-            hyperparameter_group, "%.2f%%" % (acc * 100), i))
+        print('hyperparameter_group: %s, acc: %s,' % (
+            hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
-        save(net.state_dict(), model_save_path + 'avg_fcnn_%s_%d.pth' % (hyperparameter_group, i))
+        save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
     return train_dict
 
 
@@ -122,7 +122,7 @@ def cal_avg_performance(train_log):
 
 if __name__ == '__main__':
     train_log = []
-    train_dict = train_avg(trained_model_num=i, action_recognition=True)
+    train_dict = train_avg(action_recognition=True)
     train_log.append(train_dict)
     train_dict = cal_avg_performance(train_log)
     draw_performance(train_dict)
