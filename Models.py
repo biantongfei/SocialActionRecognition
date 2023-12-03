@@ -23,8 +23,6 @@ class FCNN(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
             nn.Linear(16, self.output_size)
         )
 

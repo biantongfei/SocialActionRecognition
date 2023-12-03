@@ -30,7 +30,7 @@ def train_avg(trained_model_num, action_recognition=True):
         net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
         # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.SGD(net.parameters(), lr=1e-3)
+        optimizer = optim.SGD(net.parameters(), lr=1e-4)
         # optimizer = optim.adam(net.parameters(), lr=1e-4)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
                                             'tra_files': tra_files, 'testset': testset, 'net': net,
