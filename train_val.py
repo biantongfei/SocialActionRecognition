@@ -30,8 +30,8 @@ def train_avg(action_recognition=True):
         net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
         # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.SGD(net.parameters(), lr=1e-4)
-        # optimizer = optim.adam(net.parameters(), lr=1e-4)
+        # optimizer = optim.SGD(net.parameters(), lr=1e-4)
+        optimizer = optim.adam(net.parameters(), lr=1e-4)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
                                             'tra_files': tra_files, 'testset': testset, 'net': net,
                                             'optimizer': optimizer, 'best_acc': 0}
@@ -63,9 +63,8 @@ def train_avg(action_recognition=True):
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 labels_onehot = functional.one_hot(labels.to(int64))
-                loss = functional.mse_loss(outputs, labels_onehot)
+                loss = functional.mse_loss(outputs, labels_onehot).to(dtype).requires_grad_(True)
                 # loss = functional.cross_entropy(outputs, labels)
-                loss = tensor(loss, dtype=float, requires_grad=True)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
