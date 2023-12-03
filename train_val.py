@@ -32,7 +32,7 @@ def train_avg(trained_model_num, action_recognition=True):
                                             'tra_files': tra_files, 'testset': testset, 'net': net,
                                             'optimizer': optimizer}
 
-    print('data loaded')
+    print('Start Training!!!')
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
     epoch = 0
     unimproved_epoches = 0
@@ -73,10 +73,10 @@ def train_avg(trained_model_num, action_recognition=True):
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
-            if len(accuracy_dict[hyperparameter_group]) < 2 and acc <= accuracy_dict[hyperparameter_group][-2]:
-                unimproved_epoches += 1
-            else:
+            if len(accuracy_dict[hyperparameter_group]) < 2 and acc > accuracy_dict[hyperparameter_group][-2]:
                 unimproved_epoches = 0
+            else:
+                unimproved_epoches += 1
             print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
                 epoch, hyperparameter_group, '{.2%f}' % (acc * 100),
                 int(unimproved_epoches / len(train_dict.keys())) + 1, trained_model_num))
