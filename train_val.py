@@ -31,13 +31,14 @@ def train_avg(trained_model_num, action_recognition=True):
         # optimizer = optim.adam(net.parameters(), lr=1e-4)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
                                             'tra_files': tra_files, 'testset': testset, 'net': net,
-                                            'optimizer': optimizer}
+                                            'optimizer': optimizer, 'best_acc': 0}
 
     print('Start Training!!!')
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'noise+coco': [], 'noise+halpe': []}
     epoch = 1
-    unimproved_epoches = 0
-    while int(unimproved_epoches / len(train_dict.keys())) + 1 < 5:
+    improved = False
+    unimproved_epoch = 0
+    while unimproved_epoch < 5:
         for hyperparameter_group in train_dict.keys():
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
@@ -74,13 +75,17 @@ def train_avg(trained_model_num, action_recognition=True):
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
             accuracy_dict[hyperparameter_group].append(acc)
-            if len(accuracy_dict[hyperparameter_group]) < 2 or acc > accuracy_dict[hyperparameter_group][-2]:
-                unimproved_epoches = 0
-            else:
-                unimproved_epoches += 1
+            if acc > train_dict[hyperparameter_group]['best_acc']:
+                improved = True
+                train_dict[hyperparameter_group]['best_acc'] = acc
             print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
                 epoch, hyperparameter_group, "%.2f%%" % (acc * 100),
-                int(unimproved_epoches / len(train_dict.keys())) + 1, trained_model_num))
+                int(unimproved_epoch / len(train_dict.keys())) + 1, trained_model_num))
+        if improved:
+            improved = False
+            unimproved_epoch = 0
+        else:
+            unimproved_epoch += 1
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
