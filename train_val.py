@@ -34,9 +34,9 @@ def train_avg(action_recognition=True):
         # net = AvgCNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
-        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
-                                            'tra_files': tra_files, 'testset': testset, 'net': net,
-                                            'optimizer': optimizer, 'best_acc': 0}
+        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
+                                            'dimension': dimension, 'tra_files': tra_files, 'testset': testset,
+                                            'net': net, 'optimizer': optimizer, 'best_acc': 0}
 
     print('Start Training!!!')
     epoch = 1
@@ -49,11 +49,13 @@ def train_avg(action_recognition=True):
                                              int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
                                   action_recognition=action_recognition,
                                   is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                  sigma=train_dict[hyperparameter_group]['sigma'],
                                   is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                            :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
                                 action_recognition=action_recognition,
                                 is_crop=train_dict[hyperparameter_group]['is_crop'],
+                                sigma=train_dict[hyperparameter_group]['sigma'],
                                 is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
