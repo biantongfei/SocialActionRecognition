@@ -51,6 +51,8 @@ def train_avg(trained_model_num, action_recognition=True):
                                 action_recognition=action_recognition,
                                 is_crop=train_dict[hyperparameter_group]['is_crop'],
                                 is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+            print(len(trainset))
+            print(len(valset))
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
@@ -71,13 +73,6 @@ def train_avg(trained_model_num, action_recognition=True):
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                print(outputs)
-                print('----------------------------')
-                print(pred)
-                print('----------------------------')
-                print(labels)
-                print('----------------------------')
-                print(len(val_loader.dataset))
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
