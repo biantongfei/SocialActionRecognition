@@ -51,8 +51,6 @@ def train_avg(trained_model_num, action_recognition=True):
                                 action_recognition=action_recognition,
                                 is_crop=train_dict[hyperparameter_group]['is_crop'],
                                 is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
-            print(len(trainset))
-            print(len(valset))
             train_loader = DataLoader(dataset=trainset, batch_size=batch_size)
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
@@ -88,6 +86,7 @@ def train_avg(trained_model_num, action_recognition=True):
         else:
             unimproved_epoch += 1
         epoch += 1
+        print('-----------------------------------------')
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         for idx, data in enumerate(test_loader):
