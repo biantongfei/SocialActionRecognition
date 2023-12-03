@@ -71,6 +71,13 @@ def train_avg(trained_model_num, action_recognition=True):
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
+                print(outputs)
+                print('----------------------------')
+                print(pred)
+                print('----------------------------')
+                print(labels)
+                print('----------------------------')
+                print(len(val_loader.dataset))
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
@@ -79,8 +86,7 @@ def train_avg(trained_model_num, action_recognition=True):
                 improved = True
                 train_dict[hyperparameter_group]['best_acc'] = acc
             print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, trained_model_num: %d' % (
-                epoch, hyperparameter_group, "%.2f%%" % (acc * 100),
-                int(unimproved_epoch / len(train_dict.keys())) + 1, trained_model_num))
+                epoch, hyperparameter_group, "%.2f%%" % (acc * 100), unimproved_epoch, trained_model_num))
         if improved:
             improved = False
             unimproved_epoch = 0
