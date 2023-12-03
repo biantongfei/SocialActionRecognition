@@ -1,4 +1,4 @@
-from Dataset import AvgDataset, get_tra_test_files
+from Datasets.AvgDataset import AvgDataset, get_tra_test_files
 from Models import FCNN
 from draw_utils import draw_performance
 
@@ -15,7 +15,10 @@ model_save_path = 'models/'
 
 
 def train_avg(trained_model_num, action_recognition=True):
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}}
+    # train_dict = {'small_noise+coco': {}, 'small_noise+halpe': {}}
+    # train_dict = {'medium_noise+coco': {}, 'medium_noise+halpe': {}}
+    # train_dict = {'big_noise+coco': {}, 'big_noise+halpe': {}}
     dimension = 1  # FCNN
     # dimension = 2  # CNN
     for hyperparameter_group in train_dict.keys():
@@ -27,7 +30,7 @@ def train_avg(trained_model_num, action_recognition=True):
         net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
         # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.SGD(net.parameters(), lr=1e-4)
+        optimizer = optim.SGD(net.parameters(), lr=1e-3)
         # optimizer = optim.adam(net.parameters(), lr=1e-4)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'dimension': dimension,
                                             'tra_files': tra_files, 'testset': testset, 'net': net,

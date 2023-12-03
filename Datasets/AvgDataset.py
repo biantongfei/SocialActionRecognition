@@ -6,8 +6,7 @@ import numpy
 import numpy as np
 from torch.utils.data import Dataset
 
-ori_video_dir = '../JPL/jpl_interaction_segmented_iyuv/'
-sigma = '100501'
+sigma = 'medium'
 testset_rate = 0.1
 coco_point_num = 133
 halpe_point_num = 136
