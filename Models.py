@@ -49,12 +49,12 @@ class CNN(nn.Module):
             self.output_size = attitude_class_num
 
         self.Conv = nn.Sequential(
-            nn.Conv2d(1, 9, kernel_size=2, padding=(1, 0)),
+            nn.Conv2d(1, 9, kernel_size=(3, 5), padding=(1, 0),stride=2),
             nn.ReLU(),
-            nn.Conv2d(3, 6, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(6, 9, kernel_size=(3, 2), padding=(1, 0)),
-            nn.ReLU()
+            # nn.Conv2d(3, 6, kernel_size=(3,2), padding=1),
+            # nn.ReLU(),
+            # nn.Conv2d(6, 9, kernel_size=(3, 2), padding=(1, 0)),
+            # nn.ReLU()
         )
         self.fc = nn.Sequential(
             nn.Flatten(),
@@ -66,7 +66,9 @@ class CNN(nn.Module):
         )
 
     def forward(self, x):
+        print(x.shape)
         x = self.Conv(x)
+        print(x.shape)
         x = self.fc(x)
 
         return x
