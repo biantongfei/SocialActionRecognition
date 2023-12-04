@@ -24,7 +24,7 @@ def get_data_path(is_crop, is_coco, sigma):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, sigma):
+def get_tra_test_files(is_crop, is_coco, sigma, add_class):
     data_path = get_data_path(is_crop, is_coco, sigma)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -32,7 +32,9 @@ def get_tra_test_files(is_crop, is_coco, sigma):
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-            if feature_json['action_class'] in ori_videos_dict.keys():
+            if not add_class and feature_json['action_class'] in [7, 8]:
+                continue
+            elif feature_json['action_class'] in ori_videos_dict.keys():
                 ori_videos_dict[feature_json['action_class']].append(file)
             else:
                 ori_videos_dict[feature_json['action_class']] = [file]
@@ -63,7 +65,7 @@ class AvgDataset(Dataset):
         super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
-        self.action_recognition = action_recognition
+        self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
         self.is_crop = is_crop
         self.is_coco = is_coco
         self.dimension = dimension
@@ -107,6 +109,6 @@ class AvgDataset(Dataset):
 
 if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True)
-    dataset = AvgDataset(data_files=tra_files, action_recognition=True, is_crop=True, is_coco=True, dimension=2)
+    dataset = AvgDataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True, dimension=2)
     features, labels = dataset.__getitem__(0)
     print(features.shape, labels)

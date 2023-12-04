@@ -3,6 +3,7 @@ from torch import nn
 coco_point_num = 133
 halpe_point_num = 136
 box_feature_num = 4
+ori_action_class_num = 7
 action_class_num = 9
 attitude_class_num = 3
 
@@ -14,7 +15,10 @@ class FCNN(nn.Module):
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
         self.input_size = 2 * points_num + box_feature_num
-        self.output_size = action_class_num if action_recognition else attitude_class_num
+        if action_recognition:
+            self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
+        else:
+            self.output_size = attitude_class_num
 
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
@@ -33,16 +37,19 @@ class FCNN(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, *args, **kwargs):
+    def __init__(self, is_coco, action_recognition=False, *args, **kwargs):
         super(CNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
         self.input_size = (int(points_num + box_feature_num / 2), 2)
-        print(self.input_size)
-        self.output_size = action_class_num if action_recognition else attitude_class_num
+        if action_recognition:
+            self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
+        else:
+            self.output_size = attitude_class_num
+
         self.Conv = nn.Sequential(
-            nn.Conv2d(1, 3, kernel_size=3, padding=1),
+            nn.Conv2d(1, 9, kernel_size=2, padding=(1, 0)),
             nn.ReLU(),
             nn.Conv2d(3, 6, kernel_size=3, padding=1),
             nn.ReLU(),

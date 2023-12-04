@@ -16,7 +16,12 @@ dtype = float
 model_save_path = 'models/'
 
 
-def train_avg(action_recognition=True):
+def train_avg(action_recognition=False):
+    """
+
+    :param action_recognition: 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
+    :return:
+    """
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
                   'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
@@ -28,11 +33,12 @@ def train_avg(action_recognition=True):
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
-        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
+        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
+                                                   add_class=action_recognition)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
-        # net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
-        net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
+        # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
@@ -106,7 +112,7 @@ def train_avg(action_recognition=True):
             pred = outputs.argmax(dim=1)
             correct = pred.eq(labels).sum().float().item()
             total_correct += correct
-        acc = total_correct / len(val_loader.dataset)
+        acc = total_correct / len(test_loader.dataset)
         print('hyperparameter_group: %s, acc: %s,' % (
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
@@ -126,7 +132,8 @@ def traine_perframe(action_recognition=True):
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
-        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
+        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
+                                                   add_class=action_recognition)
         testset = PerFrameDataset(data_files=test_files, action_recognition=action_recognition,
                                   is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
         net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
@@ -213,5 +220,5 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    accuracy_dict = train_avg(action_recognition=True)
+    accuracy_dict = train_avg(action_recognition=1)
     draw_performance(accuracy_dict)
