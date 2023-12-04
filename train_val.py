@@ -113,6 +113,7 @@ def train_avg(action_recognition=False, dimension=1):
                 train_dict[hyperparameter_group]['unimproved_epoch'], "%.5f" % loss))
         epoch += 1
         print('------------------------------------------')
+        break
     best_acc = 0
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
