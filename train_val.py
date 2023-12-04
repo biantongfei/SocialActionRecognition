@@ -11,7 +11,7 @@ import numpy as np
 
 batch_size = 128
 valset_rate = 0.1
-if cuda.is_available()
+if cuda.is_available():
     device = device("cuda:0")
 elif backends.mps.is_available():
     device = device('mps')
