@@ -51,11 +51,11 @@ class CNN(nn.Module):
             self.output_size = attitude_class_num
 
         self.Conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(5, 3), padding=(0, 1), stride=(2, 1)),
+            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(5, 3), padding=(1, 1), stride=(2, 1)),
             nn.ReLU(),
-            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=(5, 3), padding=(0, 1), stride=(2, 1)),
+            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=(5, 3), padding=(1, 1), stride=(2, 1)),
             nn.ReLU(),
-            nn.Conv2d(in_channels=32, out_channels=128, kernel_size=(5, 2), stride=2),
+            nn.Conv2d(in_channels=32, out_channels=128, kernel_size=(5, 2), padding=(1, 0), stride=2),
             nn.ReLU(),
         )
 
