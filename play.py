@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 
-a = np.array((1,))
-print(a.shape[0])
+print(torch.backends.mps.is_available())
+print(torch.cuda.is_available())

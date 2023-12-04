@@ -4,22 +4,29 @@ from Models import FCNN, CNN
 from draw_utils import draw_performance
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save, int64, tensor
+from torch import device, cuda, optim, float, save, backends
 from torch.nn import functional
 import random
 import numpy as np
 
 batch_size = 128
 valset_rate = 0.1
-device = device("cuda:0" if cuda.is_available() else "cpu")
+if cuda.is_available()
+    device = device("cuda:0")
+elif backends.mps.is_available():
+    device = device('mps')
+else:
+    device = device('cpu')
 dtype = float
 model_save_path = 'models/'
 
 
-def train_avg(action_recognition=False):
+def train_avg(action_recognition=False, dimension=1):
     """
 
-    :param action_recognition: 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
+    :param
+    action_recognition: 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
+    dimension: 1 for fcnn; 2 for cnn
     :return:
     """
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
@@ -29,8 +36,6 @@ def train_avg(action_recognition=False):
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # accuracy_dict = {'crop+coco': [], 'crop+halpe': []}
 
-    dimension = 1  # FCNN
-    # dimension = 2  # CNN
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
@@ -39,8 +44,10 @@ def train_avg(action_recognition=False):
                                                    add_class=action_recognition)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
-        net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
-        # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        if dimension == 1:
+            net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
+        else:
+            net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
@@ -222,5 +229,5 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    accuracy_dict = train_avg(action_recognition=0)
+    accuracy_dict = train_avg(action_recognition=1, dimension=1)
     draw_performance(accuracy_dict)
