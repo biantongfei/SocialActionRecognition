@@ -15,7 +15,8 @@ def draw_performance(accuracy_dict):
     plt.show()
 
 
-def plot_confusion_matrix(y_true, y_pred, classes):  # 绘制混淆矩阵
+def plot_confusion_matrix(y_true, y_pred, classes):
+    print(y_true.shape, y_pred.shape)  # 绘制混淆矩阵
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
     FP = sum(cm.sum(axis=0)) - sum(np.diag(cm))  # 假正样本数
     FN = sum(cm.sum(axis=1)) - sum(np.diag(cm))  # 假负样本数
