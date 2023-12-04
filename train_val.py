@@ -78,7 +78,6 @@ def train_avg(action_recognition=False):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                print(inputs.shape, labels.shape),outputs.shape
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
