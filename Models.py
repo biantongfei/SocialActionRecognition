@@ -44,6 +44,7 @@ class CNN(nn.Module):
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
+        print(int((points_num + box_feature_num / 2) / 4) + 1)
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
         else:
@@ -65,6 +66,7 @@ class CNN(nn.Module):
 
     def forward(self, x):
         x = self.Conv(x)
+        print(x.shape)
         x = self.fc(x)
 
         return x
