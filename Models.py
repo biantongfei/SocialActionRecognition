@@ -56,19 +56,19 @@ class CNN(nn.Module):
             # nn.Conv2d(6, 9, kernel_size=(3, 2), padding=(1, 0)),
             # nn.ReLU()
         )
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(self.input_size * 9, 128),
-            nn.ReLU(),
-            nn.Linear(128, 32),
-            nn.ReLU(),
-            nn.Linear(32, self.output_size)
-        )
+        # self.fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(self.input_size * 9, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 32),
+        #     nn.ReLU(),
+        #     nn.Linear(32, self.output_size)
+        # )
 
     def forward(self, x):
         print(x.shape)
         x = self.Conv(x)
         print(x.shape)
-        x = self.fc(x)
+        # x = self.fc(x)
 
         return x
