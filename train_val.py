@@ -26,6 +26,8 @@ def train_avg(action_recognition=False):
                   'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
                      'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}}
+    accuracy_dict = {'crop+coco': [], 'crop+halpe': []}
 
     # dimension = 1  # FCNN
     dimension = 2  # CNN
