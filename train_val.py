@@ -243,6 +243,6 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    for i in range(3):
-        accuracy_dict = train_avg(action_recognition=False, dimension=1)
+    # for i in range(3):
+    accuracy_dict = train_avg(action_recognition=1, dimension=1)
     # draw_performance(accuracy_dict)
