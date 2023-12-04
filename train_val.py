@@ -97,6 +97,7 @@ def train_avg(action_recognition=True):
         print('------------------------------------------')
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
+        total_correct = 0
         for idx, data in enumerate(test_loader):
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
