@@ -1,7 +1,7 @@
 from Datasets.AvgDataset import AvgDataset, get_tra_test_files
 from Datasets.PerFrameDataset import PerFrameDataset, cal_acc
 from Models import FCNN, CNN
-from draw_utils import draw_performance
+from draw_utils import draw_performance, plot_confusion_matrix
 
 from torch.utils.data import DataLoader
 from torch import device, cuda, optim, float, save, backends
@@ -19,6 +19,9 @@ else:
     device = device('cpu')
 dtype = float
 model_save_path = 'models/'
+ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
+added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested', 'interested']
+attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
 def train_avg(action_recognition=False, dimension=1):
@@ -29,12 +32,12 @@ def train_avg(action_recognition=False, dimension=1):
     dimension: 1 for fcnn; 2 for cnn
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
-                  'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
-    accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
-                     'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}}
-    # accuracy_dict = {'crop+coco': [], 'crop+halpe': []}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
+    #               'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
+    # accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
+    #                  'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
+    train_dict = {'crop+coco': {}}
+    accuracy_dict = {'crop+coco': []}
 
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
@@ -110,6 +113,7 @@ def train_avg(action_recognition=False, dimension=1):
                 train_dict[hyperparameter_group]['unimproved_epoch'], "%.5f" % loss))
         epoch += 1
         print('------------------------------------------')
+    best_acc = 0
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         total_correct = 0
@@ -122,10 +126,20 @@ def train_avg(action_recognition=False, dimension=1):
             correct = pred.eq(labels).sum().float().item()
             total_correct += correct
         acc = total_correct / len(test_loader.dataset)
+        if acc > best_acc:
+            y_true = labels
+            y_pred = outputs
         print('hyperparameter_group: %s, acc: %s,' % (
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
         save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
+    if action_recognition:
+        classes = added_classes
+    elif action_recognition == 0:
+        classes = ori_classes
+    else:
+        classes = attitude_classes
+    plot_confusion_matrix(y_true, y_pred, classes)
     return accuracy_dict
 
 
@@ -229,5 +243,6 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    accuracy_dict = train_avg(action_recognition=1, dimension=1)
-    draw_performance(accuracy_dict)
+    for i in range(3):
+        accuracy_dict = train_avg(action_recognition=False, dimension=1)
+    # draw_performance(accuracy_dict)
