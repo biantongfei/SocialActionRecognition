@@ -12,7 +12,7 @@ def draw_performance(accuracy_dict):
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
     plt.savefig('accuracy.png')
-    plt.show()
+    # plt.show()
 
 
 def plot_confusion_matrix(y_true, y_pred, classes):
@@ -78,7 +78,7 @@ def plot_confusion_matrix(y_true, y_pred, classes):
     # plt.gcf().subplots_adjust(bottom=0.15)
     # show confusion matrix
     plt.savefig('confusion_matrix', format='png')
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':
