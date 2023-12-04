@@ -22,8 +22,8 @@ def train_avg(action_recognition=True):
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
                      'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
 
-    dimension = 1  # FCNN
-    # dimension = 2  # CNN
+    # dimension = 1  # FCNN
+    dimension = 2  # CNN
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
@@ -31,8 +31,8 @@ def train_avg(action_recognition=True):
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
-        net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
-        # net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        # net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
+        net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
