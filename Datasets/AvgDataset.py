@@ -92,11 +92,10 @@ class AvgDataset(Dataset):
             if self.dimension == 1:
                 frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                 features[index] = frame_feature
-                features = features.mean(axis=0)
             else:
                 print(features.shape, frame_feature.shape)
                 features[0, index] = frame_feature
-                features = features.mean(axis=1)
+
         if self.action_recognition:
             label = np.float32(feature_json['action_class'])
         else:
@@ -106,6 +105,7 @@ class AvgDataset(Dataset):
                 label = 2
             else:
                 label = 0
+        features = features.mean(axis=0) if self.dimension == 1 else features = features.mean(axis=1)
         return features, np.int64(feature_json['action_class'])
 
     def __len__(self):

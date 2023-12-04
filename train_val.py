@@ -58,7 +58,6 @@ def train_avg(action_recognition=False):
             else:
                 continue
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
-            print(dimension)
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                              int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
                                   action_recognition=action_recognition,
@@ -75,7 +74,7 @@ def train_avg(action_recognition=False):
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
-            for idx, data in enumerate(train_loader):
+            for data in train_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 print(inputs.shape, labels.shape)
@@ -86,7 +85,7 @@ def train_avg(action_recognition=False):
                 optimizer.step()
 
             total_correct = 0
-            for idx, data in enumerate(val_loader):
+            for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
@@ -108,7 +107,7 @@ def train_avg(action_recognition=False):
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         total_correct = 0
-        for idx, data in enumerate(test_loader):
+        for data in test_loader:
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
@@ -172,7 +171,7 @@ def traine_perframe(action_recognition=True):
             val_loader = DataLoader(dataset=valset, batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
-            for idx, data in enumerate(train_loader):
+            for data in train_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
@@ -182,7 +181,7 @@ def traine_perframe(action_recognition=True):
                 optimizer.step()
 
             val_output = np.array((1,))
-            for idx, data in enumerate(val_loader):
+            for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
@@ -207,7 +206,7 @@ def traine_perframe(action_recognition=True):
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         test_output = np.array((1,))
-        for idx, data in enumerate(test_loader):
+        for data in test_loader:
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             outputs = net(inputs)
