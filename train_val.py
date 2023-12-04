@@ -58,6 +58,7 @@ def train_avg(action_recognition=False):
             else:
                 continue
             random.shuffle(train_dict[hyperparameter_group]['tra_files'])
+            print(dimension)
             trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
                                              int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
                                   action_recognition=action_recognition,
