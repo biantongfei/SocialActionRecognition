@@ -39,6 +39,7 @@ class CNN(nn.Module):
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
         self.input_size = (int(points_num + box_feature_num / 2), 2)
+        print(self.input_size)
         self.output_size = action_class_num if action_recognition else attitude_class_num
         self.Conv = nn.Sequential(
             nn.Conv2d(1, 3, kernel_size=3, padding=1),
