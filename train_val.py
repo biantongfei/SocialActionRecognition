@@ -27,8 +27,8 @@ def train_avg(action_recognition=False):
     accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
                      'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
 
-    # dimension = 1  # FCNN
-    dimension = 2  # CNN
+    dimension = 1  # FCNN
+    # dimension = 2  # CNN
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
