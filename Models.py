@@ -1,4 +1,5 @@
 from torch import nn
+import numpy as np
 
 coco_point_num = 133
 halpe_point_num = 136
@@ -68,6 +69,7 @@ class CNN(nn.Module):
         # )
 
     def forward(self, x):
+        x=np.array[x]
         print(x.shape)
         x = self.Conv(x)
         print(x.shape)
