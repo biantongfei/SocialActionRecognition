@@ -44,7 +44,7 @@ class CNN(nn.Module):
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = coco_point_num if self.is_coco else halpe_point_num
-        print(int((points_num + box_feature_num / 2) / 4) + 1)
+        print((int((points_num + box_feature_num / 2) / 4) + 1)*64)
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
         else:
@@ -59,7 +59,7 @@ class CNN(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(int((points_num + box_feature_num / 2) / 4) + 1, 16),
+            nn.Linear((int((points_num + box_feature_num / 2) / 4) + 1) * 64, 16),
             nn.ReLU(),
             nn.Linear(16, self.output_size)
         )
