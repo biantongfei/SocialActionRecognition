@@ -73,38 +73,29 @@ class AvgDataset(Dataset):
     def __getitem__(self, idx):
         with open(self.data_path + self.files[idx], 'r') as f:
             feature_json = json.load(f)
-        frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         if self.dimension == 1:
             features = np.zeros(
                 (len(feature_json['frames']), 2 * coco_point_num + 4)) if self.is_coco else np.zeros(
                 (len(feature_json['frames']), 2 * halpe_point_num + 4))
-            for index, frame in enumerate(feature_json['frames']):
-                box_width, box_height = frame['box'][2], frame['box'][3]
-                frame_feature = np.array(frame['keypoints'])[:, :2]
-                frame_feature[:, 0] = frame_feature[:, 0] / box_width
-                frame_feature[:, 1] = frame_feature[:, 1] / box_height
-                frame_feature = np.append(frame_feature,
-                                          [[frame['box'][0] / frame_width, frame['box'][1] / frame_height],
-                                           [box_width / frame_width, box_height / frame_height]], axis=0)
-                frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
-                features[index] = frame_feature
-                feature = features.mean(axis=0)
-
         else:
             features = np.zeros(
                 (1, len(feature_json['frames']), coco_point_num + 2, 2)) if self.is_coco else np.zeros(
                 (1, len(feature_json['frames']), halpe_point_num + 2, 2))
-            for index, frame in enumerate(feature_json['frames']):
-                box_width, box_height = frame['box'][2], frame['box'][3]
-                frame_feature = np.array(frame['keypoints'])[:, :2]
-                frame_feature[0, :, 0] = frame_feature[:, 0] / box_width
-                frame_feature[0, :, 1] = frame_feature[:, 1] / box_height
-                frame_feature = np.append(frame_feature,
-                                          [[[frame['box'][0] / frame_width, frame['box'][1] / frame_height],
-                                            [box_width / frame_width, box_height / frame_height]]], axis=1)
+        frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+        for index, frame in enumerate(feature_json['frames']):
+            box_width, box_height = frame['box'][2], frame['box'][3]
+            frame_feature = np.array(frame['keypoints'])[:, :2]
+            frame_feature[:, 0] = frame_feature[:, 0] / box_width
+            frame_feature[:, 1] = frame_feature[:, 1] / box_height
+            frame_feature = np.append(frame_feature, [[frame['box'][0] / frame_width, frame['box'][1] / frame_height],
+                                                      [box_width / frame_width, box_height / frame_height]], axis=0)
+            if self.dimension == 1:
+                frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+                features[index] = frame_feature
+                features=features.mean(axis=0)
+            else:
                 features[0, index] = frame_feature
-                features.mean(axis=1)
-
+                features = features.mean(axis=1)
         if self.action_recognition:
             label = np.float32(feature_json['action_class'])
         else:
