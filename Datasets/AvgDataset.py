@@ -93,7 +93,6 @@ class AvgDataset(Dataset):
                 frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                 features[index] = frame_feature
             else:
-                print(features.shape, frame_feature.shape)
                 features[0, index] = frame_feature
 
         if self.action_recognition:
