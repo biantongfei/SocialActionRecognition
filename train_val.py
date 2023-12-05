@@ -130,7 +130,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
         acc = total_correct / len(test_loader.dataset)
         if acc > best_acc:
             y_true = labels
-            y_pred = outputs
+            y_pred = pred
         print('hyperparameter_group: %s, acc: %s,' % (
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
