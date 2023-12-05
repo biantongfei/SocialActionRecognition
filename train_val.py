@@ -38,7 +38,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
     #                       'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
     #                       'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
     train_dict = {'crop+coco': {}}
-    accuracy_dict = {'crop+coco': [[], []]}
+    accuracy_loss_dict = {'crop+coco': [[], []]}
 
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
