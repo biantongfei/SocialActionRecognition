@@ -34,8 +34,9 @@ def train_avg(action_recognition=False, dimension=1):
     """
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
                   'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
-    accuracy_dict = {'crop+coco': [], 'crop+halpe': [], 'small_noise+coco': [], 'small_noise+halpe': [],
-                     'medium_noise+coco': [], 'medium_noise+halpe': [], 'big_noise+coco': [], 'big_noise+halpe': []}
+    accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
+                          'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
+                          'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
     # train_dict = {'crop+coco': {}}
     # accuracy_dict = {'crop+coco': []}
 
@@ -63,7 +64,7 @@ def train_avg(action_recognition=False, dimension=1):
     while continue_train:
         continue_train = False
         for hyperparameter_group in train_dict.keys():
-            if train_dict[hyperparameter_group]['unimproved_epoch'] < 3:
+            if train_dict[hyperparameter_group]['unimproved_epoch'] < 5:
                 continue_train = True
             else:
                 continue
@@ -102,7 +103,8 @@ def train_avg(action_recognition=False, dimension=1):
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
-            accuracy_dict[hyperparameter_group].append(acc)
+            accuracy_dict[hyperparameter_group][0].append(acc)
+            accuracy_dict[hyperparameter_group][1].append(loss)
             if acc > train_dict[hyperparameter_group]['best_acc']:
                 train_dict[hyperparameter_group]['best_acc'] = acc
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
@@ -245,4 +247,4 @@ def traine_perframe(action_recognition=True):
 if __name__ == '__main__':
     for i in range(3):
         accuracy_dict = train_avg(action_recognition=1, dimension=1)
-    # draw_performance(accuracy_dict)
+        draw_performance(accuracy_dict)

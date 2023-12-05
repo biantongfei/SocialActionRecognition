@@ -6,12 +6,21 @@ from sklearn.metrics import confusion_matrix
 def draw_performance(accuracy_dict):
     colors = plt.cm.rainbow(np.linspace(0, 1, len(accuracy_dict.keys())))
     for index, key in enumerate(accuracy_dict.keys()):
-        acc = [100 * a for a in accuracy_dict[key]]
+        acc = [100 * a for a in accuracy_dict[key][0]]
         plt.plot(range(0, len(accuracy_dict[key])), acc, color=colors[index])
     plt.legend(accuracy_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
     plt.savefig('accuracy.png')
+    plt.close()
+    for index, key in enumerate(accuracy_dict.keys()):
+        loss = [l for l in accuracy_dict[key][1]]
+        plt.plot(range(0, len(accuracy_dict[key])), loss, color=colors[index])
+    plt.legend(accuracy_dict.keys())
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.savefig('loss.png')
+    plt.close()
     # plt.show()
 
 
