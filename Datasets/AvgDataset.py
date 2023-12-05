@@ -5,7 +5,7 @@ import random
 import numpy as np
 from torch.utils.data import Dataset
 
-testset_rate = 0.1
+testset_rate = 0.2
 coco_point_num = 133
 halpe_point_num = 136
 
