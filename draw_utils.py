@@ -86,7 +86,7 @@ def plot_confusion_matrix(y_true, y_pred, classes):
     plt.grid(True, which='minor', linestyle='-')
     # plt.gcf().subplots_adjust(bottom=0.15)
     # show confusion matrix
-    plt.savefig('confusion_matrix', format='png')
+    plt.savefig('confusion_matrix.png', format='png')
     # plt.show()
 
 
