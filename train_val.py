@@ -24,7 +24,7 @@ added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 
 attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
-def train_avg(action_recognition=False, dimension=1):
+def train_avg(lr, action_recognition=False, dimension=1):
     """
 
     :param
@@ -53,7 +53,7 @@ def train_avg(action_recognition=False, dimension=1):
         else:
             net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.Adam(net.parameters(), lr=1e-3)
+        optimizer = optim.Adam(net.parameters(), lr=lr)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
                                             'dimension': dimension, 'tra_files': tra_files, 'testset': testset,
                                             'net': net, 'optimizer': optimizer, 'best_acc': 0, 'unimproved_epoch': 0}
@@ -245,6 +245,6 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    for i in range(3):
-        accuracy_loss_dict = train_avg(action_recognition=1, dimension=1)
+    for lr in [1e-2, 1e-3, 1e-4, 1e-4, 1e-6]:
+        accuracy_loss_dict = train_avg(lr, action_recognition=False, dimension=1)
         draw_performance(accuracy_loss_dict)
