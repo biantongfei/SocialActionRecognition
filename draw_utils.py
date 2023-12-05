@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 
 
-def draw_performance(accuracy_loss_dict):
+def draw_performance(accuracy_loss_dict, sub_name):
     colors = plt.cm.rainbow(np.linspace(0, 1, len(accuracy_loss_dict.keys())))
     for index, key in enumerate(accuracy_loss_dict.keys()):
         acc = [100 * a for a in accuracy_loss_dict[key][0]]
@@ -19,12 +19,12 @@ def draw_performance(accuracy_loss_dict):
     plt.legend(accuracy_loss_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('loss')
-    plt.savefig('loss.png')
+    plt.savefig('loss%d.png' % index)
     plt.close()
     # plt.show()
 
 
-def plot_confusion_matrix(y_true, y_pred, classes):
+def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_pred = y_pred.argmax(dim=1)
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
     FP = sum(cm.sum(axis=0)) - sum(np.diag(cm))  # 假正样本数
@@ -86,7 +86,7 @@ def plot_confusion_matrix(y_true, y_pred, classes):
     plt.grid(True, which='minor', linestyle='-')
     # plt.gcf().subplots_adjust(bottom=0.15)
     # show confusion matrix
-    plt.savefig('confusion_matrix.png', format='png')
+    plt.savefig('confusion_matrix_%s.png' % (sub_name), format='png')
     # plt.show()
 
 

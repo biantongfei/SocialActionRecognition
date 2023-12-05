@@ -141,7 +141,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
         classes = ori_classes
     else:
         classes = attitude_classes
-    plot_confusion_matrix(y_true, y_pred, classes)
+    plot_confusion_matrix(y_true, y_pred, classes, sub_name=lr)
     return accuracy_loss_dict
 
 
@@ -247,4 +247,5 @@ def traine_perframe(action_recognition=True):
 if __name__ == '__main__':
     for lr in [1e-2, 1e-3, 1e-4, 1e-4, 1e-6]:
         accuracy_loss_dict = train_avg(lr, action_recognition=1, dimension=1)
-        draw_performance(accuracy_loss_dict)
+        # accuracy_loss_dict = train_avg(lr, action_recognition=False, dimension=1)
+        draw_performance(accuracy_loss_dict, sub_name=lr)
