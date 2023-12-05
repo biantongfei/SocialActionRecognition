@@ -24,7 +24,7 @@ def get_data_path(is_crop, is_coco, sigma):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, sigma, add_class):
+def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
     data_path = get_data_path(is_crop, is_coco, sigma)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -32,7 +32,7 @@ def get_tra_test_files(is_crop, is_coco, sigma, add_class):
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-            if not add_class and feature_json['action_class'] in [7, 8]:
+            if not_add_class and feature_json['action_class'] in [7, 8]:
                 continue
             elif feature_json['action_class'] in ori_videos_dict.keys():
                 ori_videos_dict[feature_json['action_class']].append(file)
@@ -96,16 +96,16 @@ class AvgDataset(Dataset):
                 features[0, index] = frame_feature
 
         if self.action_recognition:
-            label = np.float32(feature_json['action_class'])
+            label = feature_json['action_class']
         else:
-            if np.float32(feature_json['action_class']) == 7:
+            if feature_json['action_class'] == 7:
                 label = 1
-            elif np.float32(feature_json['action_class']) == 8:
+            elif feature_json['action_class'] == 8:
                 label = 2
             else:
                 label = 0
-        features = features.mean(axis=0) if self.dimension == 1 else features.mean(axis=1)
-        return features, np.int64(feature_json['action_class'])
+        feature = features.mean(axis=0) if self.dimension == 1 else features.mean(axis=1)
+        return feature, label
 
     def __len__(self):
         return len(self.files)

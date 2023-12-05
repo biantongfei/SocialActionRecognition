@@ -24,11 +24,11 @@ added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 
 attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
-def train_avg(lr, action_recognition=False, dimension=1):
+def train_avg(i, action_recognition=False, dimension=1):
     """
 
     :param
-    action_recognition: 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
+    action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     dimension: 1 for fcnn; 2 for cnn
     :return:
     """
@@ -45,7 +45,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
         is_coco = True if 'coco' in hyperparameter_group else False
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
-                                                   add_class=action_recognition)
+                                                   not_add_class=action_recognition == 1)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
         if dimension == 1:
@@ -53,7 +53,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
         else:
             net = CNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.Adam(net.parameters(), lr=lr)
+        optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
                                             'dimension': dimension, 'tra_files': tra_files, 'testset': testset,
                                             'net': net, 'optimizer': optimizer, 'best_acc': 0, 'unimproved_epoch': 0}
@@ -135,13 +135,13 @@ def train_avg(lr, action_recognition=False, dimension=1):
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
         save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
-    if action_recognition:
-        classes = added_classes
-    elif action_recognition == 0:
+    if action_recognition == 1:
         classes = ori_classes
+    elif action_recognition == 2:
+        classes = added_classes
     else:
         classes = attitude_classes
-    plot_confusion_matrix(y_true, y_pred, classes, sub_name=str(lr))
+    plot_confusion_matrix(y_true, y_pred, classes, sub_name=str(i))
     return accuracy_loss_dict
 
 
@@ -245,7 +245,7 @@ def traine_perframe(action_recognition=True):
 
 
 if __name__ == '__main__':
-    for lr in [1e-2, 1e-3, 1e-4, 1e-4, 1e-6]:
-        accuracy_loss_dict = train_avg(lr, action_recognition=1, dimension=1)
-        # accuracy_loss_dict = train_avg(lr, action_recognition=False, dimension=1)
-        draw_performance(accuracy_loss_dict, sub_name=str(lr))
+    for i in range(3):
+        accuracy_loss_dict = train_avg(i, action_recognition=2, dimension=1)
+        # accuracy_loss_dict = train_avg(action_recognition=False, dimension=1)
+        draw_performance(accuracy_loss_dict, sub_name=str(i))

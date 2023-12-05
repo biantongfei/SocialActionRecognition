@@ -18,7 +18,7 @@ class FCNN(nn.Module):
         points_num = coco_point_num if self.is_coco else halpe_point_num
         self.input_size = 2 * points_num + box_feature_num
         if action_recognition:
-            self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
+            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
 
