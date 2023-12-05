@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
+from torch import Tensor
 
 
 def draw_performance(accuracy_loss_dict, sub_name):
@@ -25,6 +26,10 @@ def draw_performance(accuracy_loss_dict, sub_name):
 
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
+    y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
+    print(y_true.shape, y_pred.shape)
+    print(y_true)
+    print(y_pred)
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
     FP = sum(cm.sum(axis=0)) - sum(np.diag(cm))  # 假正样本数
     FN = sum(cm.sum(axis=1)) - sum(np.diag(cm))  # 假负样本数
