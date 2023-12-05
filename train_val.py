@@ -246,5 +246,5 @@ def traine_perframe(action_recognition=True):
 
 if __name__ == '__main__':
     for lr in [1e-2, 1e-3, 1e-4, 1e-4, 1e-6]:
-        accuracy_loss_dict = train_avg(lr, action_recognition=False, dimension=1)
+        accuracy_loss_dict = train_avg(lr, action_recognition=1, dimension=1)
         draw_performance(accuracy_loss_dict)
