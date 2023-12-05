@@ -103,8 +103,8 @@ def train_avg(action_recognition=False, dimension=1):
                 correct = pred.eq(labels).sum().float().item()
                 total_correct += correct
             acc = total_correct / len(val_loader.dataset)
-            accuracy_dict[hyperparameter_group][0].append(acc)
-            accuracy_dict[hyperparameter_group][1].append(loss)
+            accuracy_loss_dict[hyperparameter_group][0].append(acc)
+            accuracy_loss_dict[hyperparameter_group][1].append(loss)
             if acc > train_dict[hyperparameter_group]['best_acc']:
                 train_dict[hyperparameter_group]['best_acc'] = acc
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
@@ -142,7 +142,7 @@ def train_avg(action_recognition=False, dimension=1):
     else:
         classes = attitude_classes
     plot_confusion_matrix(y_true, y_pred, classes)
-    return accuracy_dict
+    return accuracy_loss_dict
 
 
 def traine_perframe(action_recognition=True):
@@ -246,5 +246,5 @@ def traine_perframe(action_recognition=True):
 
 if __name__ == '__main__':
     for i in range(3):
-        accuracy_dict = train_avg(action_recognition=1, dimension=1)
-        draw_performance(accuracy_dict)
+        accuracy_loss_dict = train_avg(action_recognition=1, dimension=1)
+        draw_performance(accuracy_loss_dict)
