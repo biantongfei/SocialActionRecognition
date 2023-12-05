@@ -26,7 +26,7 @@ def draw_performance(accuracy_loss_dict, sub_name):
 
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
-    y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
+    # y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
     print(y_true.shape, y_pred.shape)
     print(y_true)
     print(y_pred)
@@ -40,6 +40,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     RECALL = TP / (TP + FN)  # 查全率，又名召回率
     plt.figure(figsize=(12, 8), dpi=100)
     np.set_printoptions(precision=2)
+    # 在混淆矩阵中每格的概率值
     ind_array = np.arange(len(classes) + 1)
     x, y = np.meshgrid(ind_array, ind_array)  # 生成坐标矩阵
     diags = np.diag(cm)  # 对角TP值
