@@ -32,13 +32,13 @@ def train_avg(lr, action_recognition=False, dimension=1):
     dimension: 1 for fcnn; 2 for cnn
     :return:
     """
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
-    #               'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
-    # accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
-    #                       'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
-    #                       'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
-    train_dict = {'crop+coco': {}}
-    accuracy_loss_dict = {'crop+coco': [[], []]}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
+                  'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
+    accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
+                          'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
+                          'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
+    # train_dict = {'crop+coco': {}}
+    # accuracy_loss_dict = {'crop+coco': [[], []]}
 
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
@@ -115,7 +115,6 @@ def train_avg(lr, action_recognition=False, dimension=1):
                 train_dict[hyperparameter_group]['unimproved_epoch'], "%.5f" % loss))
         epoch += 1
         print('------------------------------------------')
-        break
     best_acc = 0
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
@@ -142,7 +141,7 @@ def train_avg(lr, action_recognition=False, dimension=1):
         classes = ori_classes
     else:
         classes = attitude_classes
-    plot_confusion_matrix(y_true, y_pred, classes, sub_name=lr)
+    plot_confusion_matrix(y_true, y_pred, classes, sub_name=str(lr))
     return accuracy_loss_dict
 
 
@@ -249,4 +248,4 @@ if __name__ == '__main__':
     for lr in [1e-2, 1e-3, 1e-4, 1e-4, 1e-6]:
         accuracy_loss_dict = train_avg(lr, action_recognition=1, dimension=1)
         # accuracy_loss_dict = train_avg(lr, action_recognition=False, dimension=1)
-        draw_performance(accuracy_loss_dict, sub_name=lr)
+        draw_performance(accuracy_loss_dict, sub_name=str(lr))
