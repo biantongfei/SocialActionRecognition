@@ -116,6 +116,7 @@ def train_avg(i, action_recognition=False, dimension=1):
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
+    hg = ''
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         total_correct = 0
@@ -131,6 +132,8 @@ def train_avg(i, action_recognition=False, dimension=1):
         if acc > best_acc:
             y_true = labels
             y_pred = pred
+            best_acc = acc
+            hg = hyperparameter_group
         print('hyperparameter_group: %s, acc: %s,' % (
             hyperparameter_group, "%.2f%%" % (acc * 100)))
         print('----------------------------------------------------')
@@ -141,8 +144,9 @@ def train_avg(i, action_recognition=False, dimension=1):
         classes = added_classes
     else:
         classes = attitude_classes
-    plot_confusion_matrix(y_true, y_pred, classes, sub_name=str(i))
-    return accuracy_loss_dict
+    plot_confusion_matrix(y_true, y_pred, classes, sub_name='%s_%d' % (hg, i))
+    draw_performance(accuracy_loss_dict, sub_name='%s_%d' % (hg, i))
+    return
 
 
 def traine_perframe(action_recognition=True):
@@ -246,6 +250,5 @@ def traine_perframe(action_recognition=True):
 
 if __name__ == '__main__':
     for i in range(3):
-        accuracy_loss_dict = train_avg(i, action_recognition=2, dimension=1)
-        # accuracy_loss_dict = train_avg(i, action_recognition=False, dimension=1)
-        draw_performance(accuracy_loss_dict, sub_name=str(i))
+        train_avg(i, action_recognition=2, dimension=1)
+        # train_avg(i, action_recognition=False, dimension=1)

@@ -36,7 +36,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     SUM = TP + FP
     PRECISION = TP / (TP + FP)  # 查准率，又名准确率
     RECALL = TP / (TP + FN)  # 查全率，又名召回率
-    plt.figure(figsize=(12, 8), dpi=100)
+    plt.figure(figsize=(12, 12), dpi=100)
     np.set_printoptions(precision=2)
     # 在混淆矩阵中每格的概率值
     ind_array = np.arange(len(classes) + 1)
@@ -90,7 +90,8 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     # plt.gcf().subplots_adjust(bottom=0.15)
     # show confusion matrix
     plt.savefig('cm_%s.png' % sub_name, format='png')
-    plt.show()
+    # plt.show()
+    plt.close()
 
 
 if __name__ == '__main__':
