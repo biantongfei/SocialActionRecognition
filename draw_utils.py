@@ -12,16 +12,16 @@ def draw_performance(accuracy_loss_dict, sub_name):
     plt.legend(accuracy_loss_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
-    plt.savefig('accuracy_%s_%s.png' % (key, sub_name))
+    plt.savefig('plots/accuracy_%s_%s.png' % (key, sub_name))
     plt.close()
-    for index, key in enumerate(accuracy_loss_dict.keys()):
-        loss = [float(l) for l in accuracy_loss_dict[key][1]]
-        plt.plot(range(0, len(accuracy_loss_dict[key][1])), loss, color=colors[index])
-        plt.legend(accuracy_loss_dict.keys())
-        plt.xlabel('epoch')
-        plt.ylabel('loss')
-        plt.savefig('loss_%s_%s.png' % (key, sub_name))
-        plt.close()
+    # for index, key in enumerate(accuracy_loss_dict.keys()):
+    #     loss = [float(l) for l in accuracy_loss_dict[key][1]]
+    #     plt.plot(range(0, len(accuracy_loss_dict[key][1])), loss, color=colors[index])
+    #     plt.legend(accuracy_loss_dict.keys())
+    #     plt.xlabel('epoch')
+    #     plt.ylabel('loss')
+    #     plt.savefig('plots/loss_%s_%s.png' % (key, sub_name))
+    #     plt.close()
     # plt.show()
 
 
@@ -89,7 +89,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     plt.grid(True, which='minor', linestyle='-')
     # plt.gcf().subplots_adjust(bottom=0.15)
     # show confusion matrix
-    plt.savefig('cm_%s.png' % sub_name, format='png')
+    plt.savefig('plots/cm_%s.png' % sub_name, format='png')
     # plt.show()
     plt.close()
 
