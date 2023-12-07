@@ -1,3 +1,5 @@
+import os
+
 from Datasets.AvgDataset import get_data_path
 
 import json
@@ -9,10 +11,6 @@ from torch.utils.data import Dataset
 testset_rate = 0.1
 coco_point_num = 133
 halpe_point_num = 136
-
-
-def cal_acc(outputs):
-    pass
 
 
 class PerFrameDataset(Dataset):
@@ -35,14 +33,26 @@ class PerFrameDataset(Dataset):
         feature = np.array(feature_json['frames'][index]['keypoints'])
         feature[:, 0] = feature[:, 0] / feature_json['frames'][index]['box'][2]
         feature[:, 1] = feature[:, 1] / feature_json['frames'][index]['box'][3]
+        feature = feature[:, :2]
         feature = np.append(feature, [
-            [feature_json['frames'][index]['box'][0] / feature_json['frames'][index]['frame_size'][0],
-             feature_json['frames'][index]['box'][1] / feature_json['frames'][index]['frame_size'][0]],
-            [feature_json['frames'][index]['box'][2] / feature_json['frames'][index]['frame_size'][0],
-             feature_json['frames'][index]['box'][3] / feature_json['frames'][index]['frame_size'][1]]], axis=0)
+            [feature_json['frames'][index]['box'][0] / feature_json['frame_size'][0],
+             feature_json['frames'][index]['box'][1] / feature_json['frame_size'][1]],
+            [feature_json['frames'][index]['box'][2] / feature_json['frame_size'][0],
+             feature_json['frames'][index]['box'][3] / feature_json['frame_size'][1]]], axis=0)
         if self.dimension == 1:
             feature = feature.reshape(1, feature.size)[0]
-        return feature
+        else:
+            feature = feature.reshape(1, feature.shape[0], feature.shape[1])
+        if self.action_recognition:
+            label = feature_json['action_class']
+        else:
+            if feature_json['action_class'] == 7:
+                label = 1
+            elif feature_json['action_class'] == 8:
+                label = 2
+            else:
+                label = 0
+        return feature, label
 
     def __len__(self):
         return len(self.frame_list)
@@ -56,3 +66,9 @@ class PerFrameDataset(Dataset):
                 frame_list.append('%s~%d' % (file, index))
         random.shuffle(frame_list)
         return frame_list
+
+
+if __name__ == '__main__':
+    files = os.listdir('../jpl_augmented/features/crop/coco_wholebody/')
+    dataset = PerFrameDataset(files, 2, True, True, '', 2)
+    print(dataset.__len__())

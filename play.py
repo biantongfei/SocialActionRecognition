@@ -1,4 +1,6 @@
-import torch
+import numpy as np
 
-print(torch.backends.mps.is_available())
-print(torch.cuda.is_available())
+list2 = [1, 3, 2, 4, 2, 6, 2, 3, 3]
+counts2 = np.bincount(list2)
+Mode1 = np.argmax(np.bincount(list2))
+print(Mode1)
