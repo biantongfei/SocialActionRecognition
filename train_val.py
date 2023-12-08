@@ -92,6 +92,9 @@ def train_avg(i, action_recognition=False, dimension=1):
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
+                pred = outputs.argmax(dim=1)
+                print(labels)
+                print(pred)
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()

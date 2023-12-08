@@ -6,22 +6,22 @@ import numpy as np
 
 def summarize_features(feature_path):
     action_class_list = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested',
-                         'interested']
+                         'interested', 'total']
     summaize_dict = {}
     for i in range(len(action_class_list)):
         summaize_dict[i] = {'count': 0, 'total_frames': 0}
     feature_list = os.listdir(feature_path)
     feature_list.sort()
-    count = 0
     for feature in feature_list:
         print(feature)
-        if 'json' not in feature:
+        if 'json' not in feature or 'ori_' not in feature:
             continue
-        count += 1
         with open(feature_path + feature, "r") as f:
             feature_json = json.load(f)
         summaize_dict[feature_json['action_class']]['count'] += 1
         summaize_dict[feature_json['action_class']]['total_frames'] += feature_json['frames_number']
+        summaize_dict[len(action_class_list) - 1]['count'] += 1
+        summaize_dict[len(action_class_list) - 1]['total_frames'] += feature_json['frames_number']
 
     for action_class in summaize_dict.keys():
         print('%s:{count:%d, avg_frames:%s}' % (action_class_list[action_class], summaize_dict[action_class]['count'],
@@ -238,8 +238,18 @@ def adjust_box():
 
 if __name__ == '__main__':
     # refactor_jsons()
-    # feature_path = '../jpl_augmented/features/crop/coco_wholebody/'
+    feature_path = '../jpl_augmented/features/crop/coco_wholebody/'
     # feature_path = '../jpl_augmented/features/crop/halpe136/'
-    # summarize_features(feature_path)
+    summarize_features(feature_path)
     # gaussion_augment()
-    adjust_box()
+    # adjust_box()
+    # files = os.listdir(feature_path)
+    # files.sort()
+    # pre_video = ''
+    # for file in files:
+    #     if file.split('p')[0] == pre_video:
+    #         with open(feature_path + file, 'r') as f:
+    #             feature_json = json.load(f)
+    #         if feature_json['action_class'] == 0:
+    #             print(file)
+    #     pre_video = file.split('p')[0]

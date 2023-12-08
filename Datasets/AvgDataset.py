@@ -38,7 +38,7 @@ def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
                 ori_videos_dict[feature_json['action_class']].append(file)
             else:
                 ori_videos_dict[feature_json['action_class']] = [file]
-    f.close()
+            f.close()
     test_videos_dict = {}
     for action_class in ori_videos_dict.keys():
         random.shuffle(ori_videos_dict[action_class])
@@ -48,12 +48,19 @@ def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
                 test_videos_dict[test_video.split('-')[0]].append(test_video.split('_p')[-1].split('.')[0])
             else:
                 test_videos_dict[test_video.split('-')[0]] = [test_video.split('_p')[-1].split('.')[0]]
-
     tra_files = []
     test_files = []
     for file in files:
-        if file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
+        if 'json' not in file:
+            continue
+        elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
                 test_videos_dict[file.split('-')[0]]:
+            if not_add_class:
+                with open(data_path + file, 'r') as f:
+                    feature_json = json.load(f)
+                if feature_json['action_class'] in [7, 8]:
+                    continue
+                f.close()
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
