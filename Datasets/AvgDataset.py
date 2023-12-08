@@ -85,8 +85,8 @@ class AvgDataset(Dataset):
         for index, frame in enumerate(feature_json['frames']):
             box_width, box_height = frame['box'][2], frame['box'][3]
             frame_feature = np.array(frame['keypoints'])[:, :2]
-            frame_feature[:, 0] = frame_feature[:, 0] / box_width
-            frame_feature[:, 1] = frame_feature[:, 1] / box_height
+            frame_feature[:, 0] = frame_feature[:, 0] - frame['box'][0] / box_width
+            frame_feature[:, 1] = frame_feature[:, 1] - frame['box'][1] / box_height
             frame_feature = np.append(frame_feature, [[frame['box'][0] / frame_width, frame['box'][1] / frame_height],
                                                       [box_width / frame_width, box_height / frame_height]], axis=0)
             if self.dimension == 1:
