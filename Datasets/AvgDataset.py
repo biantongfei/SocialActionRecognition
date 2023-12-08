@@ -82,14 +82,14 @@ class AvgDataset(Dataset):
                 (1, len(feature_json['frames']), coco_point_num + 2, 2)) if self.is_coco else np.zeros(
                 (1, len(feature_json['frames']), halpe_point_num + 2, 2))
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+
         for index, frame in enumerate(feature_json['frames']):
-            box_width, box_height = frame['box'][2], frame['box'][3]
+            box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
             frame_feature = np.array(frame['keypoints'])[:, :2]
-            frame_feature[:, 0] = (frame_feature[:, 0] - frame['box'][0]) / box_width
-            frame_feature[:, 1] = (frame_feature[:, 1] - frame['box'][1]) / box_height
+            frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+            frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
             frame_feature = np.append(frame_feature, [
-                [(frame['box'][0] - (frame_width / 2)) / frame_width,
-                 (frame['box'][1] - (frame_height / 2)) / frame_height],
+                [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
                 [box_width / frame_width, box_height / frame_height]], axis=0)
             if self.dimension == 1:
                 frame_feature = frame_feature.reshape(1, frame_feature.size)[0]

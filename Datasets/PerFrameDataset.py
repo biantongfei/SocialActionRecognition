@@ -31,14 +31,14 @@ class PerFrameDataset(Dataset):
 
         index = int(frame.split('~')[1])
         feature = np.array(feature_json['frames'][index]['keypoints'])
-        feature[:, 0] = feature[:, 0] / feature_json['frames'][index]['box'][2]
-        feature[:, 1] = feature[:, 1] / feature_json['frames'][index]['box'][3]
+        frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+        box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+        feature[:, 0] = (feature[:, 0] - box_x) / box_width
+        feature[:, 1] = (feature[:, 1] - box_y) / box_height
         feature = feature[:, :2]
-        feature = np.append(feature, [
-            [feature_json['frames'][index]['box'][0] - frame['box'][0]/ feature_json['frame_size'][0],
-             feature_json['frames'][index]['box'][1] - frame['box'][0]/ feature_json['frame_size'][1]],
-            [feature_json['frames'][index]['box'][2] / feature_json['frame_size'][0],
-             feature_json['frames'][index]['box'][3] / feature_json['frame_size'][1]]], axis=0)
+        frame_feature = np.append(feature, [
+            [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+            [box_width / frame_width, box_height / frame_height]], axis=0)
         if self.dimension == 1:
             feature = feature.reshape(1, feature.size)[0]
         else:
