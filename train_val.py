@@ -35,15 +35,16 @@ def train_avg(i, action_recognition=False, dimension=1):
     dimension: 1 for fcnn; 2 for cnn
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
-                  'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
-    accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
-                          'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
-                          'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
-    # train_dict = {'crop+coco': {}}
-    # accuracy_loss_dict = {'crop+coco': [[], []]}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
+    #               'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
+    # accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
+    #                       'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
+    #                       'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
+    train_dict = {'crop+coco': {}}
+    accuracy_loss_dict = {'crop+coco': [[], []]}
 
     for hyperparameter_group in train_dict.keys():
+        print('loading data for ', hyperparameter_group)
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
