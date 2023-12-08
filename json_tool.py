@@ -210,6 +210,8 @@ def adjust_box():
     for format in format_list:
         files = os.listdir(data_path + 'crop/' + format)
         for file in files:
+            if 'json' not in file:
+                continue
             print('crop/' + format + file)
             with open(data_path + 'crop/' + format + file, 'r') as f:
                 feature_json = json.load(f)
@@ -220,8 +222,10 @@ def adjust_box():
                 json.dump(feature_json, f)
     for sigma in sigma_list:
         for format in format_list:
-            print('gaussian/' + sigma + format + file)
+            if 'json' not in file:
+                continue
             files = os.listdir(data_path + 'gaussian/' + sigma + format)
+            print('gaussian/' + sigma + format + file)
             for file in files:
                 with open(data_path + 'gaussian/' + sigma + format + file, 'r') as f:
                     feature_json = json.load(f)
