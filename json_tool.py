@@ -204,7 +204,7 @@ def gaussion_augment():
 
 
 def adjust_box():
-    data_path = '../jpl_augmented/features'
+    data_path = '../jpl_augmented/features/'
     format_list = ['coco_wholebody/', 'halpe136/']
     sigma_list = ['small/', 'medium/', 'big/']
     for format in format_list:
@@ -214,8 +214,8 @@ def adjust_box():
             with open(data_path + 'crop/' + format + file, 'r') as f:
                 feature_json = json.load(f)
             for frame in feature_json['frames']:
-                frame['bbox'][0] += frame['bbox'][2] / 2
-                frame['bbox'][1] += frame['bbox'][3] / 2
+                frame['box'][0] += frame['box'][2] / 2
+                frame['box'][1] += frame['box'][3] / 2
             with open(data_path + 'crop/' + format + file, 'w') as f:
                 json.dump(feature_json, f)
     for sigma in sigma_list:
@@ -226,8 +226,8 @@ def adjust_box():
                 with open(data_path + 'gaussian/' + sigma + format + file, 'r') as f:
                     feature_json = json.load(f)
                 for frame in feature_json['frames']:
-                    frame['bbox'][0] += frame['bbox'][2] / 2
-                    frame['bbox'][1] += frame['bbox'][3] / 2
+                    frame['box'][0] += frame['box'][2] / 2
+                    frame['box'][1] += frame['box'][3] / 2
                 with open(data_path + 'gaussian/' + sigma + format + file, 'w') as f:
                     json.dump(feature_json, f)
 
