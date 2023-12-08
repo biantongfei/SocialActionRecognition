@@ -35,8 +35,8 @@ class PerFrameDataset(Dataset):
         feature[:, 1] = feature[:, 1] / feature_json['frames'][index]['box'][3]
         feature = feature[:, :2]
         feature = np.append(feature, [
-            [feature_json['frames'][index]['box'][0] / feature_json['frame_size'][0],
-             feature_json['frames'][index]['box'][1] / feature_json['frame_size'][1]],
+            [feature_json['frames'][index]['box'][0] - frame['box'][0]/ feature_json['frame_size'][0],
+             feature_json['frames'][index]['box'][1] - frame['box'][0]/ feature_json['frame_size'][1]],
             [feature_json['frames'][index]['box'][2] / feature_json['frame_size'][0],
              feature_json['frames'][index]['box'][3] / feature_json['frame_size'][1]]], axis=0)
         if self.dimension == 1:

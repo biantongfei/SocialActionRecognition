@@ -288,5 +288,5 @@ def traine_perframe(action_recognition=True, dimension=1):
 
 if __name__ == '__main__':
     for i in range(3):
-        train_avg(i, action_recognition=2, dimension=1)
+        train_avg(i, action_recognition=1, dimension=1)
     # traine_perframe(action_recognition=2, dimension=2)
