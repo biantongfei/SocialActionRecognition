@@ -16,11 +16,11 @@ def get_points_num(is_coco, body_part):
     if body_part == 1:
         points_num = coco_body_point_num if is_coco else halpe_body_point_num
     elif body_part == 2:
-        points_num = coco_body_point_num + head_point_num if is_coco else halpe_body_point_num + head_point_num
+        points_num = head_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
     elif body_part == 3:
-        points_num = coco_body_point_num + hands_point_num if is_coco else halpe_body_point_num + head_point_num
+        points_num = hands_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
     else:
-        points_num = coco_body_point_num + head_point_num + hands_point_num if is_coco else halpe_body_point_num + head_point_num + head_point_num
+        points_num = head_point_num + hands_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
     return points_num
 
 
@@ -30,6 +30,7 @@ class FCNN(nn.Module):
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
+        print(points_num)
         self.input_size = 2 * points_num + box_feature_num
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num

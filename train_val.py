@@ -40,8 +40,8 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
     accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
                           'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
                           'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
-    # train_dict = {'crop+coco': {}}
-    # accuracy_loss_dict = {'crop+coco': [[], []]}
+    # train_dict = {'crop+halpe': {}}
+    # accuracy_loss_dict = {'crop+halpe': [[], []]}
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -279,6 +279,7 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
         plot_confusion_matrix(y_true, y_pred, classes, sub_name=hg)
         draw_performance(accuracy_loss_dict, sub_name=hg)
         return
+
 
 if __name__ == '__main__':
     for i in range(3):
