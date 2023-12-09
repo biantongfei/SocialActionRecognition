@@ -280,7 +280,7 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
         draw_performance(accuracy_loss_dict, sub_name=hg)
         return
 
-    if __name__ == '__main__':
-        for i in range(3):
-            train_avg(action_recognition=1, dimension=1, body_part=4)
-        # traine_perframe(action_recognition=2, dimension=2, body_part=4)
+if __name__ == '__main__':
+    for i in range(3):
+        train_avg(action_recognition=1, dimension=1, body_part=4)
+    # traine_perframe(action_recognition=2, dimension=2, body_part=4)
