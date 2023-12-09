@@ -1,6 +1,6 @@
 import os
 
-from Datasets.AvgDataset import get_data_path
+from Datasets.AvgDataset import get_data_path, get_body_part
 
 import json
 import random
@@ -14,7 +14,7 @@ halpe_point_num = 136
 
 
 class PerFrameDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension, body_part):
         super(PerFrameDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
@@ -22,6 +22,7 @@ class PerFrameDataset(Dataset):
         self.is_crop = is_crop
         self.is_coco = is_coco
         self.dimension = dimension
+        self.body_part = body_part
         self.frame_list = self.get_all_frames_id()
 
     def __getitem__(self, idx):
@@ -36,7 +37,7 @@ class PerFrameDataset(Dataset):
         feature[:, 0] = (feature[:, 0] - box_x) / box_width
         feature[:, 1] = (feature[:, 1] - box_y) / box_height
         feature = feature[:, :2]
-        frame_feature = np.append(feature, [
+        feature = np.append(feature, [
             [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
             [box_width / frame_width, box_height / frame_height]], axis=0)
         if self.dimension == 1:
@@ -52,6 +53,7 @@ class PerFrameDataset(Dataset):
                 label = 2
             else:
                 label = 0
+        feature = get_body_part(feature, self.is_coco, self.body_part)
         return feature, label
 
     def __len__(self):

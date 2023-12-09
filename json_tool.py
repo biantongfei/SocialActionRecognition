@@ -119,6 +119,7 @@ def flip_feature(ori_json):
 
 def gaussion_augment():
     sigma_list = [0.05, 0.01, 0.005]
+    sigma_str = 'big'
     # sigma_list = [0.005, 0.001, 0.0005]
     augment_times = 3
 

@@ -1,8 +1,10 @@
 from torch import nn
 import numpy as np
 
-coco_point_num = 133
-halpe_point_num = 136
+coco_body_point_num = 23
+halpe_body_point_num = 26
+head_point_num = 68
+hands_point_num = 42
 box_feature_num = 4
 ori_action_class_num = 7
 action_class_num = 9
@@ -10,12 +12,24 @@ attitude_class_num = 3
 batch_size = 128
 
 
+def get_points_num(is_coco, body_part):
+    if body_part == 1:
+        points_num = coco_body_point_num if is_coco else halpe_body_point_num
+    elif body_part == 2:
+        points_num = coco_body_point_num + head_point_num if is_coco else halpe_body_point_num + head_point_num
+    elif body_part == 3:
+        points_num = coco_body_point_num + hands_point_num if is_coco else halpe_body_point_num + head_point_num
+    else:
+        points_num = coco_body_point_num + head_point_num + hands_point_num if is_coco else halpe_body_point_num + head_point_num + head_point_num
+    return points_num
+
+
 class FCNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, *args, **kwargs):
+    def __init__(self, is_coco, action_recognition, body_part=4, *args, **kwargs):
         super(FCNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
-        points_num = coco_point_num if self.is_coco else halpe_point_num
+        points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num + box_feature_num
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
@@ -39,11 +53,11 @@ class FCNN(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(self, is_coco, action_recognition=False, *args, **kwargs):
+    def __init__(self, is_coco, action_recognition=False, body_part=4, *args, **kwargs):
         super(CNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
-        points_num = coco_point_num if self.is_coco else halpe_point_num
+        points_num = get_points_num(is_coco, body_part)
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
         else:

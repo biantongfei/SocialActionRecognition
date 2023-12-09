@@ -67,8 +67,27 @@ def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
     return tra_files, test_files
 
 
+def get_body_part(feature, is_coco, body_part):
+    """
+    :param body_part: 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
+    :return:
+    """
+    coco_body_part = [23, 91]
+    halpe_body_part = [26, 94]
+    if body_part == 1:
+        feature = feature[:coco_body_part[0], :] if is_coco else feature[:halpe_body_part[0], :]
+    elif body_part == 2:
+        feature = feature[:coco_body_part[1], :] if is_coco else feature[:coco_body_part[1], :]
+    elif body_part == 3:
+        if is_coco:
+            feature = np.append(feature[:coco_body_part[0], :], feature[coco_body_part[1]:, :], axis=0)
+        else:
+            feature = np.append(feature[:halpe_body_part[0], :], feature[halpe_body_part[1]:, :], axis=0)
+    return feature
+
+
 class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension, body_part):
         super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
@@ -76,6 +95,7 @@ class AvgDataset(Dataset):
         self.is_crop = is_crop
         self.is_coco = is_coco
         self.dimension = dimension
+        self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
 
     def __getitem__(self, idx):
         with open(self.data_path + self.files[idx], 'r') as f:
@@ -114,6 +134,7 @@ class AvgDataset(Dataset):
             else:
                 label = 0
         feature = features.mean(axis=0) if self.dimension == 1 else features.mean(axis=1)
+        feature = get_body_part(feature, self.is_coco, self.body_part)
         return feature, label
 
     def __len__(self):
