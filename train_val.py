@@ -50,16 +50,12 @@ def train_avg(i, action_recognition=False, dimension=1):
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
                                                    not_add_class=action_recognition == 1)
-        trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate)],
-                              action_recognition=action_recognition,
-                              is_crop=train_dict[hyperparameter_group]['is_crop'],
-                              sigma=train_dict[hyperparameter_group]['sigma'],
-                              is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+        trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
+                              action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
+                              dimension=dimension)
         valset = AvgDataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
-                            action_recognition=action_recognition,
-                            is_crop=train_dict[hyperparameter_group]['is_crop'],
-                            sigma=train_dict[hyperparameter_group]['sigma'],
-                            is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+                            action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
+                            dimension=dimension)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
         if dimension == 1:
