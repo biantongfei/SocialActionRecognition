@@ -50,6 +50,16 @@ def train_avg(i, action_recognition=False, dimension=1):
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
                                                    not_add_class=action_recognition == 1)
+        trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate)],
+                              action_recognition=action_recognition,
+                              is_crop=train_dict[hyperparameter_group]['is_crop'],
+                              sigma=train_dict[hyperparameter_group]['sigma'],
+                              is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+        valset = AvgDataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
+                            action_recognition=action_recognition,
+                            is_crop=train_dict[hyperparameter_group]['is_crop'],
+                            sigma=train_dict[hyperparameter_group]['sigma'],
+                            is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension)
         if dimension == 1:
@@ -59,8 +69,9 @@ def train_avg(i, action_recognition=False, dimension=1):
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
-                                            'dimension': dimension, 'tra_files': tra_files, 'testset': testset,
-                                            'net': net, 'optimizer': optimizer, 'best_acc': 0, 'unimproved_epoch': 0}
+                                            'dimension': dimension, 'trainset': trainset, 'valset': valset,
+                                            'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
+                                            'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -71,21 +82,8 @@ def train_avg(i, action_recognition=False, dimension=1):
                 continue_train = True
             else:
                 continue
-            random.shuffle(train_dict[hyperparameter_group]['tra_files'])
-            trainset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
-                                             int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate):],
-                                  action_recognition=action_recognition,
-                                  is_crop=train_dict[hyperparameter_group]['is_crop'],
-                                  sigma=train_dict[hyperparameter_group]['sigma'],
-                                  is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
-            valset = AvgDataset(data_files=train_dict[hyperparameter_group]['tra_files'][
-                                           :int(len(train_dict[hyperparameter_group]['tra_files']) * valset_rate)],
-                                action_recognition=action_recognition,
-                                is_crop=train_dict[hyperparameter_group]['is_crop'],
-                                sigma=train_dict[hyperparameter_group]['sigma'],
-                                is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
-            train_loader = DataLoader(dataset=trainset, batch_size=avg_batch_size)
-            val_loader = DataLoader(dataset=valset, batch_size=avg_batch_size)
+            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size)
+            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
