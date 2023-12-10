@@ -59,9 +59,9 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension, body_part=body_part)
         if dimension == 1:
-            net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
+            net = FCNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         else:
-            net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+            net = CNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
@@ -283,5 +283,5 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
 
 if __name__ == '__main__':
     for i in range(3):
-        train_avg(action_recognition=False, dimension=1, body_part=4)
+        train_avg(action_recognition=1, dimension=1, body_part=2)
     # traine_perframe(action_recognition=2, dimension=2, body_part=4)

@@ -75,14 +75,14 @@ def get_body_part(feature, is_coco, body_part):
     coco_body_part = [23, 91]
     halpe_body_part = [26, 94]
     if body_part == 1:
-        feature = feature[:coco_body_part[0], :] if is_coco else feature[:halpe_body_part[0], :]
+        feature = feature[:coco_body_part[0]] if is_coco else feature[:halpe_body_part[0]]
     elif body_part == 2:
-        feature = feature[:coco_body_part[1], :] if is_coco else feature[:coco_body_part[1], :]
+        feature = feature[:coco_body_part[1]] if is_coco else feature[:coco_body_part[1]]
     elif body_part == 3:
         if is_coco:
-            feature = np.append(feature[:coco_body_part[0], :], feature[coco_body_part[1]:, :], axis=0)
+            feature = np.append(feature[:coco_body_part[0]], feature[coco_body_part[1]:], axis=0)
         else:
-            feature = np.append(feature[:halpe_body_part[0], :], feature[halpe_body_part[1]:, :], axis=0)
+            feature = np.append(feature[:halpe_body_part[0]], feature[halpe_body_part[1]:], axis=0)
     return feature
 
 
@@ -100,14 +100,7 @@ class AvgDataset(Dataset):
     def __getitem__(self, idx):
         with open(self.data_path + self.files[idx], 'r') as f:
             feature_json = json.load(f)
-        if self.dimension == 1:
-            features = np.zeros(
-                (len(feature_json['frames']), 2 * coco_point_num + 4)) if self.is_coco else np.zeros(
-                (len(feature_json['frames']), 2 * halpe_point_num + 4))
-        else:
-            features = np.zeros(
-                (1, len(feature_json['frames']), coco_point_num + 2, 2)) if self.is_coco else np.zeros(
-                (1, len(feature_json['frames']), halpe_point_num + 2, 2))
+        features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
 
         for index, frame in enumerate(feature_json['frames']):
@@ -115,15 +108,14 @@ class AvgDataset(Dataset):
             frame_feature = np.array(frame['keypoints'])[:, :2]
             frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
             frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+            frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
             frame_feature = np.append(frame_feature, [
                 [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
                 [box_width / frame_width, box_height / frame_height]], axis=0)
             if self.dimension == 1:
                 frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
-                features[index] = frame_feature
-            else:
-                features[0, index] = frame_feature
-
+            features.append(frame_feature)
+        features = np.array(features)
         if self.action_recognition:
             label = feature_json['action_class']
         else:
@@ -134,7 +126,6 @@ class AvgDataset(Dataset):
             else:
                 label = 0
         feature = features.mean(axis=0) if self.dimension == 1 else features.mean(axis=1)
-        feature = get_body_part(feature, self.is_coco, self.body_part)
         return feature, label
 
     def __len__(self):
