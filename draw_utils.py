@@ -70,7 +70,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
             plt.text(x_val, y_val, str(TP_FP) + '\n' + str(precision), color='black', va='center', ha='center')
     cm = np.insert(cm, max_index, TP_FNs, 1)
     cm = np.insert(cm, max_index, np.append(TP_FPs, SUM), 0)
-    plt.text(max_index, max_index, str(SUM) + '\n' + str('%.2f' % (PRECISION * 100,)) + '%', color='red', va='center',
+    plt.text(max_index, max_index, str(SUM) + '\n' + str('%.2f' % (PRECISION * 100,)) + '%', color='white', va='center',
              ha='center')
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     plt.title('confusion_matrix')
