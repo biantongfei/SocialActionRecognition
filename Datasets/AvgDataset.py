@@ -77,7 +77,7 @@ def get_body_part(feature, is_coco, body_part):
     if body_part == 1:
         feature = feature[:coco_body_part[0]] if is_coco else feature[:halpe_body_part[0]]
     elif body_part == 2:
-        feature = feature[:coco_body_part[1]] if is_coco else feature[:coco_body_part[1]]
+        feature = feature[:coco_body_part[1]] if is_coco else feature[:halpe_body_part[1]]
     elif body_part == 3:
         if is_coco:
             feature = np.append(feature[:coco_body_part[0]], feature[coco_body_part[1]:], axis=0)
