@@ -85,6 +85,7 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
             for data in train_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+                print(inputs.shape)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 loss = functional.cross_entropy(outputs, labels)

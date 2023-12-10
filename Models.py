@@ -35,7 +35,7 @@ class FCNN(nn.Module):
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
-
+        print(self.input_size)
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
