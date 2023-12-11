@@ -1,5 +1,5 @@
 from torch import nn
-import numpy as np
+import math
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -71,7 +71,7 @@ class CNN(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear((int((points_num + box_feature_num / 2) / 4) + 1) * 64, 16),
+            nn.Linear(math.ceil((points_num + box_feature_num / 2) / 4) * 64, 16),
             nn.ReLU(),
             nn.Linear(16, self.output_size)
         )
