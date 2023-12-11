@@ -125,8 +125,7 @@ class AvgDataset(Dataset):
                 label = 2
             else:
                 label = 0
-        feature = features.mean(axis=0)
-        print(feature.shape)
+        feature = features.mean(axis=0) if self.dimension == 1 else np.array([features.mean(axis=0)])
         return feature, label
 
     def __len__(self):
