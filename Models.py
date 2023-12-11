@@ -77,7 +77,6 @@ class CNN(nn.Module):
         )
 
     def forward(self, x):
-        print(x.shape)
-        print(x.shape)
-
+        x = self.Conv(x)
+        x = self.fc(x)
         return x
