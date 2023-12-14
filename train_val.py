@@ -79,8 +79,6 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                pred = outputs.argmax(dim=1)
-                print(type(pred))
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
@@ -91,7 +89,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                print(outputs.shape)
+                print(outputs)
+                print(inputs.shape,outputs.shape)
                 pred = outputs.argmax(dim=1)
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
