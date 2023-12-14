@@ -24,7 +24,7 @@ def get_points_num(is_coco, body_part):
     return points_num
 
 
-class DNN(torch.Module):
+class DNN(nn.Module):
     def __init__(self, is_coco, action_recognition, body_part=4, *args, **kwargs):
         super(DNN, self).__init__()
         super().__init__(*args, **kwargs)
