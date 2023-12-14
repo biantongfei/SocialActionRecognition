@@ -1,5 +1,5 @@
+import torch
 from torch import nn
-from torchvision import models
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -24,7 +24,7 @@ def get_points_num(is_coco, body_part):
     return points_num
 
 
-class DNN(models.densenet121):
+class DNN(torch.Module):
     def __init__(self, is_coco, action_recognition, body_part=4, *args, **kwargs):
         super(DNN, self).__init__()
         super().__init__(*args, **kwargs)
