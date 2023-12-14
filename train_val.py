@@ -4,7 +4,7 @@ from Models import DNN
 from draw_utils import draw_performance, plot_confusion_matrix
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save, backends
+from torch import device, cuda, optim, float, save, backends, tensor
 from torch.nn import functional
 import random
 import numpy as np
@@ -93,7 +93,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
                 y_score += outputs
-            y_ture, y_pred, y_score = np.array(y_ture), np.array(y_pred), np.array(y_score)
+            y_ture, y_pred, y_score = np.array(y_ture), np.array(y_pred), tensor.detach().numpy(y_score)
             acc = y_pred.eq(y_ture).sum().float().item()
             f1 = f1_score(y_ture, y_pred, average='weighted')
             auc = roc_auc_score(y_ture, y_score)
@@ -135,7 +135,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             best_acc = acc
             hg = hyperparameter_group
         print('hyperparameter_group: %s, acc: %s, f1_score: %s, auc: %s' % (
-        hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1), "%.4f%%" % (auc)))
+            hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1), "%.4f%%" % (auc)))
         print('----------------------------------------------------')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         if action_recognition == 1:
