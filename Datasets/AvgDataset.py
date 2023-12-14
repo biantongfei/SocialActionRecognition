@@ -80,12 +80,12 @@ def get_body_part(feature, is_coco, body_part):
     if body_part[0]:
         new_features += feature[:coco_body_part[0]].tolist() if is_coco else feature[:halpe_body_part[0]].tolist()
     if body_part[1]:
-        new_features += feature[coco_body_part[1]:coco_body_part[2]].tolist() if is_coco else feature[
-                                                                                              halpe_body_part[1]:
+        new_features += feature[coco_body_part[0]:coco_body_part[1]].tolist() if is_coco else feature[
+                                                                                              halpe_body_part[0]:
                                                                                               halpe_body_part[
-                                                                                                  2]].tolist()
+                                                                                                  1]].tolist()
     if body_part[2]:
-        new_features += feature[coco_body_part[2]:].tolist() if is_coco else feature[halpe_body_part[2]:].tolist()
+        new_features += feature[coco_body_part[1]:].tolist() if is_coco else feature[halpe_body_part[1]:].tolist()
     return np.array(new_features)
 
 
