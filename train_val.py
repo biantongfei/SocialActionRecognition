@@ -4,7 +4,7 @@ from Models import DNN
 from draw_utils import draw_performance, plot_confusion_matrix
 
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save, backends
+from torch import device, cuda, optim, float, save, backends,Tensor
 from torch.nn import functional
 import random
 import numpy as np
@@ -94,7 +94,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
                 y_score += outputs.tolist()
-            y_ture, y_pred, y_score = np.array(y_ture), np.array(y_pred), np.array(y_score)
+            y_ture, y_pred, y_score = Tensor(y_ture), Tensor(y_pred), Tensor(y_score)
             acc = y_pred.eq(y_ture).sum().float().item()
             f1 = f1_score(y_ture, y_pred, average='weighted')
             auc = roc_auc_score(y_ture, y_score)
