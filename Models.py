@@ -1,5 +1,5 @@
 from torch import nn
-import math
+from torchvision import models
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -24,13 +24,14 @@ def get_points_num(is_coco, body_part):
     return points_num
 
 
-class FCNN(nn.Module):
+class DNN(models.densenet121):
     def __init__(self, is_coco, action_recognition, body_part=4, *args, **kwargs):
-        super(FCNN, self).__init__()
+        super(DNN, self).__init__()
         super().__init__(*args, **kwargs)
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
-        self.input_size = 2 * points_num + box_feature_num
+        # self.input_size = 2 * points_num + box_feature_num
+        self.input_size = 2 * points_num
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
@@ -48,35 +49,4 @@ class FCNN(nn.Module):
     def forward(self, x):
         x = self.fc(x)
 
-        return x
-
-
-class CNN(nn.Module):
-    def __init__(self, is_coco, action_recognition=False, body_part=4, *args, **kwargs):
-        super(CNN, self).__init__()
-        super().__init__(*args, **kwargs)
-        self.is_coco = is_coco
-        points_num = get_points_num(is_coco, body_part)
-        if action_recognition:
-            self.output_size = ori_action_class_num if action_recognition == 0 else action_class_num
-        else:
-            self.output_size = attitude_class_num
-
-        self.Conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=(5, 3), padding=(2, 1), stride=(2, 1)),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=64, kernel_size=(5, 2), padding=(2, 0), stride=(2, 1)),
-            nn.ReLU(),
-        )
-
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(math.ceil((points_num + box_feature_num / 2) / 4) * 64, 16),
-            nn.ReLU(),
-            nn.Linear(16, self.output_size)
-        )
-
-    def forward(self, x):
-        x = self.Conv(x)
-        x = self.fc(x)
         return x

@@ -1,8 +1,6 @@
-import json
-
 from Datasets.AvgDataset import AvgDataset, get_tra_test_files
 from Datasets.PerFrameDataset import PerFrameDataset
-from Models import FCNN, CNN
+from Models import DNN
 from draw_utils import draw_performance, plot_confusion_matrix
 
 from torch.utils.data import DataLoader
@@ -10,6 +8,7 @@ from torch import device, cuda, optim, float, save, backends
 from torch.nn import functional
 import random
 import numpy as np
+from sklearn.metrics import f1_score, roc_auc_score
 
 avg_batch_size = 128
 perframe_batch_size = 512
@@ -27,21 +26,17 @@ added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 
 attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
-def train_avg(action_recognition=False, dimension=1, body_part=4):
+def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
     """
 
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
-    dimension: 1 for fcnn; 2 for cnn
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
-                  'medium_noise+coco': {}, 'medium_noise+halpe': {}, 'big_noise+coco': {}, 'big_noise+halpe': {}}
-    accuracy_loss_dict = {'crop+coco': [[], []], 'crop+halpe': [[], []], 'small_noise+coco': [[], []],
-                          'small_noise+halpe': [[], []], 'medium_noise+coco': [[], []], 'medium_noise+halpe': [[], []],
-                          'big_noise+coco': [[], []], 'big_noise+halpe': [[], []]}
-    # train_dict = {'crop+halpe': {}}
-    # accuracy_loss_dict = {'crop+halpe': [[], []]}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'medium_noise+coco': {}, 'medium_noise+halpe': {}}
+    performance_dict = {}
+    for key in train_dict.keys():
+        performance_dict[key] = {'accuracy': [], 'f1': [], 'auc': [], 'loss': []}
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -49,25 +44,22 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
         is_coco = True if 'coco' in hyperparameter_group else False
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
-                                                   not_add_class=action_recognition == 1)
+                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                               action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
-                              dimension=dimension, body_part=body_part)
+                              body_part=body_part)
         valset = AvgDataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                             action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
-                            dimension=dimension, body_part=body_part)
+                            body_part=body_part)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
-                             is_crop=is_crop, sigma=sigma, is_coco=is_coco, dimension=dimension, body_part=body_part)
-        if dimension == 1:
-            net = FCNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
-        else:
-            net = CNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
+                             is_crop=is_crop, sigma=sigma, is_coco=is_coco, body_part=body_part)
+        net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
-                                            'dimension': dimension, 'trainset': trainset, 'valset': valset,
+                                            'trainset': trainset, 'valset': valset,
                                             'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
-                                            'unimproved_epoch': 0}
+                                            'best_f1': 0, 'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -92,25 +84,35 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
                 loss.backward()
                 optimizer.step()
 
-            total_correct = 0
+            y_ture, y_pred, y_score = [], [], []
             for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                correct = pred.eq(labels).sum().float().item()
-                total_correct += correct
-            acc = total_correct / len(val_loader.dataset)
-            accuracy_loss_dict[hyperparameter_group][0].append(acc)
-            accuracy_loss_dict[hyperparameter_group][1].append(loss)
-            if acc > train_dict[hyperparameter_group]['best_acc']:
-                train_dict[hyperparameter_group]['best_acc'] = acc
+                y_ture += labels.tolist()
+                y_pred += pred.tolist()
+                y_score += outputs
+            y_ture, y_pred, y_score = np.array(y_ture), np.array(y_pred), np.array(y_score)
+            acc = y_pred.eq(y_ture).sum().float().item()
+            f1 = f1_score(y_ture, y_pred, average='weighted')
+            auc = roc_auc_score(y_ture, y_score)
+            performance_dict[hyperparameter_group]['accuracy'].append(acc)
+            performance_dict[hyperparameter_group]['f1'].append(f1)
+            performance_dict[hyperparameter_group]['auc'].append(auc)
+            performance_dict[hyperparameter_group]['loss'].append(loss)
+            if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['beat_f1']:
+                train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
+                    'best_acc'] else train_dict[hyperparameter_group]['best_acc']
+                train_dict[hyperparameter_group]['best_f1'] = f1 if f1 > train_dict[hyperparameter_group][
+                    'best_f1'] else train_dict[hyperparameter_group]['best_f1']
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-            print('epcoch: %d, hyperparameter_group: %s, acc: %s, unimproved_epoch: %d, loss: %s' % (
-                epoch, hyperparameter_group, "%.2f%%" % (acc * 100),
-                train_dict[hyperparameter_group]['unimproved_epoch'], "%.5f" % loss))
+            print(
+                'epcoch: %d, hyperparameter_group: %s, unimproved_epoch: %d, acc: %s, f1_score: %s, auc: %s, loss: %s' % (
+                    epoch, hyperparameter_group, train_dict[hyperparameter_group]['unimproved_epoch'],
+                    "%.4f%%" % (acc * 100), "%.4f%%" % (f1), "%.4f%%" % (auc), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
@@ -132,27 +134,26 @@ def train_avg(action_recognition=False, dimension=1, body_part=4):
             y_pred = pred
             best_acc = acc
             hg = hyperparameter_group
-        print('hyperparameter_group: %s, acc: %s,' % (
-            hyperparameter_group, "%.2f%%" % (acc * 100)))
+        print('hyperparameter_group: %s, acc: %s, f1_score: %s, auc: %s' % (
+        hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1), "%.4f%%" % (auc)))
         print('----------------------------------------------------')
-        save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
-    if action_recognition == 1:
-        classes = ori_classes
-    elif action_recognition == 2:
-        classes = added_classes
-    else:
-        classes = attitude_classes
-    plot_confusion_matrix(y_true, y_pred, classes, sub_name=hg)
-    draw_performance(accuracy_loss_dict, sub_name=hg)
+        # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
+        if action_recognition == 1:
+            classes = ori_classes
+        elif action_recognition == 2:
+            classes = added_classes
+        else:
+            classes = attitude_classes
+        plot_confusion_matrix(y_true, y_pred, classes, sub_name=hg)
+        draw_performance(performance_dict, sub_name=hg)
     return
 
 
-def traine_perframe(action_recognition=True, dimension=1, body_part=4):
+def train_perframe(action_recognition=True, body_part=4):
     """
 
         :param
         action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
-        dimension: 1 for fcnn; 2 for cnn
         :return:
         """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'small_noise+coco': {}, 'small_noise+halpe': {},
@@ -169,14 +170,10 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
         sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
                                                    not_add_class=action_recognition == 1)
-        if dimension == 1:
-            net = FCNN(is_coco=is_coco, action_recognition=action_recognition)
-        else:
-            net = CNN(is_coco=is_coco, action_recognition=action_recognition)
+        net = DNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
-                                            'dimension': dimension,
                                             'tra_files': tra_files[int(len(tra_files) * valset_rate):],
                                             'val_files': tra_files[:int(len(tra_files) * valset_rate)],
                                             'test_files': test_files, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
@@ -197,7 +194,7 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
                                            action_recognition=action_recognition,
                                            is_crop=train_dict[hyperparameter_group]['is_crop'],
                                            sigma=train_dict[hyperparameter_group]['sigma'],
-                                           is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+                                           is_coco=train_dict[hyperparameter_group]['is_coco'])
                 train_loader = DataLoader(dataset=trainset, batch_size=perframe_batch_size)
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
@@ -216,7 +213,7 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
                     val_set = PerFrameDataset(data_files=[val], action_recognition=action_recognition,
                                               is_crop=train_dict[hyperparameter_group]['is_crop'],
                                               sigma=train_dict[hyperparameter_group]['sigma'],
-                                              is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+                                              is_coco=train_dict[hyperparameter_group]['is_coco'])
                     val_dataloader = DataLoader(val_set, batch_size=perframe_batch_size)
                     pred_list = []
                     for data in val_dataloader:
@@ -249,7 +246,7 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
                 test_set = PerFrameDataset(data_files=[test], action_recognition=action_recognition,
                                            is_crop=train_dict[hyperparameter_group]['is_crop'],
                                            sigma=train_dict[hyperparameter_group]['sigma'],
-                                           is_coco=train_dict[hyperparameter_group]['is_coco'], dimension=dimension)
+                                           is_coco=train_dict[hyperparameter_group]['is_coco'])
                 test_dataloader = DataLoader(test_set, batch_size=perframe_batch_size)
                 pred_list = []
                 for data in test_dataloader:
@@ -283,5 +280,5 @@ def traine_perframe(action_recognition=True, dimension=1, body_part=4):
 
 if __name__ == '__main__':
     for i in range(3):
-        train_avg(action_recognition=1, dimension=2, body_part=4)
-    # traine_perframe(action_recognition=2, dimension=2, body_part=4)
+        full_video_train_avg(action_recognition=1, body_part=[True, True, True], ori_videos=False)
+    # traine_perframe(action_recognition=2, body_part=4)

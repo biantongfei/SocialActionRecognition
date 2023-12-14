@@ -24,7 +24,7 @@ def get_data_path(is_crop, is_coco, sigma):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
+def get_tra_test_files(is_crop, is_coco, sigma, not_add_class, ori_videos=False):
     data_path = get_data_path(is_crop, is_coco, sigma)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -61,6 +61,8 @@ def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
                 if feature_json['action_class'] in [7, 8]:
                     continue
                 f.close()
+            if ori_videos and 'ori_' not in file:
+                continue
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
@@ -69,32 +71,32 @@ def get_tra_test_files(is_crop, is_coco, sigma, not_add_class):
 
 def get_body_part(feature, is_coco, body_part):
     """
-    :param body_part: 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
+    :param body_part: list, index0 for body, index1 for face, index2 for hands
     :return:
     """
     coco_body_part = [23, 91]
     halpe_body_part = [26, 94]
-    if body_part == 1:
-        feature = feature[:coco_body_part[0]] if is_coco else feature[:halpe_body_part[0]]
-    elif body_part == 2:
-        feature = feature[:coco_body_part[1]] if is_coco else feature[:halpe_body_part[1]]
-    elif body_part == 3:
-        if is_coco:
-            feature = np.append(feature[:coco_body_part[0]], feature[coco_body_part[1]:], axis=0)
-        else:
-            feature = np.append(feature[:halpe_body_part[0]], feature[halpe_body_part[1]:], axis=0)
-    return feature
+    new_features = []
+    if body_part[0]:
+        new_features += feature[:coco_body_part[0]].tolist() if is_coco else feature[:halpe_body_part[0]].tolist()
+    if body_part[1]:
+        new_features += feature[coco_body_part[1]:coco_body_part[2]].tolist() if is_coco else feature[
+                                                                                              halpe_body_part[1]:
+                                                                                              halpe_body_part[
+                                                                                                  2]].tolist()
+    if body_part[2]:
+        new_features += feature[coco_body_part[2]:].tolist() if is_coco else feature[halpe_body_part[2]:].tolist()
+    return np.array(new_features)
 
 
 class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension, body_part):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, body_part):
         super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
         self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
         self.is_crop = is_crop
         self.is_coco = is_coco
-        self.dimension = dimension
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
 
     def __getitem__(self, idx):
@@ -104,16 +106,17 @@ class AvgDataset(Dataset):
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
 
         for index, frame in enumerate(feature_json['frames']):
-            box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+            # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
             frame_feature = np.array(frame['keypoints'])[:, :2]
-            frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-            frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+            # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+            # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+            frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+            frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
             frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-            frame_feature = np.append(frame_feature, [
-                [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                [box_width / frame_width, box_height / frame_height]], axis=0)
-            if self.dimension == 1:
-                frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+            # frame_feature = np.append(frame_feature, [
+            #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+            #     [box_width / frame_width, box_height / frame_height]], axis=0)
+            frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
             features.append(frame_feature)
         features = np.array(features)
         if self.action_recognition:
@@ -125,7 +128,7 @@ class AvgDataset(Dataset):
                 label = 2
             else:
                 label = 0
-        feature = features.mean(axis=0) if self.dimension == 1 else np.array([features.mean(axis=0)])
+        feature = features.mean(axis=0)
         return feature, label
 
     def __len__(self):
@@ -134,6 +137,6 @@ class AvgDataset(Dataset):
 
 if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True)
-    dataset = AvgDataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True, dimension=2)
+    dataset = AvgDataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True)
     features, labels = dataset.__getitem__(0)
     print(features.shape, labels)

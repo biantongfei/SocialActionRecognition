@@ -14,14 +14,13 @@ halpe_point_num = 136
 
 
 class PerFrameDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, dimension, body_part):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, body_part):
         super(PerFrameDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
         self.action_recognition = action_recognition
         self.is_crop = is_crop
         self.is_coco = is_coco
-        self.dimension = dimension
         self.body_part = body_part
         self.frame_list = self.get_all_frames_id()
 
@@ -40,10 +39,7 @@ class PerFrameDataset(Dataset):
         feature = np.append(feature, [
             [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
             [box_width / frame_width, box_height / frame_height]], axis=0)
-        if self.dimension == 1:
-            feature = feature.reshape(1, feature.size)[0]
-        else:
-            feature = feature.reshape(1, feature.shape[0], feature.shape[1])
+        feature = feature.reshape(1, feature.size)[0]
         if self.action_recognition:
             label = feature_json['action_class']
         else:

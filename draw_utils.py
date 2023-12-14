@@ -4,26 +4,40 @@ from sklearn.metrics import confusion_matrix
 from torch import Tensor, tensor
 
 
-def draw_performance(accuracy_loss_dict, sub_name):
-    colors = plt.cm.rainbow(np.linspace(0, 1, len(accuracy_loss_dict.keys())))
-    for index, key in enumerate(accuracy_loss_dict.keys()):
-        acc = [100 * a for a in accuracy_loss_dict[key][0]]
-        plt.plot(range(0, len(accuracy_loss_dict[key][0])), acc, color=colors[index])
-    plt.legend(accuracy_loss_dict.keys())
+def draw_performance(perforamce_dict, sub_name):
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(perforamce_dict.keys())))
+    for index, key in enumerate(perforamce_dict.keys()):
+        acc = [100 * a for a in perforamce_dict[key]['accuracy']]
+        plt.plot(range(0, len(perforamce_dict[key]['accuracy'])), acc, color=colors[index])
+    plt.legend(perforamce_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
     plt.savefig('plots/accuracy_%s_%s.png' % (key, sub_name))
     plt.close()
-    # for index, key in enumerate(accuracy_loss_dict.keys()):
-    #     loss = [float(l) for l in accuracy_loss_dict[key][1]]
-    #     plt.plot(range(0, len(accuracy_loss_dict[key][1])), loss, color=colors[index])
-    #     plt.legend(accuracy_loss_dict.keys())
-    #     plt.xlabel('epoch')
-    #     plt.ylabel('loss')
-    #     plt.savefig('plots/loss_%s_%s.png' % (key, sub_name))
-    #     plt.close()
-    # plt.show()
-
+    for index, key in enumerate(perforamce_dict.keys()):
+        f1 = [a for a in perforamce_dict[key]['f1']]
+        plt.plot(range(0, len(perforamce_dict[key]['f1'])), f1, color=colors[index])
+    plt.legend(perforamce_dict.keys())
+    plt.xlabel('epoch')
+    plt.ylabel('f1')
+    plt.savefig('plots/f1_%s_%s.png' % (key, sub_name))
+    plt.close()
+    for index, key in enumerate(perforamce_dict.keys()):
+        auc = [a for a in perforamce_dict[key]['auc']]
+        plt.plot(range(0, len(perforamce_dict[key]['auc'])), auc, color=colors[index])
+    plt.legend(perforamce_dict.keys())
+    plt.xlabel('epoch')
+    plt.ylabel('auc')
+    plt.savefig('plots/auc%s_%s.png' % (key, sub_name))
+    plt.close()
+    for index, key in enumerate(perforamce_dict.keys()):
+        loss = [a for a in perforamce_dict[key]['loss']]
+        plt.plot(range(0, len(perforamce_dict[key]['loss'])), loss, color=colors[index])
+    plt.legend(perforamce_dict.keys())
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.savefig('plots/loss%s_%s.png' % (key, sub_name))
+    plt.close()
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
