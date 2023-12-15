@@ -84,17 +84,17 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 loss.backward()
                 optimizer.step()
 
-            y_ture, y_pred = [], []
+            y_true, y_pred = [], []
             for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                y_ture += labels.tolist()
+                y_true += labels.tolist()
                 y_pred += pred.tolist()
-            y_ture, y_pred = torch.Tensor(y_ture), torch.Tensor(y_pred)
-            acc = y_pred.eq(y_ture).sum().float().item() / len(val_loader)
-            f1 = f1_score(y_ture, y_pred, average='weighted')
+            y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
+            acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+            f1 = f1_score(y_true, y_pred, average='weighted')
             performance_dict[hyperparameter_group]['accuracy'].append(acc)
             performance_dict[hyperparameter_group]['f1'].append(f1)
             performance_dict[hyperparameter_group]['loss'].append(float(loss))
@@ -112,36 +112,31 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                     "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
-    best_acc = 0
-    hg = ''
+    if action_recognition == 1:
+        classes = ori_classes
+    elif action_recognition == 2:
+        classes = added_classes
+    else:
+        classes = attitude_classes
+    y_true, y_pred = [], []
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=avg_batch_size)
-        total_correct = 0
         for data in test_loader:
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
-            correct = pred.eq(labels).sum().float().item()
-            total_correct += correct
-        acc = total_correct / len(test_loader.dataset)
-        if acc > best_acc:
-            y_true = labels
-            y_pred = pred
-            best_acc = acc
-            hg = hyperparameter_group
+            y_true += labels.tolist()
+            y_pred += pred.tolist()
+        y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
+        acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+        f1 = f1_score(y_true, y_pred, average='weighted')
         print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
         print('----------------------------------------------------')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
-        if action_recognition == 1:
-            classes = ori_classes
-        elif action_recognition == 2:
-            classes = added_classes
-        else:
-            classes = attitude_classes
-        plot_confusion_matrix(y_true, y_pred, classes, sub_name=hg)
-        draw_performance(performance_dict, sub_name=hg)
+        plot_confusion_matrix(y_true, y_pred, classes, sub_name=hyperparameter_group)
+    draw_performance(performance_dict)
     return
 
 

@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 from torch import Tensor, tensor
 
 
-def draw_performance(perforamce_dict, sub_name):
+def draw_performance(perforamce_dict):
     colors = plt.cm.rainbow(np.linspace(0, 1, len(perforamce_dict.keys())))
     for index, key in enumerate(perforamce_dict.keys()):
         acc = [100 * a for a in perforamce_dict[key]['accuracy']]
@@ -12,7 +12,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.legend(perforamce_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
-    plt.savefig('plots/accuracy_%s_%s.png' % (key, sub_name))
+    plt.savefig('plots/accuracy_%s.png' % key)
     plt.close()
     for index, key in enumerate(perforamce_dict.keys()):
         f1 = [f for f in perforamce_dict[key]['f1']]
@@ -20,7 +20,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.legend(perforamce_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('f1')
-    plt.savefig('plots/f1_%s_%s.png' % (key, sub_name))
+    plt.savefig('plots/f1_%s.png' % key)
     plt.close()
     for index, key in enumerate(perforamce_dict.keys()):
         loss = [l for l in perforamce_dict[key]['loss']]
@@ -29,7 +29,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.legend(perforamce_dict.keys())
     plt.xlabel('epoch')
     plt.ylabel('loss')
-    plt.savefig('plots/loss%s_%s.png' % (key, sub_name))
+    plt.savefig('plots/loss%s.png' % key)
     plt.close()
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
