@@ -98,7 +98,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             performance_dict[hyperparameter_group]['accuracy'].append(acc)
             performance_dict[hyperparameter_group]['f1'].append(f1)
             performance_dict[hyperparameter_group]['loss'].append(loss)
-            if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['beat_f1']:
+            if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['best_f1']:
                 train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
                     'best_acc'] else train_dict[hyperparameter_group]['best_acc']
                 train_dict[hyperparameter_group]['best_f1'] = f1 if f1 > train_dict[hyperparameter_group][
