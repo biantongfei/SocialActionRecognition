@@ -37,7 +37,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     train_dict = {'crop+coco': {}}
     performance_dict = {}
     for key in train_dict.keys():
-        performance_dict[key] = {'accuracy': [], 'f1': [], 'auc': [], 'loss': []}
+        performance_dict[key] = {'accuracy': [], 'f1': [], 'loss': []}
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -84,24 +84,19 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 loss.backward()
                 optimizer.step()
 
-            y_ture, y_pred, y_score = [], [], []
+            y_ture, y_pred = [], []
             for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                print(outputs.sum(axis=0))
-                print(inputs.shape,outputs.shape)
                 pred = outputs.argmax(dim=1)
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
-                y_score += outputs.tolist()
-            y_ture, y_pred, y_score = Tensor(y_ture), Tensor(y_pred), Tensor(y_score)
+            y_ture, y_pred = Tensor(y_ture), Tensor(y_pred)
             acc = y_pred.eq(y_ture).sum().float().item()
             f1 = f1_score(y_ture, y_pred, average='weighted')
-            auc = roc_auc_score(y_ture, y_score, multi_class='ovo')
             performance_dict[hyperparameter_group]['accuracy'].append(acc)
             performance_dict[hyperparameter_group]['f1'].append(f1)
-            performance_dict[hyperparameter_group]['auc'].append(auc)
             performance_dict[hyperparameter_group]['loss'].append(loss)
             if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['beat_f1']:
                 train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
@@ -112,9 +107,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print(
-                'epcoch: %d, hyperparameter_group: %s, unimproved_epoch: %d, acc: %s, f1_score: %s, auc: %s, loss: %s' % (
+                'epcoch: %d, hyperparameter_group: %s, unimproved_epoch: %d, acc: %s, f1_score: %s, loss: %s' % (
                     epoch, hyperparameter_group, train_dict[hyperparameter_group]['unimproved_epoch'],
-                    "%.4f%%" % (acc * 100), "%.4f%%" % (f1), "%.4f%%" % (auc), "%.4f" % loss))
+                    "%.4f%%" % (acc * 100), "%.4f%%" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
@@ -136,8 +131,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             y_pred = pred
             best_acc = acc
             hg = hyperparameter_group
-        print('hyperparameter_group: %s, acc: %s, f1_score: %s, auc: %s' % (
-            hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1), "%.4f%%" % (auc)))
+        print('hyperparameter_group: %s, acc: %s, f1_score: %s' % (
+            hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1)))
         print('----------------------------------------------------')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         if action_recognition == 1:
