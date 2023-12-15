@@ -54,7 +54,6 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                             body_part=body_part)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, body_part=body_part)
-        print(len(trainset), len(valset), len(testset))
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = optim.Adam(net.parameters(), lr=1e-3)
@@ -108,9 +107,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print(
-                'epcoch: %d, hyperparameter_group: %s, unimproved_epoch: %d, acc: %s, f1_score: %s, loss: %s' % (
-                    epoch, hyperparameter_group, train_dict[hyperparameter_group]['unimproved_epoch'],
-                    "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
+                '%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
+                hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
+                "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
@@ -132,8 +131,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             y_pred = pred
             best_acc = acc
             hg = hyperparameter_group
-        print('hyperparameter_group: %s, acc: %s, f1_score: %s' % (
-            hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
+        print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
         print('----------------------------------------------------')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         if action_recognition == 1:

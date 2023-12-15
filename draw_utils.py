@@ -23,7 +23,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.savefig('plots/f1_%s_%s.png' % (key, sub_name))
     plt.close()
     for index, key in enumerate(perforamce_dict.keys()):
-        loss = [a for a in perforamce_dict[key]['loss']]
+        loss = [Tensor.detach().numpy(a) for a in perforamce_dict[key]['loss']]
         print(loss)
         plt.plot(range(0, len(perforamce_dict[key]['loss'])), loss, color=colors[index])
     plt.legend(perforamce_dict.keys())
