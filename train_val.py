@@ -56,18 +56,18 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, body_part=body_part)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
-        optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
                                             'trainset': trainset, 'valset': valset,
-                                            'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
-                                            'best_f1': 0, 'unimproved_epoch': 0}
+                                            'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': -1,
+                                            'best_f1': -1, 'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
     while continue_train:
         continue_train = False
         for hyperparameter_group in train_dict.keys():
-            if train_dict[hyperparameter_group]['unimproved_epoch'] < 3:
+            if train_dict[hyperparameter_group]['unimproved_epoch'] < 5:
                 continue_train = True
             else:
                 continue
@@ -133,7 +133,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
         acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
         f1 = f1_score(y_true, y_pred, average='weighted')
         print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
-        print('----------------------------------------------------')
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         plot_confusion_matrix(y_true, y_pred, classes, sub_name=hyperparameter_group)
     draw_performance(performance_dict)
