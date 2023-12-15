@@ -15,7 +15,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.savefig('plots/accuracy_%s_%s.png' % (key, sub_name))
     plt.close()
     for index, key in enumerate(perforamce_dict.keys()):
-        f1 = [a for a in perforamce_dict[key]['f1']]
+        f1 = [f for f in perforamce_dict[key]['f1']]
         plt.plot(range(0, len(perforamce_dict[key]['f1'])), f1, color=colors[index])
     plt.legend(perforamce_dict.keys())
     plt.xlabel('epoch')
@@ -23,7 +23,7 @@ def draw_performance(perforamce_dict, sub_name):
     plt.savefig('plots/f1_%s_%s.png' % (key, sub_name))
     plt.close()
     for index, key in enumerate(perforamce_dict.keys()):
-        loss = [Tensor.detach().numpy(a) for a in perforamce_dict[key]['loss']]
+        loss = [l for l in perforamce_dict[key]['loss']]
         print(loss)
         plt.plot(range(0, len(perforamce_dict[key]['loss'])), loss, color=colors[index])
     plt.legend(perforamce_dict.keys())

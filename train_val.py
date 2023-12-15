@@ -33,8 +33,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'medium_noise+coco': {}, 'medium_noise+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'medium_noise+coco': {}, 'medium_noise+halpe': {}}
+    train_dict = {'crop+coco': {}}
     performance_dict = {}
     for key in train_dict.keys():
         performance_dict[key] = {'accuracy': [], 'f1': [], 'loss': []}
@@ -93,11 +93,13 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
             y_ture, y_pred = Tensor(y_ture), Tensor(y_pred)
+            print(y_ture)
+            print(y_pred)
             acc = y_pred.eq(y_ture).sum().float().item()
             f1 = f1_score(y_ture, y_pred, average='weighted')
             performance_dict[hyperparameter_group]['accuracy'].append(acc)
             performance_dict[hyperparameter_group]['f1'].append(f1)
-            performance_dict[hyperparameter_group]['loss'].append(loss)
+            performance_dict[hyperparameter_group]['loss'].append(float(loss))
             if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['best_f1']:
                 train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
                     'best_acc'] else train_dict[hyperparameter_group]['best_acc']
@@ -108,8 +110,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print(
                 '%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
-                hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
+                    hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
+                    "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
