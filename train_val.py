@@ -93,7 +93,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
             y_ture, y_pred = torch.Tensor(y_ture), torch.Tensor(y_pred)
-            acc = y_pred.eq(y_ture).sum().float().item() / int(y_ture.size)
+            acc = y_pred.eq(y_ture).sum().float().item() / int(val_loader)
             f1 = f1_score(y_ture, y_pred, average='weighted')
             performance_dict[hyperparameter_group]['accuracy'].append(acc)
             performance_dict[hyperparameter_group]['f1'].append(f1)
