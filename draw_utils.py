@@ -14,7 +14,7 @@ def draw_performance(perforamce_dict):
         plt.ylabel('accuracy')
         plt.savefig('plots/accuracy_%s.png' % key)
         plt.close()
-        for index, key in enumerate(perforamce_dict.keys()):
+    for index, key in enumerate(perforamce_dict.keys()):
         f1 = [f for f in perforamce_dict[key]['f1']]
         plt.plot(range(0, len(perforamce_dict[key]['f1'])), f1, color=colors[index])
         plt.legend(perforamce_dict.keys())
