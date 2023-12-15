@@ -270,6 +270,6 @@ def train_perframe(action_recognition=True, body_part=4):
 
 
 if __name__ == '__main__':
-    for i in range(10):
+    for i in range(510):
         full_video_train_avg(action_recognition=1, body_part=[True, True, True], ori_videos=True)
     # traine_perframe(action_recognition=2, body_part=4)
