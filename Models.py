@@ -44,7 +44,7 @@ class DNN(nn.Module):
             nn.Linear(64, 16),
             nn.ReLU(),
             nn.Linear(16, self.output_size),
-            nn.Softmax()
+            nn.Softmax(dim=1)
         )
 
     def forward(self, x):
