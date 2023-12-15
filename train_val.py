@@ -118,9 +118,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
         classes = added_classes
     else:
         classes = attitude_classes
-    y_true, y_pred = [], []
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=avg_batch_size)
+        y_true, y_pred = [], []
         for data in test_loader:
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
@@ -130,7 +130,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             y_true += labels.tolist()
             y_pred += pred.tolist()
         y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-        acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+        acc = y_pred.eq(y_true).sum().float().item() / len(test_loader.dataset)
         f1 = f1_score(y_true, y_pred, average='weighted')
         print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
