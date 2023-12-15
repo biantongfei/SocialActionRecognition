@@ -42,7 +42,7 @@ class DNN(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, 16),
-            nn.ReLU(),
+            nn.Softmax(),
             nn.Linear(16, self.output_size)
         )
 

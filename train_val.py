@@ -12,7 +12,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 
 avg_batch_size = 128
 perframe_batch_size = 512
-valset_rate = 0.1
+valset_rate = 0.2
 if cuda.is_available():
     device = device("cuda:0")
 elif backends.mps.is_available():
