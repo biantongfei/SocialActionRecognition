@@ -13,14 +13,13 @@ batch_size = 128
 
 
 def get_points_num(is_coco, body_part):
-    if body_part == 1:
-        points_num = coco_body_point_num if is_coco else halpe_body_point_num
-    elif body_part == 2:
-        points_num = head_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
-    elif body_part == 3:
-        points_num = hands_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
-    else:
-        points_num = head_point_num + hands_point_num + (coco_body_point_num if is_coco else halpe_body_point_num)
+    points_num = 0
+    if body_part[0]:
+        points_num += coco_body_point_num if is_coco else halpe_body_point_num
+    if body_part[1]:
+        points_num += head_point_num
+    if body_part[2]:
+        points_num += hands_point_num
     return points_num
 
 
