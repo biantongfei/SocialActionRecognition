@@ -3,8 +3,8 @@ from Datasets.PerFrameDataset import PerFrameDataset
 from Models import DNN
 from draw_utils import draw_performance, plot_confusion_matrix
 
+import torch
 from torch.utils.data import DataLoader
-from torch import device, cuda, optim, float, save, backends, Tensor
 from torch.nn import functional
 import random
 import numpy as np
@@ -13,13 +13,13 @@ from sklearn.metrics import f1_score, roc_auc_score
 avg_batch_size = 128
 perframe_batch_size = 512
 valset_rate = 0.2
-if cuda.is_available():
-    device = device("cuda:0")
-elif backends.mps.is_available():
-    device = device('mps')
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
 else:
-    device = device('cpu')
-dtype = float
+    device = torch.device('cpu')
+dtype = torch.float
 model_save_path = 'models/'
 ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
 added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested', 'interested']
@@ -56,7 +56,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                              is_crop=is_crop, sigma=sigma, is_coco=is_coco, body_part=body_part)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
-        optimizer = optim.Adam(net.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
                                             'trainset': trainset, 'valset': valset,
                                             'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
@@ -92,7 +92,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 pred = outputs.argmax(dim=1)
                 y_ture += labels.tolist()
                 y_pred += pred.tolist()
-            y_ture, y_pred = Tensor(y_ture), Tensor(y_pred)
+            y_ture, y_pred = torch.Tensor(y_ture), torch.Tensor(y_pred)
             print(y_ture)
             print(y_pred)
             acc = y_pred.eq(y_ture).sum().float().item()
@@ -170,7 +170,7 @@ def train_perframe(action_recognition=True, body_part=4):
                                                    not_add_class=action_recognition == 1)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
-        optimizer = optim.Adam(net.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
                                             'tra_files': tra_files[int(len(tra_files) * valset_rate):],
                                             'val_files': tra_files[:int(len(tra_files) * valset_rate)],
@@ -264,7 +264,7 @@ def train_perframe(action_recognition=True, body_part=4):
             print('hyperparameter_group: %s, acc: %s,' % (
                 hyperparameter_group, "%.2f%%" % (acc * 100)))
             print('----------------------------------------------------')
-            save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
+            # torch.save(net.state_dict(), model_save_path + 'avg_fcnn_%s.pth' % (hyperparameter_group))
         if action_recognition == 1:
             classes = ori_classes
         elif action_recognition == 2:
