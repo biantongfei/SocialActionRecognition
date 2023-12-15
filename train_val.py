@@ -109,7 +109,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             print(
                 'epcoch: %d, hyperparameter_group: %s, unimproved_epoch: %d, acc: %s, f1_score: %s, loss: %s' % (
                     epoch, hyperparameter_group, train_dict[hyperparameter_group]['unimproved_epoch'],
-                    "%.4f%%" % (acc * 100), "%.4f%%" % (f1), "%.4f" % loss))
+                    "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     best_acc = 0
@@ -132,7 +132,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             best_acc = acc
             hg = hyperparameter_group
         print('hyperparameter_group: %s, acc: %s, f1_score: %s' % (
-            hyperparameter_group, "%.4f%%" % (acc), "%.4f%%" % (f1)))
+            hyperparameter_group, "%.2f%%" % (acc*100), "%.4f" % (f1)))
         print('----------------------------------------------------')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         if action_recognition == 1:
