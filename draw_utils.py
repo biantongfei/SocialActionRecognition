@@ -63,7 +63,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
             elif recall == 0.0:
                 recall = '0'
             TP_FNs.append(TP_FN)
-            plt.text(x_val, y_val, str(TP_FN) + '\n' + str(recall) + '%', color='black', va='center', ha='center')
+            plt.text(x_val, y_val, str(TP_FN) + '\n' + str(recall), color='black', va='center', ha='center')
         elif x_val != max_index and y_val == max_index:  # 绘制最下行即各数据类别的查准率
             TP = diags[x_val]
             TP_FP = cm.sum(axis=0)[x_val]

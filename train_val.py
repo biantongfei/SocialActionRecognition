@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 from torch.nn import functional
 import random
 import numpy as np
-from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.metrics import f1_score
+import csv
 
 avg_batch_size = 128
 perframe_batch_size = 512
@@ -24,6 +25,17 @@ model_save_path = 'models/'
 ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
 added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested', 'interested']
 attitude_classes = ['interacting', 'not_interested', 'interested']
+
+
+def save_performance(performance):
+    with open('performance.csv', 'w', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=' ',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    for index, performance_dict in enumerate(performance):
+        if index == 0:
+            columns = ['times'] + performance_dict.keys()
+            spamwriter.writerow(columns)
+        spamwriter.writerow([index + 1] + [performance_dict[key] for key in performance_dict.keys()])
 
 
 def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
@@ -137,7 +149,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         plot_confusion_matrix(y_true, y_pred, classes, sub_name=hyperparameter_group)
     draw_performance(performance_dict)
-    return
+    return performance_dict
 
 
 def train_perframe(action_recognition=True, body_part=4):
@@ -270,6 +282,9 @@ def train_perframe(action_recognition=True, body_part=4):
 
 
 if __name__ == '__main__':
-    for i in range(10):
-        full_video_train_avg(action_recognition=1, body_part=[True, True, True], ori_videos=True)
+    performance = []
+    for i in range(5):
+        p = full_video_train_avg(action_recognition=1, body_part=[True, False, False], ori_videos=False)
+        performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
+    save_performance(performance)
