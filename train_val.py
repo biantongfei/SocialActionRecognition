@@ -89,7 +89,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 outputs = net(inputs)
-                print(outputs.sum(axis=1))
+                print(outputs.sum(axis=0))
                 print(inputs.shape,outputs.shape)
                 pred = outputs.argmax(dim=1)
                 y_ture += labels.tolist()
