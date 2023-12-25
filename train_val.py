@@ -33,7 +33,7 @@ def save_performance(performance):
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for index, performance_dict in enumerate(performance):
         if index == 0:
-            columns = ['times'] + performance_dict.keys()
+            columns = ['times'] + list(performance_dict.keys())
             spamwriter.writerow(columns)
         spamwriter.writerow([index + 1] + [performance_dict[key] for key in performance_dict.keys()])
 
@@ -284,7 +284,7 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = full_video_train_avg(action_recognition=1, body_part=[True, False, False], ori_videos=False)
+        p = full_video_train_avg(action_recognition=1, body_part=[False, True, False], ori_videos=False)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)
