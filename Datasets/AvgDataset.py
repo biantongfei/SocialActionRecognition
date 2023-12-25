@@ -10,7 +10,7 @@ coco_point_num = 133
 halpe_point_num = 136
 
 
-def get_data_path(is_crop, is_coco, sigma):
+def get_data_path(is_crop, is_coco):
     if is_crop:
         if is_coco:
             data_path = '../jpl_augmented/features/crop/coco_wholebody/'
@@ -18,14 +18,14 @@ def get_data_path(is_crop, is_coco, sigma):
             data_path = '../jpl_augmented/features/crop/halpe136/'
     else:
         if is_coco:
-            data_path = '../jpl_augmented/features/gaussian/%s/coco_wholebody/' % (sigma)
+            data_path = '../jpl_augmented/features/gaussian/coco_wholebody/'
         else:
-            data_path = '../jpl_augmented/features/gaussian/%s/halpe136/' % (sigma)
+            data_path = '../jpl_augmented/features/gaussian/halpe136/'
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, sigma, not_add_class, ori_videos=False):
-    data_path = get_data_path(is_crop, is_coco, sigma)
+def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
+    data_path = get_data_path(is_crop, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
     for file in files:
@@ -90,10 +90,10 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, sigma, body_part):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part):
         super(AvgDataset, self).__init__()
         self.files = data_files
-        self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco, sigma=sigma)
+        self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
         self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
         self.is_crop = is_crop
         self.is_coco = is_coco

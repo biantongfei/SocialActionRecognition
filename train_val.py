@@ -29,8 +29,7 @@ attitude_classes = ['interacting', 'not_interested', 'interested']
 
 def save_performance(performance):
     with open('performance.csv', 'w', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile, delimiter=' ',
-                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for index, performance_dict in enumerate(performance):
         if index == 0:
             columns = ['times'] + list(performance_dict.keys())
@@ -40,7 +39,6 @@ def save_performance(performance):
 
 def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
     """
-
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
@@ -55,24 +53,22 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
         print('loading data for', hyperparameter_group)
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
-        sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
-        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
+        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
                                                    not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
-                              action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
+                              action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
                               body_part=body_part)
         valset = AvgDataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
-                            action_recognition=action_recognition, is_crop=is_crop, sigma=sigma, is_coco=is_coco,
+                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
                             body_part=body_part)
-        testset = AvgDataset(data_files=test_files, action_recognition=action_recognition,
-                             is_crop=is_crop, sigma=sigma, is_coco=is_coco, body_part=body_part)
+        testset = AvgDataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
+                             is_coco=is_coco, body_part=body_part)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
-        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
-                                            'trainset': trainset, 'valset': valset,
-                                            'testset': testset, 'net': net, 'optimizer': optimizer, 'best_acc': -1,
-                                            'best_f1': -1, 'unimproved_epoch': 0}
+        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
+                                            'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
+                                            'best_acc': -1, 'best_f1': -1, 'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -170,13 +166,12 @@ def train_perframe(action_recognition=True, body_part=4):
     for hyperparameter_group in train_dict.keys():
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
-        sigma = None if '_' not in hyperparameter_group else hyperparameter_group.split('_')[0]
-        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, sigma=sigma,
+        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
                                                    not_add_class=action_recognition == 1)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
-        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'sigma': sigma, 'is_coco': is_coco,
+        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco,
                                             'tra_files': tra_files[int(len(tra_files) * valset_rate):],
                                             'val_files': tra_files[:int(len(tra_files) * valset_rate)],
                                             'test_files': test_files, 'net': net, 'optimizer': optimizer, 'best_acc': 0,
@@ -196,7 +191,6 @@ def train_perframe(action_recognition=True, body_part=4):
                 trainset = PerFrameDataset(data_files=train_dict[hyperparameter_group]['tra_files'],
                                            action_recognition=action_recognition,
                                            is_crop=train_dict[hyperparameter_group]['is_crop'],
-                                           sigma=train_dict[hyperparameter_group]['sigma'],
                                            is_coco=train_dict[hyperparameter_group]['is_coco'])
                 train_loader = DataLoader(dataset=trainset, batch_size=perframe_batch_size)
                 net = train_dict[hyperparameter_group]['net']
@@ -215,7 +209,6 @@ def train_perframe(action_recognition=True, body_part=4):
                 for val in val_files:
                     val_set = PerFrameDataset(data_files=[val], action_recognition=action_recognition,
                                               is_crop=train_dict[hyperparameter_group]['is_crop'],
-                                              sigma=train_dict[hyperparameter_group]['sigma'],
                                               is_coco=train_dict[hyperparameter_group]['is_coco'])
                     val_dataloader = DataLoader(val_set, batch_size=perframe_batch_size)
                     pred_list = []
@@ -248,7 +241,6 @@ def train_perframe(action_recognition=True, body_part=4):
             for test in test_files:
                 test_set = PerFrameDataset(data_files=[test], action_recognition=action_recognition,
                                            is_crop=train_dict[hyperparameter_group]['is_crop'],
-                                           sigma=train_dict[hyperparameter_group]['sigma'],
                                            is_coco=train_dict[hyperparameter_group]['is_coco'])
                 test_dataloader = DataLoader(test_set, batch_size=perframe_batch_size)
                 pred_list = []
@@ -284,7 +276,7 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = full_video_train_avg(action_recognition=1, body_part=[False, True, False], ori_videos=False)
+        p = full_video_train_avg(action_recognition=1, body_part=[True, False, False], ori_videos=False)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)
