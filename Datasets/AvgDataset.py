@@ -13,14 +13,14 @@ halpe_point_num = 136
 def get_data_path(is_crop, is_coco):
     if is_crop:
         if is_coco:
-            data_path = '../jpl_augmented/features/crop/coco_wholebody/'
+            data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
         else:
-            data_path = '../jpl_augmented/features/crop/halpe136/'
+            data_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
     else:
         if is_coco:
-            data_path = '../jpl_augmented/features/gaussian/coco_wholebody/'
+            data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
-            data_path = '../jpl_augmented/features/gaussian/halpe136/'
+            data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
     return data_path
 
 

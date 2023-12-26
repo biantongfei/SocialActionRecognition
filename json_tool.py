@@ -205,7 +205,7 @@ def gaussion_augment():
 
 
 def adjust_box():
-    data_path = '../jpl_augmented/features/'
+    data_path = '../JPL_Augmented_Posefeatures/features/'
     format_list = ['coco_wholebody/', 'halpe136/']
     sigma_list = ['small/', 'medium/', 'big/']
     for format in format_list:
@@ -239,8 +239,8 @@ def adjust_box():
 
 if __name__ == '__main__':
     refactor_jsons()
-    # feature_path = '../jpl_augmented/features/crop/coco_wholebody/'
-    # feature_path = '../jpl_augmented/features/crop/halpe136/'
+    # feature_path = '../JPL_Augmented_Posefeatures/features/crop/coco_wholebody/'
+    # feature_path = '../JPL_Augmented_Posefeatures/features/crop/halpe136/'
     # summarize_features(feature_path)
     # gaussion_augment()
     # adjust_box()

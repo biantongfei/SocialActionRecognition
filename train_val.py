@@ -30,11 +30,11 @@ attitude_classes = ['interacting', 'not_interested', 'interested']
 def save_performance(performance):
     with open('performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    for index, performance_dict in enumerate(performance):
-        if index == 0:
-            columns = ['times'] + list(performance_dict.keys())
-            spamwriter.writerow(columns)
-        spamwriter.writerow([index + 1] + [performance_dict[key] for key in performance_dict.keys()])
+        for index, performance_dict in enumerate(performance):
+            if index == 0:
+                columns = ['times'] + list(performance_dict.keys())
+                spamwriter.writerow(columns)
+            spamwriter.writerow([index + 1] + [performance_dict[key] for key in performance_dict.keys()])
 
 
 def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
@@ -43,7 +43,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'medium_noise+coco': {}, 'medium_noise+halpe': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'crop+coco': {}}
     performance_dict = {}
     for key in train_dict.keys():
@@ -114,10 +114,11 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-            print(
-                '%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
-                    hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                    "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
+            if epoch % 5 == 0:
+                print(
+                    '%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
+                        hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
+                        "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     if action_recognition == 1:

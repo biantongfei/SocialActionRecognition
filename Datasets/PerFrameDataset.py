@@ -67,6 +67,6 @@ class PerFrameDataset(Dataset):
 
 
 if __name__ == '__main__':
-    files = os.listdir('../jpl_augmented/features/crop/coco_wholebody/')
+    files = os.listdir('../JPL_Augmented_Posefeatures/features/crop/coco_wholebody/')
     dataset = PerFrameDataset(files, 2, True, True, '', 2)
     print(dataset.__len__())
