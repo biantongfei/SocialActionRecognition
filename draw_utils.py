@@ -1,31 +1,31 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
-from torch import Tensor, tensor
+from torch import Tensor
 
 
-def draw_performance(perforamce_dict):
-    colors = plt.cm.rainbow(np.linspace(0, 1, len(perforamce_dict.keys())))
-    for index, key in enumerate(perforamce_dict.keys()):
-        acc = [100 * a for a in perforamce_dict[key]['accuracy']]
-        plt.plot(range(0, len(perforamce_dict[key]['accuracy'])), acc, color=colors[index])
-        plt.legend(perforamce_dict.keys())
+def draw_training_process(training_process):
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(training_process.keys())))
+    for index, key in enumerate(training_process.keys()):
+        acc = [100 * a for a in training_process[key]['accuracy']]
+        plt.plot(range(0, len(training_process[key]['accuracy'])), acc, color=colors[index])
+        plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
         plt.savefig('plots/accuracy_%s.png' % key)
         plt.close()
-    for index, key in enumerate(perforamce_dict.keys()):
-        f1 = [f for f in perforamce_dict[key]['f1']]
-        plt.plot(range(0, len(perforamce_dict[key]['f1'])), f1, color=colors[index])
-        plt.legend(perforamce_dict.keys())
+    for index, key in enumerate(training_process.keys()):
+        f1 = [f for f in training_process[key]['f1']]
+        plt.plot(range(0, len(training_process[key]['f1'])), f1, color=colors[index])
+        plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('f1')
         plt.savefig('plots/f1_%s.png' % key)
         plt.close()
-    for index, key in enumerate(perforamce_dict.keys()):
-        loss = [l for l in perforamce_dict[key]['loss']]
-        plt.plot(range(0, len(perforamce_dict[key]['loss'])), loss, color=colors[index])
-        plt.legend(perforamce_dict.keys())
+    for index, key in enumerate(training_process.keys()):
+        loss = [l for l in training_process[key]['loss']]
+        plt.plot(range(0, len(training_process[key]['loss'])), loss, color=colors[index])
+        plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.savefig('plots/loss%s.png' % key)

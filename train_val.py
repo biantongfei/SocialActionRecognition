@@ -1,7 +1,7 @@
 from Datasets.AvgDataset import AvgDataset, get_tra_test_files
 from Datasets.PerFrameDataset import PerFrameDataset
 from Models import DNN
-from draw_utils import draw_performance, plot_confusion_matrix
+from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
 from torch.utils.data import DataLoader
@@ -29,12 +29,13 @@ attitude_classes = ['interacting', 'not_interested', 'interested']
 
 def save_performance(performance):
     with open('performance.csv', 'w', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        for index, performance_dict in enumerate(performance):
+        spamwriter = csv.writer(csvfile)
+        for index, trainging_process in enumerate(performance):
             if index == 0:
-                columns = ['times'] + list(performance_dict.keys())
+                columns = ['times'] + list(trainging_process.keys())
                 spamwriter.writerow(columns)
-            spamwriter.writerow([index + 1] + [performance_dict[key] for key in performance_dict.keys()])
+            spamwriter.writerow([index + 1] + [trainging_process[key]['accuracy'] for key in trainging_process.keys()])
+            spamwriter.writerow([index + 1] + [trainging_process[key]['f1'] for key in trainging_process.keys()])
 
 
 def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
@@ -43,11 +44,13 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    train_dict = {'crop+coco': {}}
+    trainging_process = {}
     performance_dict = {}
     for key in train_dict.keys():
-        performance_dict[key] = {'accuracy': [], 'f1': [], 'loss': []}
+        trainging_process[key] = {'accuracy': [], 'f1': [], 'loss': []}
+        performance_dict[key] = {'accuracy': None, 'f1': None}
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -103,9 +106,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
             acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
             f1 = f1_score(y_true, y_pred, average='weighted')
-            performance_dict[hyperparameter_group]['accuracy'].append(acc)
-            performance_dict[hyperparameter_group]['f1'].append(f1)
-            performance_dict[hyperparameter_group]['loss'].append(float(loss))
+            trainging_process[hyperparameter_group]['accuracy'].append(acc)
+            trainging_process[hyperparameter_group]['f1'].append(f1)
+            trainging_process[hyperparameter_group]['loss'].append(float(loss))
             if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['best_f1']:
                 train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
                     'best_acc'] else train_dict[hyperparameter_group]['best_acc']
@@ -141,11 +144,13 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
         y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
         acc = y_pred.eq(y_true).sum().float().item() / len(test_loader.dataset)
         f1 = f1_score(y_true, y_pred, average='weighted')
+        performance_dict[hyperparameter_group]['accuracy'] = acc
+        performance_dict[hyperparameter_group]['f1'] = f1
         print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
         plot_confusion_matrix(y_true, y_pred, classes, sub_name=hyperparameter_group)
-    draw_performance(performance_dict)
+    draw_training_process(trainging_process)
     return performance_dict
 
 
@@ -270,7 +275,7 @@ def train_perframe(action_recognition=True, body_part=4):
         else:
             classes = attitude_classes
         plot_confusion_matrix(y_true, y_pred, classes, sub_name=hg)
-        draw_performance(accuracy_loss_dict, sub_name=hg)
+        draw_training_process(accuracy_loss_dict, sub_name=hg)
         return
 
 
