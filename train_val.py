@@ -44,8 +44,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_dict = {}
     for key in train_dict.keys():
