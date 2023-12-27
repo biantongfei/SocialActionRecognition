@@ -117,11 +117,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-            if epoch % 5 == 0:
-                print(
-                    '%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
-                        hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                        "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
+            print('%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
+            hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'], "%.2f%%" % (acc * 100),
+            "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     if action_recognition == 1:
@@ -282,7 +280,7 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = full_video_train_avg(action_recognition=1, body_part=[True, False, False], ori_videos=False)
+        p = full_video_train_avg(action_recognition=1, body_part=[False, False, True], ori_videos=False)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)
