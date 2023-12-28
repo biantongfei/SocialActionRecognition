@@ -38,12 +38,15 @@ class DNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
+            # nn.BatchNorm1d(128),
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(0.5),
+            # nn.BatchNorm1d(64),
             nn.Linear(64, 16),
             nn.ReLU(),
             nn.Dropout(0.5),
+            # nn.BatchNorm1d(16),
             nn.Linear(16, self.output_size),
             nn.Softmax(dim=1)
         )

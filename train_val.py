@@ -89,6 +89,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             for data in train_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+                net.train()
                 outputs = net(inputs)
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
@@ -99,6 +100,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             for data in val_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+                net.eval()
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 y_true += labels.tolist()
@@ -135,6 +137,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
+            net.eval()
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             y_true += labels.tolist()
