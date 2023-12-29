@@ -8,6 +8,7 @@ from torch.utils.data import Dataset
 testset_rate = 0.4
 coco_point_num = 133
 halpe_point_num = 136
+fps = 30
 
 
 def get_data_path(is_crop, is_coco):
@@ -24,7 +25,7 @@ def get_data_path(is_crop, is_coco):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
+def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_len=0):
     data_path = get_data_path(is_crop, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -32,13 +33,14 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-            if not_add_class and feature_json['action_class'] in [7, 8]:
-                continue
-            elif feature_json['action_class'] in ori_videos_dict.keys():
-                ori_videos_dict[feature_json['action_class']].append(file)
-            else:
-                ori_videos_dict[feature_json['action_class']] = [file]
-            f.close()
+                if (not_add_class and feature_json['action_class'] in [7, 8]) or int(video_len * fps) > feature_json[
+                    'frames_number']:
+                    continue
+                elif feature_json['action_class'] in ori_videos_dict.keys():
+                    ori_videos_dict[feature_json['action_class']].append(file)
+                else:
+                    ori_videos_dict[feature_json['action_class']] = [file]
+                f.close()
     test_videos_dict = {}
     for action_class in ori_videos_dict.keys():
         random.shuffle(ori_videos_dict[action_class])
@@ -55,12 +57,12 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
             continue
         elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
                 test_videos_dict[file.split('-')[0]]:
-            if not_add_class:
+            if not_add_class or video_len:
                 with open(data_path + file, 'r') as f:
                     feature_json = json.load(f)
-                if feature_json['action_class'] in [7, 8]:
-                    continue
-                f.close()
+                    if feature_json['action_class'] in [7, 8] or int(video_len * fps) > feature_json['frames_number']:
+                        continue
+                    f.close()
             if ori_videos and 'ori_' not in file:
                 continue
             tra_files.append(file)
