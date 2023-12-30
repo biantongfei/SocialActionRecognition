@@ -34,8 +34,11 @@ def save_performance(performance):
             if index == 0:
                 columns = ['times'] + list(trainging_process.keys())
                 spamwriter.writerow(columns)
-            spamwriter.writerow([index + 1] + [trainging_process[key]['accuracy'] for key in trainging_process.keys()])
-            spamwriter.writerow([index + 1] + [trainging_process[key]['f1'] for key in trainging_process.keys()])
+            data = [index + 1]
+            for key in trainging_process.keys():
+                data.append(key['accuracy'])
+                data.append(key['f1'])
+            spamwriter.writerow(data)
 
 
 def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
@@ -120,8 +123,9 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print('%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
-            hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'], "%.2f%%" % (acc * 100),
-            "%.4f" % (f1), "%.4f" % loss))
+                hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
+                "%.2f%%" % (acc * 100),
+                "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     if action_recognition == 1:
