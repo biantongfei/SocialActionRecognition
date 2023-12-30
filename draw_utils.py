@@ -12,7 +12,7 @@ def draw_training_process(training_process):
         plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('accuracy')
-    plt.savefig('plots/accuracy_%s.png' % key)
+    plt.savefig('plots/accuracy.png')
     plt.close()
     for index, key in enumerate(training_process.keys()):
         f1 = [f for f in training_process[key]['f1']]
@@ -20,7 +20,7 @@ def draw_training_process(training_process):
         plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('f1')
-    plt.savefig('plots/f1_%s.png' % key)
+    plt.savefig('plots/f1.png')
     plt.close()
     for index, key in enumerate(training_process.keys()):
         loss = [l for l in training_process[key]['loss']]
@@ -28,7 +28,7 @@ def draw_training_process(training_process):
         plt.legend(training_process.keys())
         plt.xlabel('epoch')
         plt.ylabel('loss')
-    plt.savefig('plots/loss%s.png' % key)
+    plt.savefig('plots/loss.png')
     plt.close()
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
