@@ -31,9 +31,6 @@ def save_performance(performance):
     with open('performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         for index, trainging_process in enumerate(performance):
-            if index == 0:
-                columns = ['times'] + list(trainging_process.keys())
-                spamwriter.writerow(columns)
             data = [index + 1]
             for key in trainging_process.keys():
                 data.append(key['accuracy'])
