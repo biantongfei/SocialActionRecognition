@@ -78,7 +78,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     while continue_train:
         continue_train = False
         for hyperparameter_group in train_dict.keys():
-            if train_dict[hyperparameter_group]['unimproved_epoch'] < 5:
+            if train_dict[hyperparameter_group]['unimproved_epoch'] < 10:
                 continue_train = True
             else:
                 continue
