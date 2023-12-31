@@ -33,8 +33,8 @@ def save_performance(performance):
         for index, trainging_process in enumerate(performance):
             data = [index + 1]
             for key in trainging_process.keys():
-                data.append(key['accuracy'])
-                data.append(key['f1'])
+                data.append(trainging_process[key]['accuracy'])
+                data.append(trainging_process[key]['f1'])
             spamwriter.writerow(data)
 
 
@@ -44,8 +44,8 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_dict = {}
     for key in train_dict.keys():
@@ -125,6 +125,7 @@ def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False
                 "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
+        break
     if action_recognition == 1:
         classes = ori_classes
     elif action_recognition == 2:
@@ -283,7 +284,7 @@ def train_perframe(action_recognition=True, body_part=4):
 
 if __name__ == '__main__':
     performance = []
-    for i in range(5):
+    for i in range(1):
         p = full_video_train_avg(action_recognition=1, body_part=[True, True, True], ori_videos=False)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
