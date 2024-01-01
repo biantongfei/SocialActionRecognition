@@ -38,13 +38,16 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def full_video_train_avg(action_recognition=False, body_part=4, ori_videos=False):
+def full_video_train_avg(action_recognition=False, body_part=None, ori_videos=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    if body_part[0]:
+        train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    else:
+        train_dict = {'crop+coco': {}, 'noise+coco': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_dict = {}
@@ -284,7 +287,7 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = full_video_train_avg(action_recognition=1, body_part=[True, False, False], ori_videos=False)
+        p = full_video_train_avg(action_recognition=1, body_part=[False, True, False], ori_videos=False)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)
