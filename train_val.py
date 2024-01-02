@@ -38,7 +38,7 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def full_video_train_avg(action_recognition=False, body_part=None, ori_videos=False):
+def train_avg(action_recognition=False, body_part=None, ori_videos=False, video_len=0):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -60,15 +60,16 @@ def full_video_train_avg(action_recognition=False, body_part=None, ori_videos=Fa
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
-                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos)
+                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos,
+                                                   video_len=video_len)
         trainset = AvgDataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                               action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                              body_part=body_part)
+                              body_part=body_part, video_len=video_len)
         valset = AvgDataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                             action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                            body_part=body_part)
+                            body_part=body_part, video_len=video_len)
         testset = AvgDataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
-                             is_coco=is_coco, body_part=body_part)
+                             is_coco=is_coco, body_part=body_part, video_len=video_len)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
@@ -287,7 +288,7 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = full_video_train_avg(action_recognition=1, body_part=[True, True, False], ori_videos=False)
+        p = train_avg(action_recognition=2, body_part=[True, True, True], ori_videos=False, video_len=0)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)

@@ -33,8 +33,8 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-                if (not_add_class and feature_json['action_class'] in [7, 8]) or int(video_len * fps) > feature_json[
-                    'frames_number']:
+                if (not_add_class and feature_json['action_class'] in [7, 8]) or int(video_len * fps) > (
+                        feature_json['frames'][-1]['frame_id'] - feature_json['frames'][0]['frame_id']):
                     continue
                 elif feature_json['action_class'] in ori_videos_dict.keys():
                     ori_videos_dict[feature_json['action_class']].append(file)
@@ -57,14 +57,15 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_
             continue
         elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
                 test_videos_dict[file.split('-')[0]]:
-            if not_add_class or video_len:
-                with open(data_path + file, 'r') as f:
-                    feature_json = json.load(f)
-                    if feature_json['action_class'] in [7, 8] or int(video_len * fps) > feature_json['frames_number']:
-                        continue
-                    f.close()
             if ori_videos and 'ori_' not in file:
                 continue
+            elif not_add_class or video_len:
+                with open(data_path + file, 'r') as f:
+                    feature_json = json.load(f)
+                    if feature_json['action_class'] in [7, 8] or int(video_len * fps) > (
+                            feature_json['frames'][-1]['frame_id'] - feature_json['frames'][0]['frame_id']):
+                        continue
+                    f.close()
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
@@ -92,7 +93,7 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=0):
         super(AvgDataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -100,6 +101,7 @@ class AvgDataset(Dataset):
         self.is_crop = is_crop
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
+        self.video_len = video_len
 
     def __getitem__(self, idx):
         with open(self.data_path + self.files[idx], 'r') as f:
@@ -108,6 +110,9 @@ class AvgDataset(Dataset):
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
 
         for index, frame in enumerate(feature_json['frames']):
+            if self.video_len and frame['frame_id'] - feature_json['frames'][0]['frame_id'] == int(
+                    self.video_len * fps):
+                break
             # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
             frame_feature = np.array(frame['keypoints'])[:, :2]
             # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
