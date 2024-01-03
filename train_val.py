@@ -288,7 +288,8 @@ def train_perframe(action_recognition=True, body_part=4):
 if __name__ == '__main__':
     performance = []
     for i in range(5):
-        p = train_avg(action_recognition=2, body_part=[True, True, False], ori_videos=False, video_len=0)
+        print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
+        p = train_avg(action_recognition=2, body_part=[False, False, True], ori_videos=False, video_len=0)
         performance.append(p)
     # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)
