@@ -163,6 +163,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, False, True], ori_videos=False, video_len=2, avg=True)
+        p = train(action_recognition=1, body_part=[True, False, True], ori_videos=False, video_len=0, avg=True)
         performance.append(p)
     save_performance(performance)
