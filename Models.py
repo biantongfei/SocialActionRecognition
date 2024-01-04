@@ -10,6 +10,7 @@ ori_action_class_num = 7
 action_class_num = 9
 attitude_class_num = 3
 batch_size = 128
+fps = 30
 
 
 def get_points_num(is_coco, body_part):
@@ -24,7 +25,7 @@ def get_points_num(is_coco, body_part):
 
 
 class DNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part=None):
+    def __init__(self, is_coco, action_recognition, body_part):
         super(DNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -58,13 +59,13 @@ class DNN(nn.Module):
 
 
 class LSTM(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part=None, bidirectional=False):
+    def __init__(self, is_coco, action_recognition, body_part, video_len, bidirectional=False):
         super(LSTM, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 512
+        self.hidden_size = int(fps * video_len)
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:

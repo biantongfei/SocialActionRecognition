@@ -68,7 +68,8 @@ def train(action_recognition=False, body_part=None, ori_videos=False, video_len=
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
                           is_coco=is_coco, body_part=body_part, video_len=video_len, avg=avg)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
-        # net = LSTM(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False)
+        # net = LSTM(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
+        #            bidirectional=False)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
@@ -162,6 +163,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=0, body_part=[False, True, True], ori_videos=False, video_len=0, avg=True)
+        p = train(action_recognition=1, body_part=[True, False, True], ori_videos=False, video_len=2, avg=True)
         performance.append(p)
     save_performance(performance)
