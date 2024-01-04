@@ -109,7 +109,7 @@ class Dataset(Dataset):
                 break
             frame = feature_json['frames'][index]
             if last_frame_id + 1 != frame['frame_id']:
-                features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
                 last_frame_id += 1
             else:
                 box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
