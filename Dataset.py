@@ -25,7 +25,7 @@ def get_data_path(is_crop, is_coco):
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_len=0):
+def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
     data_path = get_data_path(is_crop, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -33,8 +33,7 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-                if (not_add_class and feature_json['action_class'] in [7, 8]) or int(video_len * fps) > (
-                        feature_json['frames'][-1]['frame_id'] - feature_json['frames'][0]['frame_id']):
+                if not_add_class and feature_json['action_class'] in [7, 8]:
                     continue
                 elif feature_json['action_class'] in ori_videos_dict.keys():
                     ori_videos_dict[feature_json['action_class']].append(file)
@@ -57,15 +56,8 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False, video_
             continue
         elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
                 test_videos_dict[file.split('-')[0]]:
-            if ori_videos and 'ori_' not in file:
+            if ori_videos and '-ori_' not in file:
                 continue
-            elif not_add_class or video_len:
-                with open(data_path + file, 'r') as f:
-                    feature_json = json.load(f)
-                    if feature_json['action_class'] in [7, 8] or int(video_len * fps) > (
-                            feature_json['frames'][-1]['frame_id'] - feature_json['frames'][0]['frame_id']):
-                        continue
-                    f.close()
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
@@ -93,7 +85,7 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=0, avg=False):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=99999, avg=False):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -109,23 +101,30 @@ class Dataset(Dataset):
             feature_json = json.load(f)
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-
-        for index, frame in enumerate(feature_json['frames']):
-            if self.video_len and frame['frame_id'] - feature_json['frames'][0]['frame_id'] == int(
-                    self.video_len * fps):
+        frame_num = len(feature_json['frames'])
+        last_frame_id = feature_json['frames'][0]['frame_id'] - 1
+        index = 0
+        while len(features) < int(self.video_len * fps):
+            if index == frame_num:
                 break
-            # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
-            frame_feature = np.array(frame['keypoints'])[:, :2]
-            # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-            # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-            frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-            frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
-            frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-            # frame_feature = np.append(frame_feature, [
-            #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-            #     [box_width / frame_width, box_height / frame_height]], axis=0)
-            frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
-            features.append(frame_feature)
+            frame = feature_json['frames'][index]
+            if last_frame_id + 1 != frame['frame_id']:
+                features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                last_frame_id += 1
+            else:
+                box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+                frame_feature = np.array(frame['keypoints'])[:, :2]
+                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                # frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                frame_feature = np.append(frame_feature, [
+                    [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                    [box_width / frame_width, box_height / frame_height]], axis=0)
+                frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+                features.append(frame_feature)
+                index += 1
         features = np.array(features)
         if self.action_recognition:
             label = feature_json['action_class']
@@ -137,7 +136,7 @@ class Dataset(Dataset):
             else:
                 label = 0
         if self.avg:
-            features = features.mean(axis=0)
+            features = np.nanmean(features, axis=0)
         return features, label
 
     def __len__(self):
@@ -145,7 +144,10 @@ class Dataset(Dataset):
 
 
 if __name__ == '__main__':
-    tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True)
-    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True)
-    features, labels = dataset.__getitem__(0)
+    is_crop = False
+    is_coco = True
+    tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True, not_add_class=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True,
+                      body_part=[True, True, True], avg=True, video_len=2)
+    features, labels = dataset.__getitem__(9)
     print(features.shape, labels)

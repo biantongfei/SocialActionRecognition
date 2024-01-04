@@ -35,7 +35,7 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def train(action_recognition=False, body_part=None, ori_videos=False, video_len=0, avg=False):
+def train(action_recognition=False, body_part=None, ori_videos=False, video_len=99999, avg=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -57,8 +57,7 @@ def train(action_recognition=False, body_part=None, ori_videos=False, video_len=
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
-                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos,
-                                                   video_len=video_len)
+                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
                            body_part=body_part, video_len=video_len, avg=avg)
@@ -163,6 +162,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, False, True], ori_videos=False, video_len=0, avg=True)
+        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, avg=True)
         performance.append(p)
     save_performance(performance)

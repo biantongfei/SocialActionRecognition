@@ -118,13 +118,12 @@ def flip_feature(ori_json):
 
 
 def gaussion_augment():
-    sigma_list = [0.05, 0.01, 0.005]
-    sigma_str = 'big'
-    # sigma_list = [0.005, 0.001, 0.0005]
+    sigma_list = [0.01, 0.005, 0.001]
+    sigma_str = ['10', '05', '01']
     augment_times = 3
 
-    json_path = 'features/crop/coco_wholebody/'
-    out_path = 'features/gaussian/big/coco_wholebody/'
+    json_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
@@ -135,9 +134,9 @@ def gaussion_augment():
             with open(out_path + file, "w") as outfile:
                 json.dump(ori_json, outfile)
             new_json = flip_feature(ori_json)
-            with open(out_path + file.split('.')[0].replace('-ori', '') + '-flip.json', "w") as outfile:
+            with open(out_path + '%s-flip_p%s' % (file.split('_p')[0], file.split('_p')[-1]), "w") as outfile:
                 json.dump(new_json, outfile)
-            for sigma in sigma_list:
+            for sigma_index, sigma in enumerate(sigma_list):
                 for i in range(augment_times):
                     new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
                                 'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
@@ -153,18 +152,18 @@ def gaussion_augment():
                         new_json['frames'].append(
                             {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
                              'box': frame['box']})
-                    with open(out_path + '%s-noise%s-%d.json' % (
-                            file.split('.')[0].replace('-ori', ''), str(sigma_list.index(sigma)), i),
+                    with open(out_path + '%s-noise%s-%d_p%s' % (
+                            file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
                         json.dump(new_json, outfile)
                     new_json = flip_feature(new_json)
-                    with open(out_path + '%s-noise%s-%d-flip.json' % (
-                            file.split('.')[0].replace('-ori', ''), str(sigma_list.index(sigma)), i),
+                    with open(out_path + '%s-noise%s-%d-flip_p%s' % (
+                            file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
                         json.dump(new_json, outfile)
 
-    json_path = 'features/crop/halpe136/'
-    out_path = 'features/gaussian/big/halpe136/'
+    json_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
+    out_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
@@ -175,74 +174,41 @@ def gaussion_augment():
             with open(out_path + file, "w") as outfile:
                 json.dump(ori_json, outfile)
             new_json = flip_feature(ori_json)
-            with open(out_path + file.split('.')[0].replace('-ori', '') + '-flip.json', "w") as outfile:
+            with open(out_path + '%s-flip_p%s' % (file.split('_p')[0], file.split('_p')[-1]), "w") as outfile:
                 json.dump(new_json, outfile)
-            for sigma in sigma_list:
+            for sigma_index, sigma in enumerate(sigma_list):
                 for i in range(augment_times):
                     new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
                                 'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
                                 'action_class': ori_json['action_class'], 'frames': []}
                     for frame in ori_json['frames']:
-                        box = frame['box'][2:]
+                        box_size = frame['box'][2:]
                         keypoints = frame['keypoints']
-                        x_gaussion_noise = np.random.normal(0, box[0] * sigma, size=(len(keypoints), 1))
-                        y_gaussion_noise = np.random.normal(0, box[1] * sigma, size=(len(keypoints), 1))
+                        x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
+                        y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
                         score_gaussion_noise = np.zeros((len(keypoints), 1))
                         gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
                         keypoints = (np.array(keypoints) + gaussion_noise).tolist()
                         new_json['frames'].append(
                             {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
                              'box': frame['box']})
-                    with open(out_path + '%s-noise%s-%d.json' % (
-                            file.split('.')[0].replace('-ori', ''), sigma_str[sigma_list.index(sigma)], i),
+                    with open(out_path + '%s-noise%s-%d_p%s' % (
+                            file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
                         json.dump(new_json, outfile)
                     new_json = flip_feature(new_json)
-                    with open(out_path + '%s-noise%s-%d-flip.json' % (
-                            file.split('.')[0].replace('-ori', ''), sigma_str[sigma_list.index(sigma)], i),
+                    with open(out_path + '%s-noise%s-%d-flip_p%s' % (
+                            file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
                         json.dump(new_json, outfile)
 
 
-def adjust_box():
-    data_path = '../JPL_Augmented_Posefeatures/features/'
-    format_list = ['coco_wholebody/', 'halpe136/']
-    sigma_list = ['small/', 'medium/', 'big/']
-    for format in format_list:
-        files = os.listdir(data_path + 'crop/' + format)
-        for file in files:
-            if 'json' not in file:
-                continue
-            print('crop/' + format + file)
-            with open(data_path + 'crop/' + format + file, 'r') as f:
-                feature_json = json.load(f)
-            for frame in feature_json['frames']:
-                frame['box'][0] += frame['box'][2] / 2
-                frame['box'][1] += frame['box'][3] / 2
-            with open(data_path + 'crop/' + format + file, 'w') as f:
-                json.dump(feature_json, f)
-    for sigma in sigma_list:
-        for format in format_list:
-            if 'json' not in file:
-                continue
-            files = os.listdir(data_path + 'gaussian/' + sigma + format)
-            print('gaussian/' + sigma + format + file)
-            for file in files:
-                with open(data_path + 'gaussian/' + sigma + format + file, 'r') as f:
-                    feature_json = json.load(f)
-                for frame in feature_json['frames']:
-                    frame['box'][0] += frame['box'][2] / 2
-                    frame['box'][1] += frame['box'][3] / 2
-                with open(data_path + 'gaussian/' + sigma + format + file, 'w') as f:
-                    json.dump(feature_json, f)
-
-
 if __name__ == '__main__':
-    refactor_jsons()
+    # refactor_jsons()
     # feature_path = '../JPL_Augmented_Posefeatures/features/crop/coco_wholebody/'
     # feature_path = '../JPL_Augmented_Posefeatures/features/crop/halpe136/'
     # summarize_features(feature_path)
-    # gaussion_augment()
+    gaussion_augment()
     # adjust_box()
     # files = os.listdir(feature_path)
     # files.sort()

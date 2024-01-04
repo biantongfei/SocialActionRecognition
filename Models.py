@@ -30,8 +30,8 @@ class DNN(nn.Module):
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
-        # self.input_size = 2 * points_num + box_feature_num
-        self.input_size = 2 * points_num
+        self.input_size = 2 * points_num + box_feature_num
+        # self.input_size = 2 * points_num
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
@@ -39,15 +39,15 @@ class DNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.Linear(128, 64),
             nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.BatchNorm1d(64),
+            # nn.BatchNorm1d(64),
             nn.Linear(64, 16),
             nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.BatchNorm1d(16),
+            # nn.BatchNorm1d(16),
             nn.Linear(16, self.output_size),
             nn.Softmax(dim=1)
         )
