@@ -92,9 +92,9 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
-class AvgDataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=0):
-        super(AvgDataset, self).__init__()
+class Dataset(Dataset):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=0, avg=False):
+        super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
         self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition

@@ -24,9 +24,9 @@ def get_points_num(is_coco, body_part):
 
 
 class DNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part=4, *args, **kwargs):
+    def __init__(self, is_coco, action_recognition, body_part=None):
         super(DNN, self).__init__()
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         # self.input_size = 2 * points_num + box_feature_num
@@ -54,4 +54,26 @@ class DNN(nn.Module):
     def forward(self, x):
         x = self.fc(x)
 
+        return x
+
+
+class LSTM(nn.Module):
+    def __init__(self, is_coco, action_recognition, body_part=None):
+        super(DNN, self).__init__()
+        super().__init__()
+        self.is_coco = is_coco
+        points_num = get_points_num(is_coco, body_part)
+        self.input_size = 2 * points_num
+        if action_recognition:
+            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
+        else:
+            self.output_size = attitude_class_num
+        # LSTM
+        self.lstm = nn.LSTM(self.input_size, hidden_dim, layer_dim,
+                            batch_first=True)  # batch_first=True (batch_dim, seq_dim, feature_dim)
+
+        # Readout layer
+        self.fc = nn.Linear(hidden_dim, self.output_size)
+
+    def forward(self, x):
         return x
