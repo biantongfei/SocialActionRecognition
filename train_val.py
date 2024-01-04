@@ -35,7 +35,7 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def train(action_recognition=False, body_part=None, ori_videos=False, video_len=99999, avg=False):
+def train(action_recognition, body_part=None, ori_videos=False, video_len=99999, avg=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
