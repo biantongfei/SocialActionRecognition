@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN
+from Models import DNN, LSTM
 from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
@@ -35,7 +35,7 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def train_avg(action_recognition=False, body_part=None, ori_videos=False, video_len=0):
+def train(action_recognition=False, body_part=None, ori_videos=False, video_len=0, avg=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -61,13 +61,14 @@ def train_avg(action_recognition=False, body_part=None, ori_videos=False, video_
                                                    video_len=video_len)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                           body_part=body_part, video_len=video_len, avg=True)
+                           body_part=body_part, video_len=video_len, avg=avg)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                          action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                         body_part=body_part, video_len=video_len, avg=True)
+                         body_part=body_part, video_len=video_len, avg=avg)
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
-                          is_coco=is_coco, body_part=body_part, video_len=video_len, avg=True)
+                          is_coco=is_coco, body_part=body_part, video_len=video_len, avg=avg)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
+        # net = LSTM(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
@@ -161,7 +162,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train_avg(action_recognition=0, body_part=[False, True, False], ori_videos=False, video_len=0)
+        p = train(action_recognition=0, body_part=[False, True, True], ori_videos=False, video_len=0, avg=True)
         performance.append(p)
-    # traine_perframe(action_recognition=2, body_part=4)
     save_performance(performance)

@@ -102,6 +102,7 @@ class Dataset(Dataset):
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
+        self.avg = avg
 
     def __getitem__(self, idx):
         with open(self.data_path + self.files[idx], 'r') as f:
@@ -135,8 +136,9 @@ class Dataset(Dataset):
                 label = 2
             else:
                 label = 0
-        feature = features.mean(axis=0)
-        return feature, label
+        if self.avg:
+            features = features.mean(axis=0)
+        return features, label
 
     def __len__(self):
         return len(self.files)
@@ -144,6 +146,6 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True)
-    dataset = AvgDataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True)
     features, labels = dataset.__getitem__(0)
     print(features.shape, labels)
