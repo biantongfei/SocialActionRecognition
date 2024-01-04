@@ -59,6 +59,12 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
                 test_videos_dict[file.split('-')[0]]:
             if ori_videos and '-ori_' not in file:
                 continue
+            if not_add_class:
+                with open(data_path + file, 'r') as f:
+                    feature_json = json.load(f)
+                    if feature_json['action_class'] in [7, 8]:
+                        continue
+                    f.close()
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
