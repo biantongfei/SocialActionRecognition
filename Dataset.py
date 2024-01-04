@@ -34,7 +34,6 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
                 if not_add_class and feature_json['action_class'] in [7, 8]:
-                    print(111)
                     continue
                 elif feature_json['action_class'] in ori_videos_dict.keys():
                     ori_videos_dict[feature_json['action_class']].append(file)
