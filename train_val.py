@@ -81,7 +81,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
     while continue_train:
         continue_train = False
         for hyperparameter_group in train_dict.keys():
-            if train_dict[hyperparameter_group]['unimproved_epoch'] < 5:
+            if train_dict[hyperparameter_group]['unimproved_epoch'] < 10:
                 continue_train = True
             else:
                 continue
