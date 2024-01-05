@@ -40,15 +40,15 @@ class DNN(nn.Module):
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
-            # nn.BatchNorm1d(128),
+            nn.BatchNorm1d(128),
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(0.5),
-            # nn.BatchNorm1d(64),
+            nn.BatchNorm1d(64),
             nn.Linear(64, 16),
             nn.ReLU(),
             nn.Dropout(0.5),
-            # nn.BatchNorm1d(16),
+            nn.BatchNorm1d(16),
             nn.Linear(16, self.output_size),
             nn.Softmax(dim=1)
         )
@@ -67,6 +67,7 @@ class LSTM(nn.Module):
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
         self.hidden_size = 512
+        self.bidirectional = bidirectional
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
@@ -75,9 +76,16 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, dropout=0.5,
                             bidirectional=bidirectional)
         # Readout layer
-        self.fc = nn.Linear(self.hidden_size, self.output_size)
+        self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = self.lstm(x)
-        x = self.fc(x)
-        return x
+        x = self.dropout(x)
+        output, (hidden, cell) = self.lstm(x)
+        if self.bidirectional:
+            hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
+        else:
+            hidden = hidden[-1]
+        hidden = self.dropout(hidden)
+        out = self.fc(hidden)
+        return out
