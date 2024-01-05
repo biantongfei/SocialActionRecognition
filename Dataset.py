@@ -113,6 +113,7 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(frame_number)
+            # print(file)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -120,7 +121,7 @@ class Dataset(Dataset):
             f.close()
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-        frame_num = feature_json['frames_number']
+        frame_num = len(feature_json['frames'])
         last_frame_id = feature_json['frames'][0]['frame_id'] - 1
         index = 0
         while len(features) < int(self.video_len * fps):
@@ -129,7 +130,7 @@ class Dataset(Dataset):
                 break
             else:
                 frame = feature_json['frames'][index]
-                if last_frame_id + 1 != frame['frame_id']:
+                if self.form == 'normal' and last_frame_id + 1 != frame['frame_id']:
                     features.append(np.full((2 * len(frame['keypoints'])), np.nan))
                     last_frame_id += 1
                 else:
@@ -158,12 +159,10 @@ class Dataset(Dataset):
                 label = 2
             else:
                 label = 0
-        print(features.shape)
         if self.form == 'avg':
-            features = np.nanmean(features, axis=0)
+            features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)
         elif self.form == 'perframe':
-            self.features = self.features[~np.isnan(self.features).any(axis=1)]
             label = [label for _ in range(frame_num)]
         else:
             features = features.reshape(1, features.shape[0], features.shape[1])
