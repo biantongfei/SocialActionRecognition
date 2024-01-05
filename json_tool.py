@@ -127,7 +127,7 @@ def gaussion_augment():
     files = os.listdir(json_path)
     files.sort()
     for file in files:
-        if 'ori_' in file:
+        if '-ori_' in file:
             print(file, 'coco')
             with open(json_path + file, "r") as f:
                 ori_json = json.load(f)
@@ -167,7 +167,7 @@ def gaussion_augment():
     files = os.listdir(json_path)
     files.sort()
     for file in files:
-        if 'ori_' in file:
+        if '-ori_' in file:
             print(file, 'halpe')
             with open(json_path + file, "r") as f:
                 ori_json = json.load(f)

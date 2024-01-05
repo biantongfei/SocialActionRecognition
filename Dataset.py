@@ -5,7 +5,7 @@ import random
 import numpy as np
 from torch.utils.data import Dataset
 
-testset_rate = 0.4
+testset_rate = 0.5
 coco_point_num = 133
 halpe_point_num = 136
 fps = 30
@@ -67,6 +67,7 @@ def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
+    print(len(tra_files), len(test_files))
     return tra_files, test_files
 
 
@@ -150,10 +151,34 @@ class Dataset(Dataset):
 
 
 if __name__ == '__main__':
+    is_crop = True
+    is_coco = True
+    tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
+                      body_part=[True, True, True], avg=True, video_len=2)
+    features, labels = dataset.__getitem__(9)
+    print(features.shape, labels)
+
+    is_crop = True
+    is_coco = False
+    tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
+                      body_part=[True, True, True], avg=True, video_len=2)
+    features, labels = dataset.__getitem__(9)
+    print(features.shape, labels)
+
     is_crop = False
     is_coco = True
-    tra_files, test_files = get_tra_test_files(is_crop=True, is_coco=True, not_add_class=True)
-    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=True, is_coco=True,
+    tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
+                      body_part=[True, True, True], avg=True, video_len=2)
+    features, labels = dataset.__getitem__(9)
+    print(features.shape, labels)
+
+    is_crop = False
+    is_coco = False
+    tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=True)
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
                       body_part=[True, True, True], avg=True, video_len=2)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
