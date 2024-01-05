@@ -91,7 +91,7 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=99999, avg=False):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=99999, form='normal'):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -100,7 +100,7 @@ class Dataset(Dataset):
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
-        self.avg = avg
+        self.form = form  # 'avg'
         self.features, self.labels = None, []
         for file in self.files:
             feature, label = self.get_data_from_file(file)
@@ -108,11 +108,16 @@ class Dataset(Dataset):
                 self.features = np.append(self.features, feature, axis=0)
             else:
                 self.features = feature
-            self.labels.append(label)
+            if form == 'perframe':
+                self.labels += label
+            else:
+                self.labels.append(label)
+        print(self.features.shape, len(self.labels))
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
+            f.close()
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         frame_num = len(feature_json['frames'])
@@ -120,25 +125,27 @@ class Dataset(Dataset):
         index = 0
         while len(features) < int(self.video_len * fps):
             if index == frame_num:
-                break
-            frame = feature_json['frames'][index]
-            if last_frame_id + 1 != frame['frame_id']:
                 features.append(np.full((2 * len(frame['keypoints'])), np.nan))
-                last_frame_id += 1
             else:
-                # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
-                frame_feature = np.array(frame['keypoints'])[:, :2]
-                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-                frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
-                frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                # frame_feature = np.append(frame_feature, [
-                #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                #     [box_width / frame_width, box_height / frame_height]], axis=0)
-                frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
-                features.append(frame_feature)
-                index += 1
+                frame = feature_json['frames'][index]
+                if last_frame_id + 1 != frame['frame_id']:
+                    features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                    last_frame_id += 1
+                else:
+                    # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+                    frame_feature = np.array(frame['keypoints'])[:, :2]
+                    # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                    # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                    frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+                    frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                    frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                    # frame_feature = np.append(frame_feature, [
+                    #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                    #     [box_width / frame_width, box_height / frame_height]], axis=0)
+                    frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+                    features.append(frame_feature)
+                    index += 1
+
         features = np.array(features)
         if self.action_recognition:
             label = feature_json['action_class']
@@ -149,23 +156,28 @@ class Dataset(Dataset):
                 label = 2
             else:
                 label = 0
-        if self.avg:
+        if self.form == 'avg':
             features = np.nanmean(features, axis=0)
-        features = features.reshape(1, features.size)
+            features = features.reshape(1, features.size)
+        elif self.form == 'perframe':
+            label = [label for _ in range(features.shape[0])]
+        else:
+            features = features.reshape(1, features.shape[0], features.shape[1])
         return features, label
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
-        return len(self.files)
+        return self.features.shape[0]
 
 
 if __name__ == '__main__':
     is_crop = True
     is_coco = True
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
-    dataset = Dataset(data_files=tra_files, action_recognition=False, is_crop=is_crop, is_coco=is_coco,
-                      body_part=[True, True, True], avg=True, video_len=2)
+    print(len(tra_files))
+    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
+                      body_part=[True, True, True], form='normal', video_len=2)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)

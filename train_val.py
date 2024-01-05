@@ -35,7 +35,7 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
-def train(action_recognition, body_part=None, ori_videos=False, video_len=99999, avg=False):
+def train(action_recognition, body_part=None, ori_videos=False, video_len=99999, form='normal'):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -61,12 +61,12 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                                                    not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                           body_part=body_part, video_len=video_len, avg=avg)
+                           body_part=body_part, video_len=video_len, form=form)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                          action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                         body_part=body_part, video_len=video_len, avg=avg)
+                         body_part=body_part, video_len=video_len, form=form)
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
-                          is_coco=is_coco, body_part=body_part, video_len=video_len, avg=avg)
+                          is_coco=is_coco, body_part=body_part, video_len=video_len, form=form)
         net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         # net = LSTM(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
         #            bidirectional=False)
@@ -81,7 +81,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
     while continue_train:
         continue_train = False
         for hyperparameter_group in train_dict.keys():
-            if train_dict[hyperparameter_group]['unimproved_epoch'] < 10:
+            if train_dict[hyperparameter_group]['unimproved_epoch'] < 5:
                 continue_train = True
             else:
                 continue
@@ -163,6 +163,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, avg=True)
+        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)
