@@ -101,9 +101,18 @@ class Dataset(Dataset):
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
         self.avg = avg
+        self.features, self.labels = None, None
+        for file in self.files:
+            feature, label = self.get_data_from_file(file)
+            if type(self.features) == np.ndarray:
+                self.features = np.append(self.features, feature, axis=0)
+                self.labels = np.append(self.labels, label, axis=0)
+            else:
+                self.features = feature
+                self.labels = label
 
-    def __getitem__(self, idx):
-        with open(self.data_path + self.files[idx], 'r') as f:
+    def get_data_from_file(self, file):
+        with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
@@ -143,7 +152,12 @@ class Dataset(Dataset):
                 label = 0
         if self.avg:
             features = np.nanmean(features, axis=0)
+        features = features.reshape(1, features.size)
+        label = np.array(label).reshape(1, 1)
         return features, label
+
+    def __getitem__(self, idx):
+        return self.features[idx], self.labels[idx]
 
     def __len__(self):
         return len(self.files)

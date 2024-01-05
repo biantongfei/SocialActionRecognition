@@ -1,2 +1,7 @@
-a = {'a': 1, 'b': 2}
-print(type(list(a.keys())))
+import numpy as np
+
+a = 1
+a = np.array(a)
+print(a)
+a = a.reshape(1, 1)
+print(a)
