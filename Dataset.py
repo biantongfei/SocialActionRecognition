@@ -153,7 +153,7 @@ class Dataset(Dataset):
         if self.avg:
             features = np.nanmean(features, axis=0)
         features = features.reshape(1, features.size)
-        label = np.array(label).reshape(1, 1)
+        label = np.array(label)
         return features, label
 
     def __getitem__(self, idx):
@@ -170,4 +170,4 @@ if __name__ == '__main__':
     dataset = Dataset(data_files=tra_files, action_recognition=False, is_crop=is_crop, is_coco=is_coco,
                       body_part=[True, True, True], avg=True, video_len=2)
     features, labels = dataset.__getitem__(9)
-    print(features.shape, labels)
+    print(features.shape, labels.shape)
