@@ -85,7 +85,8 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 continue_train = True
             else:
                 continue
-            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size)
+            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size,
+                                      shuffle=True)
             val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
@@ -109,8 +110,12 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-            acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
-            f1 = f1_score(y_true, y_pred, average='weighted')
+            if form=='perframe':
+                acc=cal_preframe_acc()
+
+            else:
+                acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+                f1 = f1_score(y_true, y_pred, average='weighted')
             trainging_process[hyperparameter_group]['accuracy'].append(acc)
             trainging_process[hyperparameter_group]['f1'].append(f1)
             trainging_process[hyperparameter_group]['loss'].append(float(loss))
@@ -163,6 +168,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(5):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, form='avg')
+        p = train(action_recognition=1, body_part=[True, False, False], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)

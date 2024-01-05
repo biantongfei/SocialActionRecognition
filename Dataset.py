@@ -101,9 +101,9 @@ class Dataset(Dataset):
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
         self.form = form  # 'avg'
-        self.features, self.labels = None, []
+        self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
-            feature, label = self.get_data_from_file(file)
+            feature, label, frame_number = self.get_data_from_file(file)
             if type(self.features) == np.ndarray:
                 self.features = np.append(self.features, feature, axis=0)
             else:
@@ -112,6 +112,7 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
+            self.frame_number_list.append(frame_number)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -119,7 +120,7 @@ class Dataset(Dataset):
             f.close()
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-        frame_num = len(feature_json['frames'])
+        frame_num = feature_json['frames_number']
         last_frame_id = feature_json['frames'][0]['frame_id'] - 1
         index = 0
         while len(features) < int(self.video_len * fps):
@@ -129,19 +130,20 @@ class Dataset(Dataset):
             else:
                 frame = feature_json['frames'][index]
                 if last_frame_id + 1 != frame['frame_id']:
-                    features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                    features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
                     last_frame_id += 1
                 else:
-                    # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+                    box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                        frame['box'][3]
                     frame_feature = np.array(frame['keypoints'])[:, :2]
-                    # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                    # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                    frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-                    frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
-                    frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                    # frame_feature = np.append(frame_feature, [
-                    #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                    #     [box_width / frame_width, box_height / frame_height]], axis=0)
+                    frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                    frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                    # frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+                    # frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                    # frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                    frame_feature = np.append(frame_feature, [
+                        [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                        [box_width / frame_width, box_height / frame_height]], axis=0)
                     frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                     features.append(frame_feature)
                     index += 1
@@ -160,10 +162,11 @@ class Dataset(Dataset):
             features = np.nanmean(features, axis=0)
             features = features.reshape(1, features.size)
         elif self.form == 'perframe':
-            label = [label for _ in range(features.shape[0])]
+            self.features = self.features[~np.isnan(self.features).any(axis=1)]
+            label = [label for _ in range(frame_num)]
         else:
             features = features.reshape(1, features.shape[0], features.shape[1])
-        return features, label
+        return features, label, frame_num
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
@@ -178,6 +181,6 @@ if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
     dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
-                      body_part=[True, True, True], form='normal', video_len=2)
+                      body_part=[True, True, True], form='perframe', video_len=2)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
