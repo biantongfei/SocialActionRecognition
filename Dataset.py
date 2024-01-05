@@ -112,7 +112,6 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
-            print(file)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
