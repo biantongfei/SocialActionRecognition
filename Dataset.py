@@ -168,4 +168,4 @@ if __name__ == '__main__':
     dataset = Dataset(data_files=tra_files, action_recognition=False, is_crop=is_crop, is_coco=is_coco,
                       body_part=[True, True, True], avg=True, video_len=2)
     features, labels = dataset.__getitem__(9)
-    print(features.shape, labels.shape)
+    print(features.shape, labels)

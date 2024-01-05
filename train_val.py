@@ -45,8 +45,8 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
         train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     else:
         train_dict = {'crop+coco': {}, 'noise+coco': {}}
-    train_dict = {'noise+coco': {}, 'noise+halpe': {}}
-    train_dict = {'noise+coco': {}}
+    # train_dict = {'noise+coco': {}, 'noise+halpe': {}}
+    # train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_dict = {}
     for key in train_dict.keys():
@@ -94,7 +94,6 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
                 outputs = net(inputs)
-                print(outputs.shape, labels.shape)
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
