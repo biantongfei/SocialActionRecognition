@@ -130,20 +130,20 @@ class Dataset(Dataset):
             else:
                 frame = feature_json['frames'][index]
                 if last_frame_id + 1 != frame['frame_id']:
-                    features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
+                    features.append(np.full((2 * len(frame['keypoints'])), np.nan))
                     last_frame_id += 1
                 else:
-                    box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
-                        frame['box'][3]
+                    # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                    #     frame['box'][3]
                     frame_feature = np.array(frame['keypoints'])[:, :2]
-                    frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                    frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                    # frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-                    # frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
-                    # frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                    frame_feature = np.append(frame_feature, [
-                        [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                        [box_width / frame_width, box_height / frame_height]], axis=0)
+                    # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                    # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                    frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+                    frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                    frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                    # frame_feature = np.append(frame_feature, [
+                    #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                    #     [box_width / frame_width, box_height / frame_height]], axis=0)
                     frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                     features.append(frame_feature)
                     index += 1
@@ -158,6 +158,7 @@ class Dataset(Dataset):
                 label = 2
             else:
                 label = 0
+        print(features.shape)
         if self.form == 'avg':
             features = np.nanmean(features, axis=0)
             features = features.reshape(1, features.size)
@@ -181,6 +182,6 @@ if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
     dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
-                      body_part=[True, True, True], form='perframe', video_len=2)
+                      body_part=[True, True, True], form='perframe')
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
