@@ -40,15 +40,15 @@ class DNN(nn.Module):
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.Linear(128, 64),
             nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.BatchNorm1d(64),
+            # nn.BatchNorm1d(64),
             nn.Linear(64, 16),
             nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.BatchNorm1d(16),
+            # nn.BatchNorm1d(16),
             nn.Linear(16, self.output_size),
             nn.Softmax(dim=1)
         )
@@ -82,7 +82,7 @@ class LSTM(nn.Module):
 
     def forward(self, x):
         x = self.dropout(x)
-        output, (hidden, cell) = self.lstm(x)
+        _, (hidden, _) = self.lstm(x)
         if self.bidirectional:
             hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
         else:
