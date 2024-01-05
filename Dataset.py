@@ -125,7 +125,8 @@ class Dataset(Dataset):
         index = 0
         while len(features) < int(self.video_len * fps):
             if index == frame_num:
-                features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                # features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+                break
             else:
                 frame = feature_json['frames'][index]
                 if last_frame_id + 1 != frame['frame_id']:
