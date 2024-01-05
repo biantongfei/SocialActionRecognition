@@ -30,8 +30,8 @@ class DNN(nn.Module):
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
-        self.input_size = 2 * points_num + box_feature_num
-        # self.input_size = 2 * points_num
+        # self.input_size = 2 * points_num + box_feature_num
+        self.input_size = 2 * points_num
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
