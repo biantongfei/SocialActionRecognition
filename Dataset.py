@@ -118,16 +118,16 @@ class Dataset(Dataset):
                 features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
                 last_frame_id += 1
             else:
-                box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
+                # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], frame['box'][3]
                 frame_feature = np.array(frame['keypoints'])[:, :2]
-                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
-                # frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                frame_feature = np.append(frame_feature, [
-                    [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                    [box_width / frame_width, box_height / frame_height]], axis=0)
+                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
+                frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                # frame_feature = np.append(frame_feature, [
+                #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                #     [box_width / frame_width, box_height / frame_height]], axis=0)
                 frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                 features.append(frame_feature)
                 index += 1
