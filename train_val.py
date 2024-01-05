@@ -35,6 +35,20 @@ def save_performance(performance):
             spamwriter.writerow(data)
 
 
+def transform_preframe_result(y_true, y_pred, frame_num_list):
+    index_1 = 0
+    index_2 = 0
+    y, y_hat = [], []
+    for frame_num in frame_num_list:
+        index_2 += frame_num
+        label = int(torch.mean(y_true[index_1:index_2]))
+        predict = int(torch.mode(y_true[index_1:index_2]))
+        y.append(label)
+        y_hat.append(predict)
+        index_1 += frame_num
+    return torch.Tensor(y), torch.Tensor(y_hat)
+
+
 def train(action_recognition, body_part=None, ori_videos=False, video_len=99999, form='normal'):
     """
     :param
@@ -110,12 +124,11 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-            if form=='perframe':
-                acc=cal_preframe_acc()
-
-            else:
-                acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
-                f1 = f1_score(y_true, y_pred, average='weighted')
+            if form == 'perframe':
+                y_true, y_pred = transform_preframe_result(y_true, y_pred,
+                                                           train_dict[hyperparameter_group]['valset'].frame_number_list)
+            acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+            f1 = f1_score(y_true, y_pred, average='weighted')
             trainging_process[hyperparameter_group]['accuracy'].append(acc)
             trainging_process[hyperparameter_group]['f1'].append(f1)
             trainging_process[hyperparameter_group]['loss'].append(float(loss))
@@ -166,8 +179,8 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
 
 if __name__ == '__main__':
     performance = []
-    for i in range(5):
+    for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, False, False], ori_videos=False, form='avg')
+        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)
