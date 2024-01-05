@@ -39,15 +39,15 @@ class DNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.BatchNorm1d(128),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.BatchNorm1d(64),
             nn.Linear(64, 16),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.BatchNorm1d(16),
             nn.Linear(16, self.output_size),
             nn.Softmax(dim=1)
@@ -78,6 +78,7 @@ class LSTM(nn.Module):
         # Readout layer
         self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
         self.dropout = nn.Dropout(0.5)
+        self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
         x = self.dropout(x)
@@ -87,5 +88,6 @@ class LSTM(nn.Module):
         else:
             hidden = hidden[-1]
         hidden = self.dropout(hidden)
+        hidden = self.BatchNorm1d(hidden)
         out = self.fc(hidden)
         return out
