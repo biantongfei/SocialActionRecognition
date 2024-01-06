@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN, LSTM
+from Models import DNN, RNN
 from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
@@ -101,7 +101,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 continue
             train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size,
                                       shuffle=True)
-            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size)
+            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size,)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
@@ -181,6 +181,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, False, False], ori_videos=False, form='avg')
+        p = train(action_recognition=1, body_part=[True, False, True], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)

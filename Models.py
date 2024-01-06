@@ -59,9 +59,9 @@ class DNN(nn.Module):
         return x
 
 
-class LSTM(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part, video_len, bidirectional=False):
-        super(LSTM, self).__init__()
+class RNN(nn.Module):
+    def __init__(self, is_coco, action_recognition, body_part, video_len, bidirectional=False, gru=False):
+        super(RNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
@@ -72,22 +72,26 @@ class LSTM(nn.Module):
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
-        # LSTM
-        self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, dropout=0.5,
-                            bidirectional=bidirectional)
+
+        if gru:
+            self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
+        else:
+            self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
+                                bidirectional=bidirectional)
+
         # Readout layer
         self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
-        x = self.dropout(x)
-        _, (hidden, _) = self.lstm(x)
+        # x = self.dropout(x)
+        _, (hidden, _) = self.rnn(x)
         if self.bidirectional:
             hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
         else:
             hidden = hidden[-1]
-        hidden = self.dropout(hidden)
-        hidden = self.BatchNorm1d(hidden)
+        # hidden = self.dropout(hidden)
+        # hidden = self.BatchNorm1d(hidden)
         out = self.fc(hidden)
         return out
