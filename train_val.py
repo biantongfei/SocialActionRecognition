@@ -100,7 +100,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
             else:
                 continue
             train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size,
-                                      shuffle=True, drop_last=True)
+                                      shuffle=True, drop_last=False)
             val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size, )
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
@@ -181,6 +181,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, True, False], ori_videos=False, form='avg')
+        p = train(action_recognition=2, body_part=[True, False, False], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)
