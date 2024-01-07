@@ -91,7 +91,7 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, video_len=99999, form='normal'):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, video_len=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -100,7 +100,7 @@ class Dataset(Dataset):
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
-        self.form = form  # 'avg', 'perframe' and 'normal'
+        self.model = model
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
             feature, label, frame_number = self.get_data_from_file(file)
@@ -108,7 +108,7 @@ class Dataset(Dataset):
                 self.features = np.append(self.features, feature, axis=0)
             else:
                 self.features = feature
-            if form == 'perframe':
+            if model == 'perframe':
                 self.labels += label
             else:
                 self.labels.append(label)
@@ -129,7 +129,7 @@ class Dataset(Dataset):
                 break
             else:
                 frame = feature_json['frames'][index]
-                if self.form == 'normal' and last_frame_id + 1 != frame['frame_id']:
+                if self.model not in ['avg', 'perframe'] and last_frame_id + 1 != frame['frame_id']:
                     features.append(np.full((2 * len(frame['keypoints'])), np.nan))
                     # features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
                     last_frame_id += 1
@@ -159,10 +159,10 @@ class Dataset(Dataset):
                 label = 2
             else:
                 label = 0
-        if self.form == 'avg':
+        if self.model == 'avg':
             features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)
-        elif self.form == 'perframe':
+        elif self.model == 'perframe':
             label = [label for _ in range(frame_num)]
         else:
             features = features.reshape(1, features.shape[0], features.shape[1])
@@ -181,6 +181,6 @@ if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
     dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
-                      body_part=[True, True, True], form='perframe')
+                      body_part=[True, True, True], model='perframe')
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)

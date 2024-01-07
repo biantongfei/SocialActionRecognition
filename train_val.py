@@ -12,10 +12,13 @@ avg_batch_size = 128
 perframe_batch_size = 512
 valset_rate = 0.2
 if torch.cuda.is_available():
+    print('Using CUDA')
     device = torch.device("cuda:0")
 elif torch.backends.mps.is_available():
+    print('Using MPS')
     device = torch.device('mps')
 else:
+    print('Using CPU')
     device = torch.device('cpu')
 dtype = torch.float
 model_save_path = 'models/'
@@ -49,7 +52,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(action_recognition, body_part=None, ori_videos=False, video_len=99999, form='normal'):
+def train(model, action_recognition, body_part=None, ori_videos=False, video_len=99999):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -67,23 +70,35 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
         trainging_process[key] = {'accuracy': [], 'f1': [], 'loss': []}
         performance_dict[key] = {'accuracy': None, 'f1': None}
 
+    if model == 'avg':
+        batch_size = avg_batch_size
+    elif model == 'perframe':
+        batch_size = perframe_batch_size
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
         is_crop = True if 'crop' in hyperparameter_group else False
         is_coco = True if 'coco' in hyperparameter_group else False
         tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
                                                    not_add_class=action_recognition == 1, ori_videos=ori_videos)
+        print(len(tra_files), len(test_files))
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                           body_part=body_part, video_len=video_len, form=form)
+                           body_part=body_part, model=model, video_len=video_len)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                          action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                         body_part=body_part, video_len=video_len, form=form)
+                         body_part=body_part, model=model, video_len=video_len)
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
-                          is_coco=is_coco, body_part=body_part, video_len=video_len, form=form)
-        net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
-        # net = LSTM(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
-        #            bidirectional=False)
+                          is_coco=is_coco, body_part=body_part, model=model, video_len=video_len)
+        print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
+            len(train_dict), len(valset), len(testset)))
+        if model == 'avg' or model == 'perframe':
+            net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
+        elif model == 'lstm':
+            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
+                      bidirectional=False)
+        elif model == 'gru':
+            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
+                      bidirectional=False, gru=True)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
@@ -99,9 +114,9 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 continue_train = True
             else:
                 continue
-            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=avg_batch_size,
-                                      shuffle=True, drop_last=False)
-            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=avg_batch_size, )
+            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                      shuffle=True)
+            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size, )
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
@@ -124,11 +139,9 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-            if form == 'perframe':
+            if model == 'perframe':
                 y_true, y_pred = transform_preframe_result(y_true, y_pred,
                                                            train_dict[hyperparameter_group]['valset'].frame_number_list)
-            print(y_pred.eq(y_true).sum().float().item())
-            print(y_pred.size(dim=0))
             acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
             f1 = f1_score(y_true, y_pred, average='weighted')
             trainging_process[hyperparameter_group]['accuracy'].append(acc)
@@ -155,7 +168,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
     else:
         classes = attitude_classes
     for hyperparameter_group in train_dict:
-        test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=avg_batch_size)
+        test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
             inputs, labels = data
@@ -167,7 +180,7 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
             y_true += labels.tolist()
             y_pred += pred.tolist()
         y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-        if form == 'perframe':
+        if model == 'perframe':
             y_true, y_pred = transform_preframe_result(y_true, y_pred,
                                                        train_dict[hyperparameter_group]['valset'].frame_number_list)
         acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
@@ -186,6 +199,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, form='perframe')
+        p = train(model='perframe', action_recognition=1, body_part=[True, True, True], ori_videos=False)
         performance.append(p)
     save_performance(performance)
