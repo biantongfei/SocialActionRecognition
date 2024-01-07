@@ -25,7 +25,7 @@ attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
 def save_performance(performance):
-    with open('performance.csv', 'w', newline='') as csvfile:
+    with open('plots/performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         for index, trainging_process in enumerate(performance):
             data = [index + 1]
@@ -42,7 +42,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     for frame_num in frame_num_list:
         index_2 += frame_num
         label = int(torch.mean(y_true[index_1:index_2]))
-        predict = int(torch.mode(y_true[index_1:index_2]))
+        predict = int(torch.mode(y_pred[index_1:index_2]))
         y.append(label)
         y_hat.append(predict)
         index_1 += frame_num
@@ -181,6 +181,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=False, body_part=[True, True, True], ori_videos=False, form='avg')
+        p = train(action_recognition=False, body_part=[True, False, False], ori_videos=False, form='avg')
         performance.append(p)
     save_performance(performance)
