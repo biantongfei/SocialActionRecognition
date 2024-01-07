@@ -186,6 +186,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=2, body_part=[True, True, True], ori_videos=False, form='perframe')
+        p = train(action_recognition=1, body_part=[True, True, True], ori_videos=False, form='perframe')
         performance.append(p)
     save_performance(performance)
