@@ -1,7 +1,6 @@
 import torch
-from torch import nn
 
-print(torch.duda.is_available()) # true 查看GPU是否可用
+print(torch.cuda.is_available()) # true 查看GPU是否可用
 
 print(torch.cuda.device_count()) #GPU数量， 1
 
