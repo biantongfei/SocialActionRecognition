@@ -100,7 +100,7 @@ class Dataset(Dataset):
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.video_len = video_len
-        self.form = form  # 'avg'
+        self.form = form  # 'avg', 'perframe' and 'normal'
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
             feature, label, frame_number = self.get_data_from_file(file)

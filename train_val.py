@@ -42,7 +42,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     for frame_num in frame_num_list:
         index_2 += frame_num
         label = int(torch.mean(y_true[index_1:index_2]))
-        predict = int(torch.mode(y_pred[index_1:index_2]))
+        predict = int(torch.mode(y_pred[index_1:index_2])[0])
         y.append(label)
         y_hat.append(predict)
         index_1 += frame_num
@@ -127,7 +127,9 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
             if form == 'perframe':
                 y_true, y_pred = transform_preframe_result(y_true, y_pred,
                                                            train_dict[hyperparameter_group]['valset'].frame_number_list)
-            acc = y_pred.eq(y_true).sum().float().item() / len(val_loader.dataset)
+            print(y_pred.eq(y_true).sum().float().item())
+            print(y_pred.size(dim=0))
+            acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
             f1 = f1_score(y_true, y_pred, average='weighted')
             trainging_process[hyperparameter_group]['accuracy'].append(acc)
             trainging_process[hyperparameter_group]['f1'].append(f1)
@@ -165,7 +167,10 @@ def train(action_recognition, body_part=None, ori_videos=False, video_len=99999,
             y_true += labels.tolist()
             y_pred += pred.tolist()
         y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
-        acc = y_pred.eq(y_true).sum().float().item() / len(test_loader.dataset)
+        if form == 'perframe':
+            y_true, y_pred = transform_preframe_result(y_true, y_pred,
+                                                       train_dict[hyperparameter_group]['valset'].frame_number_list)
+        acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
         f1 = f1_score(y_true, y_pred, average='weighted')
         performance_dict[hyperparameter_group]['accuracy'] = acc
         performance_dict[hyperparameter_group]['f1'] = f1
@@ -181,6 +186,6 @@ if __name__ == '__main__':
     performance = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(action_recognition=False, body_part=[False, True, False], ori_videos=False, form='avg')
+        p = train(action_recognition=2, body_part=[True, True, True], ori_videos=False, form='perframe')
         performance.append(p)
     save_performance(performance)
