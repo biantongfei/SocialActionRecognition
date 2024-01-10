@@ -54,7 +54,7 @@ def draw_save(performance_model, action_recognition):
                     y_true[key] = torch.cat((y_true[key], p_m[key]['y_true']), dim=0)
                     y_pred[key] = torch.cat((y_pred[key], p_m[key]['y_pred']), dim=0)
                 else:
-                    y_true[key] = p_m[key]['y_ture']
+                    y_true[key] = p_m[key]['y_true']
                     y_pred[key] = p_m[key]['y_pred']
                 plot_confusion_matrix(y_true, y_pred, classes, sub_name=key)
             spamwriter.writerow(data)
