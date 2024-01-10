@@ -25,7 +25,7 @@ def get_points_num(is_coco, body_part):
 
 
 class DNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part):
+    def __init__(self, is_coco, action_recognition, body_part, model):
         super(DNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -36,22 +36,36 @@ class DNN(nn.Module):
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
-        self.fc = nn.Sequential(
-            nn.Linear(self.input_size, 128),
-            nn.ReLU(),
-            # nn.Dropout(0.5),
-            nn.BatchNorm1d(128),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            # nn.Dropout(0.5),
-            nn.BatchNorm1d(64),
-            nn.Linear(64, 16),
-            nn.ReLU(),
-            # nn.Dropout(0.5),
-            nn.BatchNorm1d(16),
-            nn.Linear(16, self.output_size),
-            nn.Softmax(dim=1)
-        )
+        if model == 'avg:':
+            self.fc = nn.Sequential(
+                nn.Linear(self.input_size, 128),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.BatchNorm1d(128),
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.BatchNorm1d(64),
+                nn.Linear(64, 16),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.BatchNorm1d(16),
+                nn.Linear(16, self.output_size),
+                nn.Softmax(dim=1)
+            )
+        elif model == 'perframe':
+            self.fc = nn.Sequential(
+                nn.Linear(self.input_size, 128),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(128),
+                nn.Linear(128, 32),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(32),
+                nn.Linear(32, self.output_size),
+                nn.Softmax(dim=1)
+            )
 
     def forward(self, x):
         x = self.fc(x)
