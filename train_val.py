@@ -23,7 +23,6 @@ else:
     print('Using CPU')
     device = torch.device('cpu')
 dtype = torch.float
-model_save_path = 'models/'
 ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
 added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested', 'interested']
 attitude_classes = ['interacting', 'not_interested', 'interested']
@@ -59,7 +58,7 @@ def draw_save(performance_model, action_recognition):
                 plot_confusion_matrix(y_true[key], y_pred[key], classes, sub_name=key)
             spamwriter.writerow(data)
         csvfile.close()
-    torch.save(best_model.state_dict(), model_save_path + 'plots/model.pth')
+    torch.save(best_model.state_dict(), 'plots/model.pth')
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
