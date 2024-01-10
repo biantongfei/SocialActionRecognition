@@ -59,7 +59,7 @@ def draw_save(performance_model, action_recognition):
                 plot_confusion_matrix(y_true, y_pred, classes, sub_name=key)
             spamwriter.writerow(data)
         csvfile.close()
-    torch.save(best_model.state_dict(), model_save_path + 'models/model.pth')
+    torch.save(best_model.state_dict(), model_save_path + 'plots/model.pth')
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
