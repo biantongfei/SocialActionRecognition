@@ -222,7 +222,7 @@ if __name__ == '__main__':
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, False, False],
+        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, True, False],
                     ori_videos=False)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
