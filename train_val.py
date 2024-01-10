@@ -11,7 +11,7 @@ import csv
 avg_batch_size = 128
 perframe_batch_size = 2048
 avg_train_epoch = 3
-perframe_train_epoch = 4
+perframe_train_epoch = 3
 valset_rate = 0.2
 if torch.cuda.is_available():
     print('Using CUDA')
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, False, False],
+        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, True, True],
                     ori_videos=False)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
