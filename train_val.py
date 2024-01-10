@@ -29,15 +29,37 @@ added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 
 attitude_classes = ['interacting', 'not_interested', 'interested']
 
 
-def save_performance(performance):
+def draw_save(performance_model, action_recognition):
+    if action_recognition == 1:
+        classes = ori_classes
+    elif action_recognition == 2:
+        classes = added_classes
+    else:
+        classes = attitude_classes
+    y_true = {}
+    y_pred = {}
+    best_acc = -1
+    best_model = None
     with open('plots/performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
-        for index, trainging_process in enumerate(performance):
+        for index, p_m in enumerate(performance_model):
             data = [index + 1]
-            for key in trainging_process.keys():
-                data.append(trainging_process[key]['accuracy'])
-                data.append(trainging_process[key]['f1'])
+            for key in p_m.keys():
+                if best_acc < p_m[key]['accuracy']:
+                    best_acc = p_m[key]['accuracy']
+                    best_model = p_m[key]['model']
+                data.append(p_m[key]['accuracy'])
+                data.append(p_m[key]['f1'])
+                if key in y_true.keys():
+                    y_true[key] = torch.cat((y_true[key], p_m[key]['y_true']), dim=0)
+                    y_pred[key] = torch.cat((y_pred[key], p_m[key]['y_pred']), dim=0)
+                else:
+                    y_true[key] = p_m[key]['y_ture']
+                    y_pred[key] = p_m[key]['y_pred']
+                plot_confusion_matrix(y_true, y_pred, classes, sub_name=key)
             spamwriter.writerow(data)
+        csvfile.close()
+    torch.save(best_model.state_dict(), model_save_path + 'models/model.pth')
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
@@ -67,10 +89,10 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
     # train_dict = {'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'noise+coco': {}}
     trainging_process = {}
-    performance_dict = {}
+    performance_model = {}
     for key in train_dict.keys():
         trainging_process[key] = {'accuracy': [], 'f1': [], 'loss': []}
-        performance_dict[key] = {'accuracy': None, 'f1': None}
+        performance_model[key] = {'accuracy': None, 'f1': None, 'y_true': None, 'y_pred': None, 'model': None}
 
     if model == 'avg':
         batch_size = avg_batch_size
@@ -165,12 +187,6 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
                 "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
-    if action_recognition == 1:
-        classes = ori_classes
-    elif action_recognition == 2:
-        classes = added_classes
-    else:
-        classes = attitude_classes
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
@@ -189,20 +205,21 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
                                                        train_dict[hyperparameter_group]['testset'].frame_number_list)
         acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
         f1 = f1_score(y_true, y_pred, average='weighted')
-        performance_dict[hyperparameter_group]['accuracy'] = acc
-        performance_dict[hyperparameter_group]['f1'] = f1
+        performance_model[hyperparameter_group]['accuracy'] = acc
+        performance_model[hyperparameter_group]['f1'] = f1
+        performance_model[hyperparameter_group]['y_true'] = y_true
+        performance_model[hyperparameter_group]['y_pred'] = y_pred
+        performance_model[hyperparameter_group]['model'] = net
         print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        # save(net.state_dict(), model_save_path + 'fuullvideo_avg_%s.pth' % (hyperparameter_group))
-        plot_confusion_matrix(y_true, y_pred, classes, sub_name=hyperparameter_group)
     draw_training_process(trainging_process)
-    return performance_dict
+    return performance_model
 
 
 if __name__ == '__main__':
-    performance = []
+    performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p = train(model='perframe', action_recognition=1, body_part=[False, True, False], ori_videos=False)
-        performance.append(p)
-    save_performance(performance)
+        p_m = train(model='perframe', action_recognition=1, body_part=[False, False, True], ori_videos=False)
+        performance_model.append(p_m)
+    draw_save(performance_model)
