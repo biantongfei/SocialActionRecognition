@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 testset_rate = 0.5
 coco_point_num = 133
 halpe_point_num = 136
-fps = 30
+video_fps = 30
 
 
 def get_data_path(is_crop, is_coco):
@@ -91,7 +91,7 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, video_len=99999):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -99,8 +99,10 @@ class Dataset(Dataset):
         self.is_crop = is_crop
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
-        self.video_len = video_len
         self.model = model
+        self.sample_fps = sample_fps
+        self.video_len = video_len
+
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
             feature, label, frame_number = self.get_data_from_file(file)
@@ -123,17 +125,13 @@ class Dataset(Dataset):
         frame_num = len(feature_json['frames'])
         last_frame_id = feature_json['frames'][0]['frame_id'] - 1
         index = 0
-        while len(features) < int(self.video_len * fps):
+        while len(features) < int(self.video_len * video_fps):
             if index == frame_num:
                 # features.append(np.full((2 * len(frame['keypoints'])), np.nan))
                 break
             else:
                 frame = feature_json['frames'][index]
-                if self.model not in ['avg', 'perframe'] and last_frame_id + 1 != frame['frame_id']:
-                    features.append(np.full((2 * len(frame['keypoints'])), np.nan))
-                    # features.append(np.full((2 * len(frame['keypoints']) + 4), np.nan))
-                    last_frame_id += 1
-                else:
+                if frame['frame_id'] % int(video_fps / self.sample_fps) != 0:
                     # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
                     #     frame['box'][3]
                     frame_feature = np.array(frame['keypoints'])[:, :2]

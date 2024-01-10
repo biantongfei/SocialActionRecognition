@@ -75,7 +75,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(model, action_recognition, body_part=None, ori_videos=False, video_len=99999):
+def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori_videos=False, ):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -110,12 +110,12 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
                                                    not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
                            action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                           body_part=body_part, model=model, video_len=video_len)
+                           body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
                          action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
-                         body_part=body_part, model=model, video_len=video_len)
+                         body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
-                          is_coco=is_coco, body_part=body_part, model=model, video_len=video_len)
+                          is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
         if model == 'avg' or model == 'perframe':
@@ -219,10 +219,13 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
 
 if __name__ == '__main__':
     action_recognition = 1
+    body_part = [True, True, True]
+    ori_video = False
+    sample_fps = 30
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, True, True],
-                    ori_videos=False)
+        p_m = train(model='perframe', action_recognition=action_recognition, body_part=body_part, sample_fps=sample_fps,
+                    ori_videos=ori_video)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
