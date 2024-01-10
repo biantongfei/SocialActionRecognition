@@ -218,11 +218,11 @@ def train(model, action_recognition, body_part=None, ori_videos=False, video_len
 
 
 if __name__ == '__main__':
-    action_recognition = 1
+    action_recognition = 2
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[False, True, True],
+        p_m = train(model='perframe', action_recognition=action_recognition, body_part=[True, True, True],
                     ori_videos=False)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
