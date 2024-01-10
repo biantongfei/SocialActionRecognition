@@ -56,7 +56,7 @@ def draw_save(performance_model, action_recognition):
                 else:
                     y_true[key] = p_m[key]['y_true']
                     y_pred[key] = p_m[key]['y_pred']
-                plot_confusion_matrix(y_true, y_pred, classes, sub_name=key)
+                plot_confusion_matrix(y_true[key], y_pred[key], classes, sub_name=key)
             spamwriter.writerow(data)
         csvfile.close()
     torch.save(best_model.state_dict(), model_save_path + 'plots/model.pth')
