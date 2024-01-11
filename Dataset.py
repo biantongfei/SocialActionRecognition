@@ -123,15 +123,15 @@ class Dataset(Dataset):
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         frame_num = len(feature_json['frames'])
-        last_frame_id = feature_json['frames'][0]['frame_id'] - 1
         index = 0
-        while len(features) < int(self.video_len * video_fps):
+        while len(features) < int(self.video_len * self.sample_fps):
             if index == frame_num:
                 # features.append(np.full((2 * len(frame['keypoints'])), np.nan))
                 break
             else:
                 frame = feature_json['frames'][index]
-                if frame['frame_id'] % int(video_fps / self.sample_fps) != 0:
+                index += 1
+                if frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                     # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
                     #     frame['box'][3]
                     frame_feature = np.array(frame['keypoints'])[:, :2]
@@ -145,7 +145,7 @@ class Dataset(Dataset):
                     #     [box_width / frame_width, box_height / frame_height]], axis=0)
                     frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                     features.append(frame_feature)
-                    index += 1
+
 
         features = np.array(features)
         if self.action_recognition:

@@ -14,13 +14,13 @@ avg_train_epoch = 3
 perframe_train_epoch = 2
 valset_rate = 0.2
 if torch.cuda.is_available():
-    print('Using CUDA')
+    print('Using CUDA for training')
     device = torch.device("cuda:0")
 elif torch.backends.mps.is_available():
-    print('Using MPS')
+    print('Using MPS for training')
     device = torch.device('mps')
 else:
-    print('Using CPU')
+    print('Using CPU for training')
     device = torch.device('cpu')
 dtype = torch.float
 ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
