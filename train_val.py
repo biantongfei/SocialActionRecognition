@@ -11,7 +11,7 @@ import csv
 avg_batch_size = 128
 perframe_batch_size = 2048
 avg_train_epoch = 3
-perframe_train_epoch = 2
+perframe_train_epoch = 3
 valset_rate = 0.2
 if torch.cuda.is_available():
     print('Using CUDA for training')
