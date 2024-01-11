@@ -11,7 +11,7 @@ import csv
 avg_batch_size = 128
 perframe_batch_size = 2048
 avg_train_epoch = 3
-perframe_train_epoch = 3
+perframe_train_epoch = 2
 valset_rate = 0.2
 if torch.cuda.is_available():
     print('Using CUDA')
@@ -85,10 +85,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     else:
         train_dict = {'crop+coco': {}, 'noise+coco': {}}
-    if body_part[0]:
-        train_dict = {'noise+coco': {}, 'noise+halpe': {}}
-    else:
-        train_dict = {'noise+coco': {}}
+    # if body_part[0]:
+    #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
+    # else:
+    #     train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
