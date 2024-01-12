@@ -1,3 +1,4 @@
+import math
 import os
 import json
 import random
@@ -114,7 +115,7 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
-            self.frame_number_list.append(frame_number)
+            self.frame_number_list.append(int(feature.shape[0]))
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -146,7 +147,6 @@ class Dataset(Dataset):
                     frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                     features.append(frame_feature)
 
-
         features = np.array(features)
         if self.action_recognition:
             label = feature_json['action_class']
@@ -161,7 +161,7 @@ class Dataset(Dataset):
             features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)
         elif self.model == 'perframe':
-            label = [label for _ in range(frame_num)]
+            label = [label for _ in range(int(features.shape[0]))]
         else:
             features = features.reshape(1, features.shape[0], features.shape[1])
         return features, label, frame_num
