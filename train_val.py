@@ -218,10 +218,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    action_recognition = 2
-    body_part = [True, False, True]
+    action_recognition = False
+    body_part = [True, True, True]
     ori_video = False
-    sample_fps = 15
+    sample_fps = 30
     performance_model = []
     print(body_part)
     for i in range(10):
