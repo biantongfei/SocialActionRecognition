@@ -107,7 +107,7 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
             feature, label, frame_number = self.get_data_from_file(file)
-            print(feature.shape)
+            print(feature.shape, label, frame_number)
             if type(self.features) == np.ndarray:
                 self.features = np.append(self.features, feature, axis=0)
             else:
