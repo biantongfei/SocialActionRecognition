@@ -218,15 +218,23 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    action_recognition = False
-    body_part = [True, False, False]
+    model = 'perframe'
+    action_recognition = 1
+    body_part = [True, False, True]
     ori_video = False
-    sample_fps = 6
+    sample_fps = 30
+    video_len = 1
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        p_m = train(model='perframe', action_recognition=action_recognition, body_part=body_part, sample_fps=sample_fps,
-                    ori_videos=ori_video)
+        if video_len:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part, sample_fps=sample_fps,
+                        ori_videos=ori_video, video_len=video_len)
+        else:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
+                        sample_fps=sample_fps,
+                        ori_videos=ori_video)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
-    print(body_part)
+    print('model: %s, action_recognition: %s, body_part:' % (model, str(action_recognition)), body_part,
+          ', sample_fps: %d, video_len: %s' % (sample_fps, str(video_len)))
