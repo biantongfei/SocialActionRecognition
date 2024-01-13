@@ -107,7 +107,6 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
             feature, label = self.get_data_from_file(file)
-            print(feature.shape)
             if feature.shape[0] < 1:
                 continue
             if type(self.features) == np.ndarray:
