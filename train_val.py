@@ -222,8 +222,8 @@ if __name__ == '__main__':
     action_recognition = 1
     body_part = [True, False, True]
     ori_video = False
-    sample_fps = 15
-    video_len = 2
+    sample_fps = 6
+    video_len = 1
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
