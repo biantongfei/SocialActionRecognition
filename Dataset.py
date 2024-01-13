@@ -106,7 +106,8 @@ class Dataset(Dataset):
 
         self.features, self.labels, self.frame_number_list = None, [], []
         for file in self.files:
-            feature, label, frame_number = self.get_data_from_file(file)
+            feature, label = self.get_data_from_file(file)
+            print(feature.shape)
             if feature.shape[0] < 1:
                 continue
             if type(self.features) == np.ndarray:
@@ -118,6 +119,7 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
+        print(self.features.shape)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -125,16 +127,18 @@ class Dataset(Dataset):
             f.close()
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-        frame_num = len(feature_json['frames'])
+        video_frame_num = len(feature_json['frames'])
+        first_id = feature_json['frames'][0]['frame_id']
         index = 0
         while len(features) < int(self.video_len * self.sample_fps):
-            if index == frame_num:
-                # features.append(np.full((2 * len(frame['keypoints'])), np.nan))
+            if index == video_frame_num:
                 break
             else:
                 frame = feature_json['frames'][index]
                 index += 1
-                if frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                    break
+                elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                     # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
                     #     frame['box'][3]
                     frame_feature = np.array(frame['keypoints'])[:, :2]
@@ -166,7 +170,7 @@ class Dataset(Dataset):
             label = [label for _ in range(int(features.shape[0]))]
         else:
             features = features.reshape(1, features.shape[0], features.shape[1])
-        return features, label, frame_num
+        return features, label
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
@@ -180,7 +184,7 @@ if __name__ == '__main__':
     is_coco = True
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
-    dataset = Dataset(data_files=tra_files, action_recognition=1, is_crop=is_crop, is_coco=is_coco,
-                      body_part=[True, True, True], model='perframe')
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, is_crop=is_crop,
+                      is_coco=is_coco, body_part=[True, True, True], model='perframe', sample_fps=30, video_len=2)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
