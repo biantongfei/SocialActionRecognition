@@ -190,3 +190,7 @@ if __name__ == '__main__':
                       is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, is_crop=is_crop,
+                      is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
+    features, labels = dataset.__getitem__(9)
+    print(features.shape, labels)

@@ -91,7 +91,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -133,10 +133,12 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
                       bidirectional=False, gru=True)
         net.to(device)
-        optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
+        optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
-                                            'best_acc': -1, 'best_f1': -1, 'unimproved_epoch': 0}
+                                            'scheduler': scheduler, 'best_acc': -1, 'best_f1': -1,
+                                            'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -152,11 +154,14 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size, )
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
+            scheduler = train_dict[hyperparameter_group]['scheduler']
+            scheduler.step()
             for data in train_loader:
                 inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
                 outputs = net(inputs)
+                print(outputs.argmax(dim=1))
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
