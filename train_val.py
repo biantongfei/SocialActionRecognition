@@ -5,6 +5,8 @@ from draw_utils import draw_training_process, plot_confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 from torch.nn import functional
+import torch.nn.utils.rnn as rnn_utils
+
 from sklearn.metrics import f1_score
 import csv
 
@@ -13,7 +15,7 @@ perframe_batch_size = 2048
 rnn_batch_size = 32
 avg_train_epoch = 3
 perframe_train_epoch = 3
-rnn_train_epoch = 3
+rnn_train_epoch = 5
 valset_rate = 0.2
 if torch.cuda.is_available():
     print('Using CUDA for training')
@@ -155,23 +157,24 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             scheduler = train_dict[hyperparameter_group]['scheduler']
-            scheduler.step()
-            for data in train_loader:
-                inputs, labels = data
+            for inputs, labels, sample_length in train_loader:
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
+                if model in ['lstm', 'gru']:
+                    inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
                 outputs = net(inputs)
-                print(outputs.argmax(dim=1))
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
             y_true, y_pred = [], []
-            for data in val_loader:
-                inputs, labels = data
+            for inputs, labels, sample_length in val_loader:
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.eval()
+                if model in ['lstm', 'gru']:
+                    inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
                 y_true += labels.tolist()
@@ -202,11 +205,12 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
-        for data in test_loader:
-            inputs, labels = data
+        for inputs, labels, sample_length in test_loader:
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
+            if model in ['lstm', 'gru']:
+                inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             y_true += labels.tolist()

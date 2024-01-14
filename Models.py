@@ -79,7 +79,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 128
+        self.hidden_size = 512
         self.bidirectional = bidirectional
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
@@ -89,24 +89,24 @@ class RNN(nn.Module):
         if gru:
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
         else:
-            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
-                               bidirectional=bidirectional)
+            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
             # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
             #                     bidirectional=bidirectional, dropout=0.5)
 
         # Readout layer
-        self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
+        self.fc = nn.Sequential(nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size),
+                                nn.Softmax(dim=0))
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
         # x = self.dropout(x)
-        out, _ = self.rnn(x)
+        on, (hn, _) = self.rnn(x)
         if self.bidirectional:
-            out = torch.cat([out[-2], out[-1]], dim=1)
+            hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
-            out = out[:, -1, :]
+            on = on[:, -1, :]
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
-        out = self.fc(out)
+        out = self.fc(on)
         return out
