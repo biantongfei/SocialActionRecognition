@@ -9,7 +9,6 @@ box_feature_num = 4
 ori_action_class_num = 7
 action_class_num = 9
 attitude_class_num = 3
-batch_size = 128
 fps = 30
 
 
@@ -80,7 +79,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 512
+        self.hidden_size = 256
         self.bidirectional = bidirectional
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
@@ -102,7 +101,7 @@ class RNN(nn.Module):
 
     def forward(self, x):
         # x = self.dropout(x)
-        out, (_, _) = self.rnn(x)
+        out,_ = self.rnn(x)
         if self.bidirectional:
             out = torch.cat([out[-2], out[-1]], dim=1)
         else:
