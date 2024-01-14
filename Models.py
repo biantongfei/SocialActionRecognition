@@ -79,7 +79,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 256
+        self.hidden_size = 128
         self.bidirectional = bidirectional
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
