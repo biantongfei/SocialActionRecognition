@@ -9,6 +9,7 @@ import torch.nn.utils.rnn as rnn_utils
 
 from sklearn.metrics import f1_score
 import csv
+import numpy as np
 
 avg_batch_size = 128
 perframe_batch_size = 2048
@@ -77,6 +78,20 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
         y_hat.append(predict)
         index_1 += frame_num
     return torch.Tensor(y), torch.Tensor(y_hat)
+
+
+def collate_fn(train_data):
+    train_x = []
+    train_y = []
+    for data in train_data:
+        train_x.append(data[0])
+        train_y.append(data[1])
+    train_x.sort(key=lambda data: len(data[0]), reverse=True)
+    data_length = [len(data) for data in train_x]
+    # print(data_length)
+    train_x = rnn_utils.pad_sequence(train_x, batch_first=True, padding_value=0)
+    train_y = torch.from_numpy(np.asarray(train_y))
+    return train_x.unsqueeze(-1), train_y, data_length
 
 
 def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori_videos=False, ):
@@ -151,9 +166,15 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                      shuffle=True)
-            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size, )
+            if model in ['avg', 'lstm']:
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                          shuffle=True)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
+            elif model in ['lstm', 'gru']:
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                          shuffle=True, collate_fn=collate_fn)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
+                                        collate_fn=collate_fn)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             scheduler = train_dict[hyperparameter_group]['scheduler']

@@ -125,8 +125,6 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
-        if self.model in ['lstm', 'gru']:
-            self.features = rnn_utils.pad_sequence(self.features, batch_first=True)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -180,7 +178,7 @@ class Dataset(Dataset):
         return features, label
 
     def __getitem__(self, idx):
-        return self.features[idx], self.labels[idx], self.features[idx].shape[0]
+        return self.features[idx], self.labels[idx]
 
     def __len__(self):
         return self.features.shape[0]
