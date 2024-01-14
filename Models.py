@@ -91,21 +91,21 @@ class RNN(nn.Module):
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
         else:
             self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
-                                bidirectional=bidirectional)
+                                bidirectional=bidirectional, dropout=0.5)
 
         # Readout layer
         self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
         self.dropout = nn.Dropout(0.5)
-        self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
+        # self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
-        # x = self.dropout(x)
+        x = self.dropout(x)
         _, (hidden, _) = self.rnn(x)
         if self.bidirectional:
             hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
         else:
             hidden = hidden[-1]
-        # hidden = self.dropout(hidden)
+        hidden = self.dropout(hidden)
         # hidden = self.BatchNorm1d(hidden)
         out = self.fc(hidden)
         return out

@@ -1,10 +1,11 @@
-import math
 import os
 import json
 import random
 
 import numpy as np
+import torch
 from torch.utils.data import Dataset
+import torch.nn.utils.rnn as rnn_utils
 
 testset_rate = 0.5
 coco_point_num = 133
@@ -109,15 +110,17 @@ class Dataset(Dataset):
             feature, label = self.get_data_from_file(file)
             if feature.shape[0] < 1:
                 continue
-            if type(self.features) == np.ndarray:
-                self.features = np.append(self.features, feature, axis=0)
+            if self.features:
+                self.features.append(feature)
             else:
-                self.features = feature
+                self.features = [feature]
             if model == 'perframe':
                 self.labels += label
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
+        if self.model in ['lstm', 'gru']:
+            self.features = rnn_utils.pad_sequence(self.features, batch_first=True)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -166,8 +169,9 @@ class Dataset(Dataset):
             features = features.reshape(1, features.size)
         elif self.model == 'perframe':
             label = [label for _ in range(int(features.shape[0]))]
-        else:
-            features = features.reshape(1, features.shape[0], features.shape[1])
+        elif self.model in ['lstm', 'gru']:
+            features = features.reshape(features.shape[0], features.shape[1])
+            features = torch.from_numpy(features)
         return features, label
 
     def __getitem__(self, idx):
@@ -183,6 +187,6 @@ if __name__ == '__main__':
     tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
     dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, is_crop=is_crop,
-                      is_coco=is_coco, body_part=[True, True, True], model='perframe', sample_fps=30, video_len=2)
+                      is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)

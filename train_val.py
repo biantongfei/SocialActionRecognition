@@ -10,8 +10,10 @@ import csv
 
 avg_batch_size = 128
 perframe_batch_size = 2048
+rnn_batch_size = 128
 avg_train_epoch = 3
 perframe_train_epoch = 3
+rnn_train_epoch = 3
 valset_rate = 0.2
 if torch.cuda.is_available():
     print('Using CUDA for training')
@@ -85,10 +87,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     else:
         train_dict = {'crop+coco': {}, 'noise+coco': {}}
-    if body_part[0]:
-        train_dict = {'crop+coco': {}, 'crop+halpe': {}}
-    else:
-        train_dict = {'crop+coco': {}}
+    # if body_part[0]:
+    #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
+    # else:
+    #     train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -101,6 +103,9 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     elif model == 'perframe':
         batch_size = perframe_batch_size
         epoch_limit = perframe_train_epoch
+    elif model in ['lstm,gru']:
+        batch_size = rnn_batch_size
+        epoch_limit = rnn_train_epoch
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -218,12 +223,12 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    model = 'perframe'
-    action_recognition = False
-    body_part = [True, False, True]
+    model = 'lstm'
+    action_recognition = 1
+    body_part = [True, True, True]
     ori_video = False
-    sample_fps = 3
-    video_len = 1
+    sample_fps = 30
+    video_len = False
     performance_model = []
     for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
@@ -232,8 +237,7 @@ if __name__ == '__main__':
                         ori_videos=ori_video, video_len=video_len)
         else:
             p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                        sample_fps=sample_fps,
-                        ori_videos=ori_video)
+                        sample_fps=sample_fps, ori_videos=ori_video)
         performance_model.append(p_m)
     draw_save(performance_model, action_recognition=action_recognition)
     print('model: %s, action_recognition: %s, body_part:' % (model, str(action_recognition)), body_part,
