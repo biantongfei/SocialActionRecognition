@@ -92,7 +92,7 @@ class RNN(nn.Module):
         else:
             # self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
             #                     bidirectional=bidirectional)
-            self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
+            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
                                 bidirectional=bidirectional, dropout=0.5)
 
         # Readout layer
