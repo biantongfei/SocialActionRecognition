@@ -10,7 +10,7 @@ import csv
 
 avg_batch_size = 128
 perframe_batch_size = 2048
-rnn_batch_size = 128
+rnn_batch_size = 64
 avg_train_epoch = 3
 perframe_train_epoch = 3
 rnn_train_epoch = 3
@@ -103,7 +103,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     elif model == 'perframe':
         batch_size = perframe_batch_size
         epoch_limit = perframe_train_epoch
-    elif model in ['lstm,gru']:
+    elif model in ['lstm', 'gru']:
         batch_size = rnn_batch_size
         epoch_limit = rnn_train_epoch
 

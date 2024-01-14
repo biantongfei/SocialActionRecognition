@@ -90,6 +90,8 @@ class RNN(nn.Module):
         if gru:
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
         else:
+            # self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
+            #                     bidirectional=bidirectional)
             self.lstm = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
                                 bidirectional=bidirectional, dropout=0.5)
 
