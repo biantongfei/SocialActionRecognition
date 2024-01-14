@@ -181,7 +181,10 @@ class Dataset(Dataset):
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
-        return self.features.shape[0]
+        if self.model in ['avg', 'perframe']:
+            return self.features.shape[0]
+        elif self.model in ['lstm', 'gru']:
+            return len(self.features)
 
 
 if __name__ == '__main__':
