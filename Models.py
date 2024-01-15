@@ -110,9 +110,7 @@ class RNN(nn.Module):
         on, (hn, _) = self.rnn(x)
         print(on.data.shape)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
-        h_pad, h_length = rnn_utils.pad_packed_sequence(hn, batch_first=True)
         print(out_pad.shape)
-        print(h_pad.shape)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
