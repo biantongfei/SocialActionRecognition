@@ -95,10 +95,10 @@ class RNN(nn.Module):
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
                               batch_first=True)
         else:
-            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
-                               batch_first=True)
-            # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
-            #                     bidirectional=bidirectional, dropout=0.5,batch_first=True)
+            # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
+            #                    batch_first=True)
+            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
+                               bidirectional=bidirectional, dropout=0.5, batch_first=True)
 
         # Readout layer
         self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
@@ -106,16 +106,16 @@ class RNN(nn.Module):
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
-        # x = self.dropout(x)
+        x = self.dropout(x)
         on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
             # on = out_pad[:, -1, :]
-            hn = hn[-1]
+            out = hn[-1]
             print(hn.shape)
-        # out = self.dropout(out)
+        out = self.dropout(out)
         # out = self.BatchNorm1d(out)
-        out = self.fc(hn)
+        out = self.fc(out)
         return out
