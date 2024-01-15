@@ -17,6 +17,8 @@ avg_train_epoch = 3
 perframe_train_epoch = 3
 rnn_train_epoch = 5
 valset_rate = 0.2
+dnn_learning_rate = 1e-3
+rnn_learning_rate = 1e-4
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
@@ -103,12 +105,15 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     if model == 'avg':
         batch_size = avg_batch_size
         epoch_limit = avg_train_epoch
+        learning_rate = dnn_learning_rate
     elif model == 'perframe':
         batch_size = perframe_batch_size
         epoch_limit = perframe_train_epoch
+        learning_rate = dnn_learning_rate
     elif model in ['lstm', 'gru']:
         batch_size = rnn_batch_size
         epoch_limit = rnn_train_epoch
+        learning_rate = rnn_learning_rate
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -134,7 +139,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False,
                       gru=True)
         net.to(device)
-        optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
