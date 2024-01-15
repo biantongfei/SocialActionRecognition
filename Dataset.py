@@ -100,7 +100,7 @@ def rnn_collate_fn(data):
     x.sort(key=lambda feature: feature.shape[0], reverse=True)
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
-    return (x, torch.Tensor(y)), data_length
+    return (x, torch.Tensor(y).long()), data_length
 
 
 class Dataset(Dataset):
