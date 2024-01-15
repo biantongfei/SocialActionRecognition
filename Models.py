@@ -108,6 +108,7 @@ class RNN(nn.Module):
     def forward(self, x):
         on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
+        print(hn.shape)
         print(out_pad.data.shape)
         print(out_length)
         if self.bidirectional:
@@ -115,7 +116,6 @@ class RNN(nn.Module):
         else:
             # on = out_pad[:, -1, :]
             out = hn[-1]
-            print(hn.shape)
         out = self.dropout(out)
         # out = self.BatchNorm1d(out)
         out = self.fc(out)
