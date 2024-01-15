@@ -18,7 +18,7 @@ perframe_train_epoch = 3
 rnn_train_epoch = 5
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
-rnn_learning_rate = 1e-6
+rnn_learning_rate = 1e-5
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
