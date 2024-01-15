@@ -109,11 +109,13 @@ class RNN(nn.Module):
         # x = self.dropout(x)
         on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
+        h_pad, h_length = rnn_utils.pad_packed_sequence(hn, batch_first=True)
         print(out_pad.shape)
+        print(h_pad.shape)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
-            on = on[:, -1, :]
+            on = out_pad[:, -1, :]
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
         out = self.fc(on)
