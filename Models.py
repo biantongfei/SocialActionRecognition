@@ -41,7 +41,7 @@ class DNN(nn.Module):
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
-        if model == 'avg:':
+        if model in ['avg', 'perframe']:
             self.fc = nn.Sequential(
                 nn.Linear(self.input_size, 128),
                 nn.ReLU(),
