@@ -10,6 +10,12 @@ ori_action_class_num = 7
 action_class_num = 9
 attitude_class_num = 3
 fps = 30
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+else:
+    device = torch.device('cpu')
 
 
 def get_points_num(is_coco, body_part):
@@ -50,7 +56,6 @@ class DNN(nn.Module):
                 # nn.Dropout(0.5),
                 nn.BatchNorm1d(16),
                 nn.Linear(16, self.output_size),
-                nn.Softmax(dim=1)
             )
         elif model == 'perframe':
             self.fc = nn.Sequential(
@@ -63,7 +68,6 @@ class DNN(nn.Module):
                 # nn.Dropout(0.5),
                 nn.BatchNorm1d(32),
                 nn.Linear(32, self.output_size),
-                nn.Softmax(dim=1)
             )
 
     def forward(self, x):
@@ -73,13 +77,13 @@ class DNN(nn.Module):
 
 
 class RNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part, video_len, bidirectional=False, gru=False):
+    def __init__(self, is_coco, action_recognition, body_part, bidirectional=False, gru=False):
         super(RNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 512
+        self.hidden_size = 512 * (2 if bidirectional else 1)
         self.bidirectional = bidirectional
         if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
@@ -87,26 +91,29 @@ class RNN(nn.Module):
             self.output_size = attitude_class_num
 
         if gru:
-            self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
+            self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
+                              batch_first=True)
         else:
-            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional)
+            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
+                               batch_first=True)
             # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
-            #                     bidirectional=bidirectional, dropout=0.5)
+            #                     bidirectional=bidirectional, dropout=0.5,batch_first=True)
 
         # Readout layer
         self.fc = nn.Sequential(nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size),
-                                nn.Softmax(dim=0))
+                                nn.Softmax(dim=1))
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
         # x = self.dropout(x)
-        on, (hn, _) = self.rnn(x)
+        print(x.shape)
+        _, (hn, _) = self.rnn(x)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
-            on = on[:, -1, :]
+            hn = hn[-1]
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
-        out = self.fc(on)
+        out = self.fc(hn)
         return out

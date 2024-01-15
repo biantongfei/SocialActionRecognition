@@ -80,21 +80,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def collate_fn(train_data):
-    train_x = []
-    train_y = []
-    for data in train_data:
-        train_x.append(data[0])
-        train_y.append(data[1])
-    train_x.sort(key=lambda data: len(data[0]), reverse=True)
-    data_length = [len(data) for data in train_x]
-    # print(data_length)
-    train_x = rnn_utils.pad_sequence(train_x, batch_first=True, padding_value=0)
-    train_y = torch.from_numpy(np.asarray(train_y))
-    return train_x.unsqueeze(-1), train_y, data_length
-
-
-def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori_videos=False, ):
+def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori_videos=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -144,11 +130,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         if model == 'avg' or model == 'perframe':
             net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, model=model)
         elif model == 'lstm':
-            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
-                      bidirectional=False)
+            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False)
         elif model == 'gru':
-            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, video_len=video_len,
-                      bidirectional=False, gru=True)
+            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False,
+                      gru=True)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
@@ -166,23 +151,15 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            if model in ['avg', 'lstm']:
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          shuffle=True)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
-            elif model in ['lstm', 'gru']:
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          shuffle=True, collate_fn=collate_fn)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
-                                        collate_fn=collate_fn)
+            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                      shuffle=True)
+            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             scheduler = train_dict[hyperparameter_group]['scheduler']
-            for inputs, labels, sample_length in train_loader:
+            for inputs, labels in train_loader:
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
-                if model in ['lstm', 'gru']:
-                    inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
                 outputs = net(inputs)
                 loss = functional.cross_entropy(outputs, labels)
                 optimizer.zero_grad()
@@ -191,13 +168,12 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 scheduler.step()
 
             y_true, y_pred = [], []
-            for inputs, labels, sample_length in val_loader:
+            for inputs, labels in val_loader:
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.eval()
-                if model in ['lstm', 'gru']:
-                    inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
+                print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
@@ -219,19 +195,16 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print('%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
                 hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                "%.2f%%" % (acc * 100),
-                "%.4f" % (f1), "%.4f" % loss))
+                "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
-        for inputs, labels, sample_length in test_loader:
+        for inputs, labels in test_loader:
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
-            if model in ['lstm', 'gru']:
-                inputs = rnn_utils.pack_padded_sequence(inputs, sample_length, batch_first=True)
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)
             y_true += labels.tolist()
@@ -254,7 +227,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    model = 'lstm'
+    model = 'perframe'
     action_recognition = 1
     body_part = [True, True, True]
     ori_video = False
