@@ -105,12 +105,12 @@ class Dataset(Dataset):
         self.sample_fps = sample_fps
         self.video_len = video_len
 
-        self.features, self.labels, self.frame_number_list = None, [], []
+        self.features, self.labels, self.frame_number_list = '', [], []
         for file in self.files:
             feature, label = self.get_data_from_file(file)
             if feature.shape[0] < 1:
                 continue
-            if self.features:
+            if type(self.features) != str():
                 if self.model in ['avg', 'perframe']:
                     self.features = np.append(self.features, feature, axis=0)
                 elif self.model in ['lstm', 'gru']:
