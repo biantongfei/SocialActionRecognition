@@ -114,6 +114,7 @@ class RNN(nn.Module):
         else:
             # on = out_pad[:, -1, :]
             hn = hn[-1]
+            print(hn.shape)
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
         out = self.fc(hn)
