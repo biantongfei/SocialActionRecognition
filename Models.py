@@ -106,7 +106,6 @@ class RNN(nn.Module):
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
-        x = self.dropout(x)
         on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
         if self.bidirectional:
