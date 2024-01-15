@@ -94,7 +94,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -173,7 +173,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 net.eval()
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                print(pred)
+                # print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
