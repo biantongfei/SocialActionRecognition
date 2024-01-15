@@ -92,6 +92,17 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
+def rnn_collate_fn(data):
+    x, y = [], []
+    for d in data:
+        x.append(d[0])
+        y.append(d[1])
+    x.sort(key=lambda feature: feature.shape[0], reverse=True)
+    data_length = [feature.shape[0] for feature in x]
+    x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
+    return (x, torch.Tensor(y)), data_length
+
+
 class Dataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999):
         super(Dataset, self).__init__()
@@ -127,8 +138,8 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
-        if self.model in ['lstm', 'gru']:
-            self.features = rnn_utils.pad_sequence(self.features, batch_first=True)
+        # if self.model in ['lstm', 'gru']:
+        #     self.features = rnn_utils.pad_sequence(self.features, batch_first=True)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -185,7 +196,10 @@ class Dataset(Dataset):
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
-        return self.features.shape[0]
+        if self.model in ['avg', 'perframe']:
+            return self.features.shape[0]
+        elif self.model in ['lstm', 'gru']:
+            return len(self.features)
 
 
 if __name__ == '__main__':

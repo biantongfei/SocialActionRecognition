@@ -106,8 +106,8 @@ class RNN(nn.Module):
 
     def forward(self, x):
         # x = self.dropout(x)
-        print(x.shape)
         _, (hn, _) = self.rnn(x)
+        print(hn.shape)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:

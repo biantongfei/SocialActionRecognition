@@ -1,4 +1,4 @@
-from Dataset import Dataset, get_tra_test_files
+from Dataset import Dataset, get_tra_test_files, rnn_collate_fn
 from Models import DNN, RNN
 from draw_utils import draw_training_process, plot_confusion_matrix
 
@@ -94,7 +94,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -151,12 +151,23 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size)
-            val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
+            if model in ['lstm', 'gru']:
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                          collate_fn=rnn_collate_fn)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
+                                        collate_fn=rnn_collate_fn)
+            else:
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             scheduler = train_dict[hyperparameter_group]['scheduler']
-            for inputs, labels in train_loader:
+            for data in train_loader:
+                if model in ['lstm', 'gru']:
+                    (inputs, labels), data_length = data
+                    inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                else:
+                    inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
                 outputs = net(inputs)
@@ -167,12 +178,17 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 scheduler.step()
 
             y_true, y_pred = [], []
-            for inputs, labels in val_loader:
+            for data in val_loader:
+                if model in ['lstm', 'gru']:
+                    (inputs, labels), data_length = data
+                    inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                else:
+                    inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.eval()
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                # print(pred)
+                print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
@@ -197,10 +213,16 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
         epoch += 1
         print('------------------------------------------')
+
     for hyperparameter_group in train_dict:
         test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
-        for inputs, labels in test_loader:
+        for data in test_loader:
+            if model in ['lstm', 'gru']:
+                (inputs, labels), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+            else:
+                inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
@@ -226,7 +248,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    model = 'perframe'
+    model = 'lstm'
     action_recognition = 1
     body_part = [True, True, True]
     ori_video = False
