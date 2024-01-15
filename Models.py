@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.utils.rnn as rnn_utils
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -106,12 +107,14 @@ class RNN(nn.Module):
 
     def forward(self, x):
         # x = self.dropout(x)
-        _, (hn, _) = self.rnn(x)
+        on, (hn, _) = self.rnn(x)
+        out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
+        print(out_pad.shape)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
-            hn = hn[-1]
+            on = on[:, -1, :]
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
-        out = self.fc(hn)
+        out = self.fc(on)
         return out
