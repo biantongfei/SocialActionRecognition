@@ -12,7 +12,7 @@ import csv
 
 avg_batch_size = 128
 perframe_batch_size = 2048
-rnn_batch_size = 8
+rnn_batch_size = 32
 avg_train_epoch = 3
 perframe_train_epoch = 3
 rnn_train_epoch = 5
