@@ -85,7 +85,7 @@ class RNN(nn.Module):
         self.input_size = 2 * points_num
         self.hidden_size = 512 * (2 if bidirectional else 1)
         self.bidirectional = bidirectional
-        if action_recognition:
+        if action_recognition != None:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
@@ -100,8 +100,7 @@ class RNN(nn.Module):
             #                     bidirectional=bidirectional, dropout=0.5,batch_first=True)
 
         # Readout layer
-        self.fc = nn.Sequential(nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size),
-                                nn.Softmax(dim=1))
+        self.fc = nn.Sequential(nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size))
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
