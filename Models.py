@@ -108,7 +108,7 @@ class RNN(nn.Module):
     def forward(self, x):
         # x = self.dropout(x)
         on, (hn, _) = self.rnn(x)
-        print(on.shape)
+        print(on.data.shape)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
         h_pad, h_length = rnn_utils.pad_packed_sequence(hn, batch_first=True)
         print(out_pad.shape)
