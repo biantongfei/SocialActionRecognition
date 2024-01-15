@@ -105,21 +105,22 @@ class Dataset(Dataset):
         self.sample_fps = sample_fps
         self.video_len = video_len
 
-        self.features, self.labels, self.frame_number_list = '', [], []
-        for file in self.files:
+        self.features, self.labels, self.frame_number_list = None, [], []
+        for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
             if feature.shape[0] < 1:
                 continue
-            if type(self.features) != str():
-                if self.model in ['avg', 'perframe']:
-                    self.features = np.append(self.features, feature, axis=0)
-                elif self.model in ['lstm', 'gru']:
-                    self.features.append(feature)
-            else:
+            if index == 0:
                 if self.model in ['avg', 'perframe']:
                     self.features = feature
                 elif self.model in ['lstm', 'gru']:
                     self.features = [feature]
+            else:
+                if self.model in ['avg', 'perframe']:
+                    self.features = np.append(self.features, feature, axis=0)
+                elif self.model in ['lstm', 'gru']:
+                    self.features.append(feature)
+
             if model == 'perframe':
                 self.labels += label
             else:
@@ -151,8 +152,8 @@ class Dataset(Dataset):
                     frame_feature = np.array(frame['keypoints'])[:, :2]
                     # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
                     # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                    frame_feature[:, 0] = frame_feature[:, 0] / frame_width - 0.5
-                    frame_feature[:, 1] = frame_feature[:, 1] / frame_height - 0.5
+                    frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
+                    frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
                     frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
                     # frame_feature = np.append(frame_feature, [
                     #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],

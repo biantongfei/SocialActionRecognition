@@ -7,4 +7,5 @@ train_x = [torch.tensor([[2, 2]]),
 x = rnn_utils.pad_sequence(train_x, batch_first=True)
 print(x.shape)
 print(x)
-print(type(None))
+print(type('none'))
+print(type('none') is )
