@@ -9,7 +9,6 @@ import torch.nn.utils.rnn as rnn_utils
 
 from sklearn.metrics import f1_score
 import csv
-import numpy as np
 
 avg_batch_size = 128
 perframe_batch_size = 2048

@@ -105,9 +105,9 @@ class RNN(nn.Module):
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
     def forward(self, x):
+        print(x.shape)
         # x = self.dropout(x)
         _, (hn, _) = self.rnn(x)
-        print(hn.shape)
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
