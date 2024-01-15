@@ -100,7 +100,7 @@ class RNN(nn.Module):
             #                     bidirectional=bidirectional, dropout=0.5,batch_first=True)
 
         # Readout layer
-        self.fc = nn.Sequential(nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size))
+        self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
 
@@ -111,7 +111,7 @@ class RNN(nn.Module):
         if self.bidirectional:
             hn = torch.cat([hn[-2], hn[-1]], dim=1)
         else:
-            hn = hn[-1]
+            hn = hn[0]
         # out = self.dropout(out)
         # out = self.BatchNorm1d(out)
         out = self.fc(hn)

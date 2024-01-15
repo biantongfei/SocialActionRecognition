@@ -151,8 +151,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                      shuffle=True)
+            train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size)
             val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
