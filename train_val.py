@@ -214,7 +214,11 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         print('------------------------------------------')
 
     for hyperparameter_group in train_dict:
-        test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
+        if model in ['lstm', 'gru']:
+            test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size,
+                                     collate_fn=rnn_collate_fn)
+        else:
+            test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
             if model in ['lstm', 'gru']:
