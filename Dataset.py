@@ -93,11 +93,12 @@ def get_body_part(feature, is_coco, body_part):
 
 
 def rnn_collate_fn(data):
+    data = list(data)
+    data.sort(key=lambda feature: feature[0].shape[0], reverse=True)
     x, y = [], []
     for d in data:
         x.append(d[0])
         y.append(d[1])
-    x.sort(key=lambda feature: feature.shape[0], reverse=True)
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
     return (x, torch.Tensor(y).long()), data_length
@@ -106,7 +107,6 @@ def rnn_collate_fn(data):
 class Dataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999):
         super(Dataset, self).__init__()
-        random.shuffle(data_files)
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
         self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
@@ -171,6 +171,8 @@ class Dataset(Dataset):
                     #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
                     #     [box_width / frame_width, box_height / frame_height]], axis=0)
                     frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+                    if frame_feature.all() == 0:
+                        continue
                     features.append(frame_feature)
 
         features = np.array(features)

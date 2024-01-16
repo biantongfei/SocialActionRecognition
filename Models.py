@@ -63,12 +63,14 @@ class DNN(nn.Module):
                 nn.Linear(self.input_size, 128),
                 nn.ReLU(),
                 # nn.Dropout(0.5),
-                nn.BatchNorm1d(128),
-                nn.Linear(128, 32),
+                # nn.BatchNorm1d(128),
+                nn.Linear(128, 64),
                 nn.ReLU(),
                 # nn.Dropout(0.5),
-                nn.BatchNorm1d(32),
-                nn.Linear(32, self.output_size),
+                # nn.BatchNorm1d(32),
+                nn.Linear(64, 16),
+                nn.ReLU(),
+                nn.Linear(16, self.output_size),
             )
 
     def forward(self, x):
@@ -84,7 +86,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        self.hidden_size = 512 * (2 if bidirectional else 1)
+        self.hidden_size = 512
         self.bidirectional = bidirectional
         if action_recognition != None:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
@@ -95,10 +97,10 @@ class RNN(nn.Module):
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
                               batch_first=True)
         else:
-            # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
-            #                    batch_first=True)
-            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
-                               bidirectional=bidirectional, dropout=0.5, batch_first=True)
+            self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
+                               batch_first=True)
+            # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
+            #                    bidirectional=bidirectional, dropout=0.5, batch_first=True)
 
         # Readout layer
         self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
@@ -108,15 +110,19 @@ class RNN(nn.Module):
     def forward(self, x):
         on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
-        print(hn.shape)
-        print(out_pad.data.shape)
-        print(out_length)
+        # print(out_pad.data.shape)
         if self.bidirectional:
-            hn = torch.cat([hn[-2], hn[-1]], dim=1)
+            out = torch.zeros(out_pad.data.shape[0], self.hidden_size * 2).to(device)
+            for i in range(out_pad.data.shape[0]):
+                index = out_length[i] - 1
+                out[i] = torch.cat((out_pad.data[i, index, :self.hidden_size], out_pad.data[i, 0, self.hidden_size:]),
+                                   dim=0)
         else:
-            # on = out_pad[:, -1, :]
-            out = hn[-1]
-        out = self.dropout(out)
-        # out = self.BatchNorm1d(out)
+            out = torch.zeros(out_pad.data.shape[0], self.hidden_size).to(device)
+            for i in range(out_pad.data.shape[0]):
+                index = out_length[i] - 1
+                out[i] = out_pad.data[i, index, :]
+        # out = self.dropout(out)
+        out = self.BatchNorm1d(out)
         out = self.fc(out)
         return out

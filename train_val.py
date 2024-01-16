@@ -5,6 +5,7 @@ from draw_utils import draw_training_process, plot_confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 from torch.nn import functional
+from torch import nn
 import torch.nn.utils.rnn as rnn_utils
 
 from sklearn.metrics import f1_score
@@ -18,7 +19,7 @@ perframe_train_epoch = 3
 rnn_train_epoch = 5
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
-rnn_learning_rate = 1e-5
+rnn_learning_rate = 1e-4
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
@@ -95,7 +96,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    train_dict = {'crop+coco': {}}
+    train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -131,13 +132,11 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
-        if model == 'avg' or model == 'perframe':
+        if model in ['avg', 'perframe']:
             net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, model=model)
-        elif model == 'lstm':
-            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False)
-        elif model == 'gru':
-            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=False,
-                      gru=True)
+        elif model in ['lstm', 'gru']:
+            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=True,
+                      gru=model == 'gru')
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
@@ -157,11 +156,12 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue
             if model in ['lstm', 'gru']:
                 train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          collate_fn=rnn_collate_fn)
+                                          collate_fn=rnn_collate_fn, shuffle=True)
                 val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
                                         collate_fn=rnn_collate_fn)
             else:
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size)
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                          shuffle=True)
                 val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
@@ -192,9 +192,11 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 net.eval()
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                print(pred)
+                # print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
+            print(y_true)
+            print(y_pred)
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
             if model == 'perframe':
                 y_true, y_pred = transform_preframe_result(y_true, y_pred,
@@ -256,7 +258,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    model = 'lstm'
+    model = 'perframe'
     action_recognition = 1
     body_part = [True, True, True]
     ori_video = False
