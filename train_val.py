@@ -96,7 +96,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    train_dict = {'noise+coco': {}}
+    # train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
