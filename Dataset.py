@@ -7,6 +7,8 @@ import torch
 from torch.utils.data import Dataset
 import torch.nn.utils.rnn as rnn_utils
 
+from Models import get_points_num
+
 testset_rate = 0.5
 coco_point_num = 133
 halpe_point_num = 136
@@ -105,7 +107,8 @@ def rnn_collate_fn(data):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999):
+    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999,
+                 zero_frame=False):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -116,6 +119,7 @@ class Dataset(Dataset):
         self.model = model
         self.sample_fps = sample_fps
         self.video_len = video_len
+        self.zero_frame = zero_frame
 
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
@@ -155,25 +159,26 @@ class Dataset(Dataset):
                 break
             else:
                 frame = feature_json['frames'][index]
-                index += 1
-                if frame['frame_id'] - first_id > int(video_fps * self.video_len):
-                    break
-                elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
-                    # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
-                    #     frame['box'][3]
-                    frame_feature = np.array(frame['keypoints'])[:, :2]
-                    # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                    # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                    frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
-                    frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
-                    frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                    # frame_feature = np.append(frame_feature, [
-                    #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
-                    #     [box_width / frame_width, box_height / frame_height]], axis=0)
-                    frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
-                    if frame_feature.all() == 0:
-                        continue
-                    features.append(frame_feature)
+                if self.zero_frame and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
+                    features.append(np.zeros((get_points_num(is_coco=self.is_coco, body_part=self.body_part))))
+                else:
+                    index += 1
+                    if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                        break
+                    elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                        # box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                        #     frame['box'][3]
+                        frame_feature = np.array(frame['keypoints'])[:, :2]
+                        # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                        # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                        frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
+                        frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
+                        frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                        # frame_feature = np.append(frame_feature, [
+                        #     [(box_x - (frame_width / 2)) / frame_width, (box_y - (frame_height / 2)) / frame_height],
+                        #     [box_width / frame_width, box_height / frame_height]], axis=0)
+                        frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
+                        features.append(frame_feature)
 
         features = np.array(features)
         if self.action_recognition:
