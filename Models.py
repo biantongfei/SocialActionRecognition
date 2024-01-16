@@ -68,25 +68,38 @@ class DNN(nn.Module):
                 nn.ReLU(),
                 # nn.Dropout(0.5),
                 # nn.BatchNorm1d(32),
+                nn.Linear(64, 16),
+                nn.ReLU(),
+                nn.Linear(16, self.output_size),
+            )
+            self.fc = nn.Sequential(
+                nn.Linear(self.input_size, 128),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(128),
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(32),
                 nn.Linear(64, 32),
                 nn.ReLU(),
                 nn.Linear(32, 16),
                 nn.ReLU(),
                 nn.Linear(16, self.output_size),
             )
-            # self.fc = nn.Sequential(
-            #     nn.Linear(self.input_size, 128),
-            #     nn.ReLU(),
-            #     # nn.Dropout(0.5),
-            #     # nn.BatchNorm1d(128),
-            #     nn.Linear(128, 64),
-            #     nn.ReLU(),
-            #     # nn.Dropout(0.5),
-            #     # nn.BatchNorm1d(32),
-            #     nn.Linear(64, 16),
-            #     nn.ReLU(),
-            #     nn.Linear(16, self.output_size),
-            # )
+            self.fc = nn.Sequential(
+                nn.Linear(self.input_size, 256),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(128),
+                nn.Linear(256, 64),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(32),
+                nn.Linear(64, 16),
+                nn.ReLU(),
+                nn.Linear(16, self.output_size),
+            )
 
     def forward(self, x):
         x = self.fc(x)
@@ -137,7 +150,33 @@ class RNN(nn.Module):
             for i in range(out_pad.data.shape[0]):
                 index = out_length[i] - 1
                 out[i] = out_pad.data[i, index, :]
+        out = nn.ReLU(out)
         # out = self.dropout(out)
         out = self.BatchNorm1d(out)
         out = self.fc(out)
         return out
+
+
+class Cnn1D(nn.Module):
+    def __init__(self, is_coco, action_recognition, body_part, max_length):
+        super(RNN, self).__init__()
+        super().__init__()
+        self.is_coco = is_coco
+        points_num = get_points_num(is_coco, body_part)
+        self.input_size = 2 * points_num
+        if action_recognition != None:
+            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
+        else:
+            self.output_size = attitude_class_num
+        self.max_length = max_length
+        self.cnn1 = nn.Conv1d(self.max_length, 256, kernel_size=3)
+        self.cnn2 = nn.Conv1d(128, 32, kernel_size=3)
+        self.cnn3 = nn.Conv1d(16, 3, kernel_size=3)
+        # Readout layer
+        self.fc1 = nn.Linear(3 * points_num * 2, 128)
+        self.fc2 = nn.Linear(3 * points_num * 2, 128)
+        self.fc3 = nn.Linear(3 * points_num * 2, 128)
+
+    def forward(self, x):
+        x=nn.ReLU(self.cnn1(x))
+        x=nn.MaxPool1d()

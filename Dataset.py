@@ -108,7 +108,7 @@ def rnn_collate_fn(data):
 
 class Dataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999,
-                 zero_frame=False):
+                 empty_frame=False):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
@@ -119,7 +119,7 @@ class Dataset(Dataset):
         self.model = model
         self.sample_fps = sample_fps
         self.video_len = video_len
-        self.zero_frame = zero_frame
+        self.empty_frame = empty_frame
 
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
@@ -159,8 +159,11 @@ class Dataset(Dataset):
                 break
             else:
                 frame = feature_json['frames'][index]
-                if self.zero_frame and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
-                    features.append(np.zeros((get_points_num(is_coco=self.is_coco, body_part=self.body_part))))
+                if self.empty_frame and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
+                    if self.empty_frame == 'zero':
+                        features.append(np.zeros((get_points_num(is_coco=self.is_coco, body_part=self.body_part))))
+                    elif self.empty_frame == 'same':
+                        features.append(features[-1])
                 else:
                     index += 1
                     if frame['frame_id'] - first_id > int(video_fps * self.video_len):
