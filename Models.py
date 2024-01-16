@@ -73,6 +73,7 @@ class DNN(nn.Module):
                 nn.Linear(32, 16),
                 nn.ReLU(),
                 nn.Linear(16, self.output_size),
+                nn.Softmax(dim=1)
             )
 
     def forward(self, x):
@@ -143,14 +144,27 @@ class Cnn1D(nn.Module):
         else:
             self.output_size = attitude_class_num
         self.max_length = max_length
-        self.cnn1 = nn.Conv1d(self.max_length, 256, kernel_size=3)
-        self.cnn2 = nn.Conv1d(128, 32, kernel_size=3)
-        self.cnn3 = nn.Conv1d(16, 3, kernel_size=3)
+        self.cnn1 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
+        self.cnn2 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
+        self.cnn3 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
         # Readout layer
-        self.fc1 = nn.Linear(3 * points_num * 2, 128)
-        self.fc2 = nn.Linear(3 * points_num * 2, 128)
-        self.fc3 = nn.Linear(3 * points_num * 2, 128)
+        self.fc1 = nn.Linear(2 * self.input_size, 128)
+        self.fc2 = nn.Linear(128, 32)
+        self.fc3 = nn.Linear(32, self.output_size)
 
     def forward(self, x):
-        x=nn.ReLU(self.cnn1(x))
-        x=nn.MaxPool1d()
+        x = torch.transpose(x, 1, 2)
+        x = nn.ReLU(self.cnn1(x))
+        x = nn.MaxPool1d(2, stride=2)(x)
+        x = nn.ReLU(self.cnn2(x))
+        x = nn.MaxPool1d(2, stride=2)(x)
+        x = nn.ReLU(self.cnn3(x))
+        x = nn.MaxPool1d(2, stride=2)(x)
+        x = x.view(-1, x.size)
+        # x = nn.Dropout(0.5)(x)
+        x = nn.ReLU(self.fc1(x))
+        # x = nn.Dropout(0.5)(x)
+        x = nn.ReLU(self.fc2(x))
+        # x = nn.Dropout(0.5)(x)
+        x = self.fc3(x)
+        return x
