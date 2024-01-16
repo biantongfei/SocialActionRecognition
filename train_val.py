@@ -195,8 +195,6 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 # print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
-            print(y_true)
-            print(y_pred)
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
             if model == 'perframe':
                 y_true, y_pred = transform_preframe_result(y_true, y_pred,
