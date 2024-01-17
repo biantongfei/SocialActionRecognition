@@ -12,10 +12,10 @@ from sklearn.metrics import f1_score
 import csv
 
 avg_batch_size = 128
-perframe_batch_size = 1024
+perframe_batch_size = 2048
 rnn_batch_size = 32
 avg_train_epoch = 3
-perframe_train_epoch = 3
+perframe_train_epoch = 4
 rnn_train_epoch = 5
 valset_rate = 0.2
 dnn_learning_rate = 1e-3

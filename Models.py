@@ -6,7 +6,7 @@ coco_body_point_num = 23
 halpe_body_point_num = 26
 head_point_num = 68
 hands_point_num = 42
-box_feature_num = 3
+box_feature_num = 4
 ori_action_class_num = 7
 action_class_num = 9
 attitude_class_num = 3
@@ -73,12 +73,24 @@ class DNN(nn.Module):
                 nn.Linear(32, 16),
                 nn.ReLU(),
                 nn.Linear(16, self.output_size),
-                nn.Softmax(dim=1)
+            )
+            self.fc = nn.Sequential(
+                nn.Linear(self.input_size, 128),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(128),
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                # nn.Dropout(0.5),
+                # nn.BatchNorm1d(32),
+                nn.Linear(64, 16),
+                nn.ReLU(),
+                nn.Linear(16, self.output_size),
             )
 
     def forward(self, x):
         x = self.fc(x)
-
+        x = nn.Softmax(dim=1)(x)
         return x
 
 
