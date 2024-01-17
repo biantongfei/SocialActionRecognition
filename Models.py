@@ -98,7 +98,7 @@ class DNN(nn.Module):
 
     def forward(self, x):
         x = self.fc(x)
-        x = nn.Softmax(dim=1)(x)
+        # x = nn.Softmax(dim=1)(x)
         return x
 
 
