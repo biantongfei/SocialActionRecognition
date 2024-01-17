@@ -259,21 +259,15 @@ if __name__ == '__main__':
     sample_fps = 30
     video_len = False
     performance_model = []
-    i = 0
-    while i < 10:
+    for i in range(10):
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        try:
-            if video_len:
-                p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                            sample_fps=sample_fps,
-                            ori_videos=ori_video, video_len=video_len)
-            else:
-                p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                            sample_fps=sample_fps, ori_videos=ori_video)
-        except ValueError:
-            continue
+        if video_len:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part, sample_fps=sample_fps,
+                        ori_videos=ori_video, video_len=video_len)
+        else:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
+                        sample_fps=sample_fps, ori_videos=ori_video)
         performance_model.append(p_m)
-        i += 1
     draw_save(performance_model, action_recognition=action_recognition)
     print('model: %s, action_recognition: %s, body_part:' % (model, str(action_recognition)), body_part,
           ', sample_fps: %d, video_len: %s' % (sample_fps, str(video_len)))
