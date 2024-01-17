@@ -139,11 +139,9 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                       gru=model == 'gru')
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
-                                            'scheduler': scheduler, 'best_acc': -1, 'best_f1': -1,
-                                            'unimproved_epoch': 0}
+                                            'best_acc': -1, 'best_f1': -1, 'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -165,7 +163,6 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
-            scheduler = train_dict[hyperparameter_group]['scheduler']
             for data in train_loader:
                 if model in ['lstm', 'gru']:
                     (inputs, labels), data_length = data
@@ -179,7 +176,6 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                scheduler.step()
 
             y_true, y_pred = [], []
             for data in val_loader:
