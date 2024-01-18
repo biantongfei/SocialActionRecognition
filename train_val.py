@@ -254,7 +254,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 if __name__ == '__main__':
     model = 'perframe'
     action_recognition = 2
-    body_part = [False, True, False]
+    body_part = [True, True, False]
     ori_video = False
     sample_fps = 30
     video_len = False
