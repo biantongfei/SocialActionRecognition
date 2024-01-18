@@ -256,7 +256,7 @@ if __name__ == '__main__':
     action_recognition = 1
     body_part = [True, False, True]
     ori_video = False
-    sample_fps = 15
+    sample_fps = 3
     video_len = False
     performance_model = []
     i = 0
