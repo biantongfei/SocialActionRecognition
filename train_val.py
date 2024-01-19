@@ -255,9 +255,9 @@ if __name__ == '__main__':
     model = 'perframe'
     action_recognition = False
     body_part = [True, False, True]
-    ori_video = False
-    sample_fps = 3
-    video_len = False
+    ori_video = 1
+    sample_fps = 30
+    video_len = 1
     performance_model = []
     i = 0
     while i < 10:
