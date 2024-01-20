@@ -257,7 +257,7 @@ if __name__ == '__main__':
     body_part = [True, False, True]
     ori_video = False
     sample_fps = 6
-    video_len = 2
+    video_len = 0.5
     performance_model = []
     i = 0
     while i < 10:
