@@ -3,7 +3,7 @@ from Models import DNN, RNN, Cnn1D
 from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
-from torch.utils.data import DataLoader
+from DataLoader import JPLDataLoader
 from torch.nn import functional
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
@@ -161,22 +161,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            if model in ['avg', 'perframe']:
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          shuffle=True)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
-            elif model in ['lstm', 'gru']:
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          collate_fn=rnn_collate_fn, shuffle=True)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
-                                        collate_fn=rnn_collate_fn)
-
-            elif model == 'conv1d':
-                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          collate_fn=conv1d_collate_fn, shuffle=True)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
-                                        collate_fn=conv1d_collate_fn)
-
+            train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
+                                         batch_size=batch_size, shuffle=True)
+            val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
+                                       batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
@@ -231,11 +219,8 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         print('------------------------------------------')
 
     for hyperparameter_group in train_dict:
-        if model in ['lstm', 'gru', 'conv1d']:
-            test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size,
-                                     collate_fn=rnn_collate_fn)
-        else:
-            test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
+        test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
+                                    batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:

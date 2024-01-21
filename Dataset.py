@@ -5,7 +5,6 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-import torch.nn.utils.rnn as rnn_utils
 
 from Models import get_points_num
 
@@ -13,7 +12,6 @@ testset_rate = 0.5
 coco_point_num = 133
 halpe_point_num = 136
 video_fps = 30
-max_length = 1058
 
 
 def get_data_path(is_crop, is_coco):
@@ -95,33 +93,6 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
-def rnn_collate_fn(data):
-    data.sort(key=lambda feature: feature[0].shape[0], reverse=True)
-    x, y = [], []
-    for d in data:
-        x.append(d[0])
-        y.append(d[1])
-    data_length = [feature.shape[0] for feature in x]
-    x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
-    return (x, torch.Tensor(y).long()), data_length
-
-
-def conv1d_collate_fn(data):
-    padding = 'zero'
-    # padding = 'same'
-    input, label = None, []
-    for index, d in enumerate(data):
-        x = d[0]
-        while x.shape[0] < max_length:
-            x = torch.cat(
-                (x, torch.zeros((1, x.shape[1])) if padding == 'zero' else x[-1].reshape((1, x.shape[1]))),
-                dim=0)
-        input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
-            (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
-        label.append(d[1])
-    return input, torch.Tensor(label).long()
-
-
 class Dataset(Dataset):
     def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999,
                  empty_frame=False):
@@ -135,7 +106,7 @@ class Dataset(Dataset):
         self.model = model
         self.sample_fps = sample_fps
         self.video_len = video_len
-        self.empty_frame = empty_frame
+        self.empty_frame = empty_frame  # how to deal with empty frames: 'zero' for zero padding; 'same' for last frame padding
 
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
@@ -158,6 +129,7 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
+        self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
