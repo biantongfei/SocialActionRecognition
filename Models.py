@@ -147,34 +147,37 @@ class Cnn1D(nn.Module):
         else:
             self.output_size = attitude_class_num
         self.cnn = nn.Sequential(
-            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
-            # nn.BatchNorm2d(self.input_size),
-            # nn.Dropout(0.5),
+            nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
+            nn.MaxPool1d(2, stride=2),
+            # nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
-            nn.BatchNorm2d(self.input_size),
             nn.Dropout(0.5),
+            nn.Conv1d(64, 32, kernel_size=7, stride=3, padding=3),
+            nn.MaxPool1d(2, stride=2),
+            # nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
-            nn.BatchNorm2d(self.input_size),
             nn.Dropout(0.5),
+            nn.Conv1d(32, 16, kernel_size=7, stride=3, padding=3),
+            nn.MaxPool1d(2, stride=2),
+            # nn.BatchNorm1d(16),
             nn.ReLU(),
+            nn.Dropout(0.5),
         )
         self.fc = nn.Sequential(
-            nn.Linear(2 * self.input_size, 128),
-            nn.ReLU(),
+            nn.Linear(80, 32),
             # nn.BatchNorm1d(32),
-            # nn.Dropout(0.5),
-            nn.Linear(128, 32),
             nn.ReLU(),
-            # nn.BatchNorm1d(32),
-            # nn.Dropout(0.5),
-            nn.Linear(32, self.output_size)
+            nn.Dropout(0.5),
+            nn.Linear(32, 16),
+            # nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(16, self.output_size)
         )
 
     def forward(self, x):
         x = torch.transpose(x, 1, 2)
         x = self.cnn(x)
-        x = x.view(-1, x.size)
+        x = x.flatten(1)
         x = self.fc(x)
         return x

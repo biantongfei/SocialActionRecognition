@@ -13,6 +13,7 @@ testset_rate = 0.5
 coco_point_num = 133
 halpe_point_num = 136
 video_fps = 30
+max_length = 1058
 
 
 def get_data_path(is_crop, is_coco):
@@ -95,7 +96,6 @@ def get_body_part(feature, is_coco, body_part):
 
 
 def rnn_collate_fn(data):
-    data = list(data)
     data.sort(key=lambda feature: feature[0].shape[0], reverse=True)
     x, y = [], []
     for d in data:
@@ -104,6 +104,22 @@ def rnn_collate_fn(data):
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
     return (x, torch.Tensor(y).long()), data_length
+
+
+def conv1d_collate_fn(data):
+    padding = 'zero'
+    # padding = 'same'
+    input, label = None, []
+    for index, d in enumerate(data):
+        x = d[0]
+        while x.shape[0] < max_length:
+            x = torch.cat(
+                (x, torch.zeros((1, x.shape[1])) if padding == 'zero' else x[-1].reshape((1, x.shape[1]))),
+                dim=0)
+        input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
+            (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
+        label.append(d[1])
+    return input, torch.Tensor(label).long()
 
 
 class Dataset(Dataset):

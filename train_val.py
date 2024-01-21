@@ -1,4 +1,4 @@
-from Dataset import Dataset, get_tra_test_files, rnn_collate_fn
+from Dataset import Dataset, get_tra_test_files, rnn_collate_fn, conv1d_collate_fn
 from Models import DNN, RNN, Cnn1D
 from draw_utils import draw_training_process, plot_confusion_matrix
 
@@ -161,25 +161,30 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            if model in ['lstm', 'gru', 'conv1d']:
+            if model in ['avg', 'perframe']:
+                train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
+                                          shuffle=True)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
+            elif model in ['lstm', 'gru']:
                 train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
                                           collate_fn=rnn_collate_fn, shuffle=True)
                 val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
                                         collate_fn=rnn_collate_fn)
-            else:
+
+            elif model == 'conv1d':
                 train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
-                                          shuffle=True)
-                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size)
+                                          collate_fn=conv1d_collate_fn, shuffle=True)
+                val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
+                                        collate_fn=conv1d_collate_fn)
+
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
-                if model in ['lstm', 'gru']:
+                if model in ['avg', 'perframe', 'conv1d']:
+                    inputs, labels = data
+                elif model in ['lstm', 'gru']:
                     (inputs, labels), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                elif model == 'conv1d':
-                    (inputs, labels), data_length = data
-                else:
-                    inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.train()
                 outputs = net(inputs)
@@ -190,16 +195,16 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
             y_true, y_pred = [], []
             for data in val_loader:
-                if model in ['lstm', 'gru']:
+                if model in ['avg', 'perframe', 'conv1d']:
+                    inputs, labels = data
+                elif model in ['lstm', 'gru']:
                     (inputs, labels), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                else:
-                    inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
                 net.eval()
                 outputs = net(inputs)
                 pred = outputs.argmax(dim=1)
-                # print(pred)
+                print(pred)
                 y_true += labels.tolist()
                 y_pred += pred.tolist()
             y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
@@ -226,18 +231,18 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         print('------------------------------------------')
 
     for hyperparameter_group in train_dict:
-        if model in ['lstm', 'gru']:
+        if model in ['lstm', 'gru', 'conv1d']:
             test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size,
                                      collate_fn=rnn_collate_fn)
         else:
             test_loader = DataLoader(dataset=train_dict[hyperparameter_group]['testset'], batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
-            if model in ['lstm', 'gru']:
+            if model in ['avg', 'perframe', 'conv1d']:
+                inputs, labels = data
+            elif model in ['lstm', 'gru']:
                 (inputs, labels), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-            else:
-                inputs, labels = data
             inputs, labels = inputs.to(dtype).to(device), labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
@@ -263,9 +268,9 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 
 if __name__ == '__main__':
-    model = 'perframe'
+    model = 'conv1d'
     action_recognition = 1
-    body_part = [True, False, True]
+    body_part = [True, True, True]
     ori_video = False
     sample_fps = 30
     video_len = False
@@ -273,15 +278,15 @@ if __name__ == '__main__':
     i = 0
     while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        try:
-            if video_len:
-                p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                            sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len)
-            else:
-                p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                            sample_fps=sample_fps, ori_videos=ori_video)
-        except ValueError:
-            continue
+        # try:
+        if video_len:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
+                        sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len)
+        else:
+            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
+                        sample_fps=sample_fps, ori_videos=ori_video)
+        # except ValueError:
+        #     continue
         performance_model.append(p_m)
         i += 1
     draw_save(performance_model, action_recognition=action_recognition)
