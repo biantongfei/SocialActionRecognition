@@ -254,10 +254,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 if __name__ == '__main__':
     model = 'perframe'
     action_recognition = False
-    body_part = [True, False, True]
+    body_part = [True, False, False]
     ori_video = False
-    sample_fps = 3
-    video_len = 1
+    sample_fps = 30
+    video_len = False
     performance_model = []
     i = 0
     while i < 10:
@@ -265,8 +265,7 @@ if __name__ == '__main__':
         try:
             if video_len:
                 p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                            sample_fps=sample_fps,
-                            ori_videos=ori_video, video_len=video_len)
+                            sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len)
             else:
                 p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
                             sample_fps=sample_fps, ori_videos=ori_video)
