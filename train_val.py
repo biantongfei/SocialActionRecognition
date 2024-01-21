@@ -1,4 +1,4 @@
-from Dataset import Dataset, get_tra_test_files, rnn_collate_fn, conv1d_collate_fn
+from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D
 from draw_utils import draw_training_process, plot_confusion_matrix
 
