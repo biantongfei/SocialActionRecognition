@@ -129,12 +129,12 @@ class Dataset(Dataset):
             if index == 0:
                 if self.model in ['avg', 'perframe']:
                     self.features = feature
-                elif self.model in ['lstm', 'gru']:
+                elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features = [feature]
             else:
                 if self.model in ['avg', 'perframe']:
                     self.features = np.append(self.features, feature, axis=0)
-                elif self.model in ['lstm', 'gru']:
+                elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
 
             if model == 'perframe':
@@ -142,8 +142,6 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(int(feature.shape[0]))
-        # if self.model in ['lstm', 'gru']:
-        #     self.features = rnn_utils.pad_sequence(self.features, batch_first=True)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -198,7 +196,7 @@ class Dataset(Dataset):
             features = features.reshape(1, features.size)
         elif self.model == 'perframe':
             label = [label for _ in range(int(features.shape[0]))]
-        elif self.model in ['lstm', 'gru']:
+        elif self.model in ['lstm', 'gru', 'conv1d']:
             features = torch.from_numpy(features)
         return features, label
 
@@ -208,7 +206,7 @@ class Dataset(Dataset):
     def __len__(self):
         if self.model in ['avg', 'perframe']:
             return self.features.shape[0]
-        elif self.model in ['lstm', 'gru']:
+        elif self.model in ['lstm', 'gru', 'conv1d']:
             return len(self.features)
 
 

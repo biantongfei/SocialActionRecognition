@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files, rnn_collate_fn
-from Models import DNN, RNN
+from Models import DNN, RNN, Cnn1D
 from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
@@ -14,12 +14,15 @@ import csv
 avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 32
+conv1d_batch_size = 64
 avg_train_epoch = 3
 perframe_train_epoch = 5
 rnn_train_epoch = 5
+conv1d_epoch = 5
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
-rnn_learning_rate = 1e-4
+rnn_learning_rate = 1e-3
+conv1d_learning_rate = 1e-3
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
@@ -92,11 +95,11 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     else:
         train_dict = {'crop+coco': {}, 'noise+coco': {}}
-    if body_part[0]:
-        train_dict = {'crop+coco': {}, 'crop+halpe': {}}
-    else:
-        train_dict = {'crop+coco': {}}
-    # train_dict = {'noise+coco': {}}
+    # if body_part[0]:
+    #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
+    # else:
+    #     train_dict = {'crop+coco': {}}
+    train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -115,6 +118,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         batch_size = rnn_batch_size
         epoch_limit = rnn_train_epoch
         learning_rate = rnn_learning_rate
+    elif model == 'conv1d':
+        batch_size = conv1d_batch_size
+        epoch_limit = conv1d_epoch
+        learning_rate = conv1d_learning_rate
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -137,6 +144,8 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
         elif model in ['lstm', 'gru']:
             net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=True,
                       gru=model == 'gru')
+        elif model == 'conv1d':
+            net = Cnn1D(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
@@ -152,7 +161,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 continue_train = True
             else:
                 continue
-            if model in ['lstm', 'gru']:
+            if model in ['lstm', 'gru', 'conv1d']:
                 train_loader = DataLoader(dataset=train_dict[hyperparameter_group]['trainset'], batch_size=batch_size,
                                           collate_fn=rnn_collate_fn, shuffle=True)
                 val_loader = DataLoader(dataset=train_dict[hyperparameter_group]['valset'], batch_size=batch_size,
@@ -167,6 +176,8 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                 if model in ['lstm', 'gru']:
                     (inputs, labels), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                elif model == 'conv1d':
+                    (inputs, labels), data_length = data
                 else:
                     inputs, labels = data
                 inputs, labels = inputs.to(dtype).to(device), labels.to(device)
@@ -253,8 +264,8 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
 if __name__ == '__main__':
     model = 'perframe'
-    action_recognition = False
-    body_part = [True, False, False]
+    action_recognition = 1
+    body_part = [True, False, True]
     ori_video = False
     sample_fps = 30
     video_len = False

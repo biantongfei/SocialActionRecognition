@@ -61,21 +61,21 @@ class DNN(nn.Module):
         elif model == 'perframe':
             self.fc = nn.Sequential(
                 nn.Linear(self.input_size, 128),
-                nn.ReLU(),
                 nn.BatchNorm1d(128),
                 # nn.Dropout(0.5),
-                nn.Linear(128, 64),
                 nn.ReLU(),
+                nn.Linear(128, 64),
                 nn.BatchNorm1d(64),
                 # nn.Dropout(0.5),
-                nn.Linear(64, 32),
                 nn.ReLU(),
+                nn.Linear(64, 32),
                 nn.BatchNorm1d(32),
                 # nn.Dropout(0.5),
-                nn.Linear(32, 16),
                 nn.ReLU(),
+                nn.Linear(32, 16),
                 nn.BatchNorm1d(16),
                 # nn.Dropout(0.5),
+                nn.ReLU(),
                 nn.Linear(16, self.output_size),
             )
 
@@ -94,7 +94,7 @@ class RNN(nn.Module):
         self.input_size = 2 * points_num
         self.hidden_size = 512
         self.bidirectional = bidirectional
-        if action_recognition != None:
+        if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
@@ -136,24 +136,41 @@ class RNN(nn.Module):
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part, max_length):
-        super(RNN, self).__init__()
+    def __init__(self, is_coco, action_recognition, body_part):
+        super(Cnn1D, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        if action_recognition != None:
+        if action_recognition:
             self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
         else:
             self.output_size = attitude_class_num
-        self.max_length = max_length
-        self.cnn1 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
-        self.cnn2 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
-        self.cnn3 = nn.Conv1d(self.input_size, self.input_size, kernel_size=3)
-        # Readout layer
-        self.fc1 = nn.Linear(2 * self.input_size, 128)
-        self.fc2 = nn.Linear(128, 32)
-        self.fc3 = nn.Linear(32, self.output_size)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
+            # nn.BatchNorm2d(self.input_size),
+            # nn.Dropout(0.5),
+            nn.ReLU(),
+            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
+            nn.BatchNorm2d(self.input_size),
+            nn.Dropout(0.5),
+            nn.ReLU(),
+            nn.Conv1d(self.input_size, self.input_size, kernel_size=3),
+            nn.BatchNorm2d(self.input_size),
+            nn.Dropout(0.5),
+            nn.ReLU(),
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(2 * self.input_size, 128),
+            nn.ReLU(),
+            # nn.BatchNorm1d(32),
+            # nn.Dropout(0.5),
+            nn.Linear(128, 32),
+            nn.ReLU(),
+            # nn.BatchNorm1d(32),
+            # nn.Dropout(0.5),
+            nn.Linear(32, self.output_size)
+        )
 
     def forward(self, x):
         x = torch.transpose(x, 1, 2)
