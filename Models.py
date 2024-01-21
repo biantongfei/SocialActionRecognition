@@ -174,17 +174,7 @@ class Cnn1D(nn.Module):
 
     def forward(self, x):
         x = torch.transpose(x, 1, 2)
-        x = nn.ReLU(self.cnn1(x))
-        x = nn.MaxPool1d(2, stride=2)(x)
-        x = nn.ReLU(self.cnn2(x))
-        x = nn.MaxPool1d(2, stride=2)(x)
-        x = nn.ReLU(self.cnn3(x))
-        x = nn.MaxPool1d(2, stride=2)(x)
+        x = self.cnn(x)
         x = x.view(-1, x.size)
-        # x = nn.Dropout(0.5)(x)
-        x = nn.ReLU(self.fc1(x))
-        # x = nn.Dropout(0.5)(x)
-        x = nn.ReLU(self.fc2(x))
-        # x = nn.Dropout(0.5)(x)
-        x = self.fc3(x)
+        x = self.fc(x)
         return x
