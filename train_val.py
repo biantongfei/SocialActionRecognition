@@ -137,6 +137,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
                          body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
+        max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
@@ -162,9 +163,9 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             else:
                 continue
             train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
-                                         batch_size=batch_size, shuffle=True)
+                                         batch_size=batch_size, max_length=max_length, shuffle=True)
             val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
-                                       batch_size=batch_size)
+                                       max_length=max_length, batch_size=batch_size)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
@@ -220,7 +221,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                    batch_size=batch_size)
+                                    max_length=max_length,batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:

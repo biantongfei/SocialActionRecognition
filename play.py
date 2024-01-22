@@ -5,7 +5,7 @@ import numpy as np
 m1 = nn.Conv1d(266, 64, 7, stride=3, padding=3)
 m2 = nn.Conv1d(64, 32, 7, stride=3, padding=3)
 m3 = nn.Conv1d(32, 16, 7, stride=3, padding=3)
-input = torch.randn(32, 1044, 266)
+input = torch.randn(32, 1058, 266)
 input = torch.transpose(input, 1, 2)
 output = m1(input)
 print(output.shape)
