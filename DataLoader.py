@@ -5,7 +5,7 @@ import torch.nn.utils.rnn as rnn_utils
 
 class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, shuffle=False):
-        super(JPLDataLoader).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle)
+        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle)
         if model in ['lstm', 'gru']:
             self.collate_fn = self.rnn_collate_fn
         elif model == 'conv1d':
