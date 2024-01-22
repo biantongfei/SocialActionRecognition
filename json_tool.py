@@ -203,6 +203,54 @@ def gaussion_augment():
                         json.dump(new_json, outfile)
 
 
+def mixed_augment():
+    sigma_list = [0.01, 0.005, 0.001]
+    sigma_str = ['10', '05', '01']
+    augment_times = 3
+
+    crop_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
+    files = os.listdir(crop_path)
+    files.sort()
+    for file in files:
+        print(file, 'coco')
+        with open(crop_path + file, "r") as f:
+            ori_json = json.load(f)
+            f.close()
+        with open(out_path + file, "w") as outfile:
+            json.dump(ori_json, outfile)
+            outfile.close()
+        new_json = flip_feature(ori_json)
+        with open(out_path + '%s-flip_p%s' % (file.split('_p')[0], file.split('_p')[-1]), "w") as outfile:
+            json.dump(new_json, outfile)
+            outfile.close()
+        for sigma_index, sigma in enumerate(sigma_list):
+            for i in range(augment_times):
+                new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
+                            'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
+                            'action_class': ori_json['action_class'], 'frames': []}
+                for frame in ori_json['frames']:
+                    box_size = frame['box'][2:]
+                    keypoints = frame['keypoints']
+                    x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
+                    y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
+                    score_gaussion_noise = np.zeros((len(keypoints), 1))
+                    gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                    keypoints = (np.array(keypoints) + gaussion_noise).tolist()
+                    new_json['frames'].append(
+                        {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
+                         'box': frame['box']})
+                with open(out_path + '%s-noise%s-%d_p%s' % (
+                        file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
+                          "w") as outfile:
+                    json.dump(new_json, outfile)
+                new_json = flip_feature(new_json)
+                with open(out_path + '%s-noise%s-%d-flip_p%s' % (
+                        file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
+                          "w") as outfile:
+                    json.dump(new_json, outfile)
+
+
 if __name__ == '__main__':
     # refactor_jsons()
     # feature_path = '../JPL_Augmented_Posefeatures/features/crop/coco_wholebody/'
