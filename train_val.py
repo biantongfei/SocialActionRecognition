@@ -221,7 +221,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                    max_length=max_length,batch_size=batch_size)
+                                    max_length=max_length, batch_size=batch_size)
         y_true, y_pred = [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
