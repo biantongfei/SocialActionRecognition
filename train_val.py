@@ -99,6 +99,10 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
+    if body_part[0]:
+        train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
+    else:
+        train_dict = {'mixed+coco': {}}
     # train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -125,17 +129,17 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
-        is_crop = True if 'crop' in hyperparameter_group else False
+        augment = hyperparameter_group.split('+')[0]
         is_coco = True if 'coco' in hyperparameter_group else False
-        tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco,
+        tra_files, test_files = get_tra_test_files(augment=augment, is_coco=is_coco,
                                                    not_add_class=action_recognition == 1, ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
-                           action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
+                           action_recognition=action_recognition, augment=augment, is_coco=is_coco,
                            body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
-                         action_recognition=action_recognition, is_crop=is_crop, is_coco=is_coco,
+                         action_recognition=action_recognition, augment=augment, is_coco=is_coco,
                          body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
-        testset = Dataset(data_files=test_files, action_recognition=action_recognition, is_crop=is_crop,
+        testset = Dataset(data_files=test_files, action_recognition=action_recognition, augment=augment,
                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
@@ -149,7 +153,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             net = Cnn1D(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-        train_dict[hyperparameter_group] = {'is_crop': is_crop, 'is_coco': is_coco, 'trainset': trainset,
+        train_dict[hyperparameter_group] = {'augment': augment, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
                                             'best_acc': -1, 'best_f1': -1, 'unimproved_epoch': 0}
     print('Start Training!!!')
@@ -256,7 +260,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 if __name__ == '__main__':
     model = 'conv1d'
     action_recognition = 1
-    body_part = [True, True, True]
+    body_part = [True, False, False]
     ori_video = False
     sample_fps = 30
     video_len = False

@@ -14,22 +14,27 @@ halpe_point_num = 136
 video_fps = 30
 
 
-def get_data_path(is_crop, is_coco):
-    if is_crop:
+def get_data_path(augment, is_coco):
+    if augment=='crop':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
-    else:
+    elif augment=='noise':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
+    else:
+        if is_coco:
+            data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
+        else:
+            data_path = '../JPL_Augmented_Posefeatures/mixed/halpe136/'
     return data_path
 
 
-def get_tra_test_files(is_crop, is_coco, not_add_class, ori_videos=False):
-    data_path = get_data_path(is_crop, is_coco)
+def get_tra_test_files(augment, is_coco, not_add_class, ori_videos=False):
+    data_path = get_data_path(augment, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
     for file in files:
@@ -94,13 +99,13 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, is_crop, is_coco, body_part, model, sample_fps, video_len=99999,
+    def __init__(self, data_files, action_recognition, augment, is_coco, body_part, model, sample_fps, video_len=99999,
                  empty_frame=False):
         super(Dataset, self).__init__()
         self.files = data_files
-        self.data_path = get_data_path(is_crop=is_crop, is_coco=is_coco)
+        self.data_path = get_data_path(augment=augment, is_coco=is_coco)
         self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
-        self.is_crop = is_crop
+        self.augment = augment
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.model = model
@@ -199,15 +204,15 @@ class Dataset(Dataset):
 
 
 if __name__ == '__main__':
-    is_crop = True
+    augment = 'crop'
     is_coco = True
-    tra_files, test_files = get_tra_test_files(is_crop=is_crop, is_coco=is_coco, not_add_class=False)
+    tra_files, test_files = get_tra_test_files(augment=augment, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, is_crop=is_crop,
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, augment=augment,
                       is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, is_crop=is_crop,
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, augment=augment,
                       is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
