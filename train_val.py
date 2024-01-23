@@ -260,7 +260,7 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 if __name__ == '__main__':
     model = 'conv1d'
     action_recognition = 1
-    body_part = [True, False, False]
+    body_part = [True, True, True]
     ori_video = False
     sample_fps = 30
     video_len = False
