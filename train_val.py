@@ -61,6 +61,7 @@ def draw_save(performance_model):
                     else:
                         y_true[key] = p_m[key]['%s_y_true' % task]
                         y_pred[key] = p_m[key]['%s_y_pred' % task]
+                    print(y_true.keys(), task, attitude_classes if task == 'attitude' else action_classes)
                     plot_confusion_matrix(y_true[key], y_pred[key],
                                           attitude_classes if task == 'attitude' else action_classes,
                                           sub_name="%s_%s" % (key, task))
@@ -102,7 +103,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    # train_dict = {'noise+coco': {}}
+    train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -251,6 +252,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
                 "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
+        break
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
