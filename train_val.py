@@ -290,8 +290,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
         performance_model[hyperparameter_group]['attitude_f1'] = att_f1
         performance_model[hyperparameter_group]['attitude_y_true'] = att_y_true
         performance_model[hyperparameter_group]['attitude_y_pred'] = att_y_pred
-        performance_model[hyperparameter_group]['action_accuracy'] = att_acc
-        performance_model[hyperparameter_group]['action_accuracy'] = att_acc
+        performance_model[hyperparameter_group]['action_accuracy'] = act_acc
         performance_model[hyperparameter_group]['action_f1'] = act_f1
         performance_model[hyperparameter_group]['action_y_true'] = act_y_true
         performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
