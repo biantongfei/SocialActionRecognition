@@ -60,7 +60,7 @@ def draw_save(performance_model):
                         y_pred[key] = torch.cat((y_pred[key], p_m[key]['%s_y_pred' % task]), dim=0)
                     else:
                         y_true[key] = p_m[key]['%s_y_true' % task]
-                        y_pred[key] = p_m[key]['%sy_pred' % task]
+                        y_pred[key] = p_m[key]['%s_y_pred' % task]
                     plot_confusion_matrix(y_true[key], y_pred[key], attitude_classes, sub_name="%s_%s" % (key, task))
             spamwriter.writerow(data)
         csvfile.close()
