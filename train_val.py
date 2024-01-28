@@ -38,8 +38,6 @@ action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch',
 
 
 def draw_save(performance_model):
-    y_true = {}
-    y_pred = {}
     att_best_acc = -1
     best_model = None
     with open('plots/performance.csv', 'w', newline='') as csvfile:
@@ -47,6 +45,8 @@ def draw_save(performance_model):
         for index, p_m in enumerate(performance_model):
             data = [index + 1]
             for key in p_m.keys():
+                y_true = {}
+                y_pred = {}
                 if att_best_acc < p_m[key]['attitude_accuracy']:
                     att_best_acc = p_m[key]['attitude_accuracy']
                     best_model = p_m[key]['model']
@@ -61,7 +61,7 @@ def draw_save(performance_model):
                     else:
                         y_true[key] = p_m[key]['%s_y_true' % task]
                         y_pred[key] = p_m[key]['%s_y_pred' % task]
-                    print(y_true.keys(), task, attitude_classes if task == 'attitude' else action_classes)
+                    print(y_true[key]['y'], task, attitude_classes if task == 'attitude' else action_classes)
                     plot_confusion_matrix(y_true[key], y_pred[key],
                                           attitude_classes if task == 'attitude' else action_classes,
                                           sub_name="%s_%s" % (key, task))
