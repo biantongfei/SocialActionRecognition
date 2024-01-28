@@ -61,7 +61,6 @@ def draw_save(performance_model):
                     else:
                         y_true[key] = p_m[key]['%s_y_true' % task]
                         y_pred[key] = p_m[key]['%s_y_pred' % task]
-                    print(y_true[key]['y'], task, attitude_classes if task == 'attitude' else action_classes)
                     plot_confusion_matrix(y_true[key], y_pred[key],
                                           attitude_classes if task == 'attitude' else action_classes,
                                           sub_name="%s_%s" % (key, task))
