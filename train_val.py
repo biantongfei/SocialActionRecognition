@@ -61,7 +61,9 @@ def draw_save(performance_model):
                     else:
                         y_true[key] = p_m[key]['%s_y_true' % task]
                         y_pred[key] = p_m[key]['%s_y_pred' % task]
-                    plot_confusion_matrix(y_true[key], y_pred[key], attitude_classes, sub_name="%s_%s" % (key, task))
+                    plot_confusion_matrix(y_true[key], y_pred[key],
+                                          attitude_classes if task == 'attitude' else action_classes,
+                                          sub_name="%s_%s" % (key, task))
             spamwriter.writerow(data)
         csvfile.close()
     torch.save(best_model.state_dict(), 'plots/model.pth')
@@ -303,7 +305,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 if __name__ == '__main__':
     model = 'avg'
-    body_part = [True, False, False]
+    body_part = [True, True, True]
     ori_video = False
     sample_fps = 30
     video_len = False
