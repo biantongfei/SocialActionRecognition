@@ -102,7 +102,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    train_dict = {'noise+coco': {}}
+    # train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -251,7 +251,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
                 "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
-        break
+        # break
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
