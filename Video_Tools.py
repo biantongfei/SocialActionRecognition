@@ -4,7 +4,6 @@ import random
 
 import cv2
 import xlrd
-import imageio
 
 
 def read_jpl_labels():
@@ -31,6 +30,9 @@ def video_augmentation(video_dir, out_path):
     videos.sort()
 
     for video_name in videos:
+        if '.avi' not in video_name:
+            continue
+        print(video_name)
         # read video
         cap = cv2.VideoCapture(video_dir + video_name)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -72,13 +74,13 @@ def video_augmentation(video_dir, out_path):
                     new_frames.append([augmented_frames[index]])
                 new_frames.append([frame])
                 frame = cv2.flip(frame, 1)
-                new_frames.append(frame)
+                new_frames.append([frame])
             success, frame = cap.read()
         cap.release()
         cv2.destroyAllWindows()
 
         # write videos
-        for index, frames in enumerate(new_frames[:-1]):
+        for index, frames in enumerate(new_frames[:-2]):
             crop_rate = crop_rate_list[int(index / (crop_times_per_rate * 2))]
             count = int((index % (crop_times_per_rate * 2)) / 2)
             is_flip = index % 2
@@ -86,6 +88,8 @@ def video_augmentation(video_dir, out_path):
                         height=int(height * crop_rate), is_original=False, crop_rate=crop_rate, count=count,
                         is_flip=is_flip)
         write_video(new_frames[-1], video_name, out_path, fps=fps, width=width, height=height, is_original=True)
+        write_video(new_frames[-2], video_name, out_path, fps=fps, width=width, height=height, is_original=True,
+                    is_flip=True)
 
 
 def write_video(frames, video_name, out_path, fps, width, height, is_original=True, crop_rate=None, count=None,
@@ -107,7 +111,7 @@ def write_video(frames, video_name, out_path, fps, width, height, is_original=Tr
 
 
 def label_person_id(now_video, coco, fps):
-    video_dir = 'jpl_augmented/videos/'
+    video_dir = '../JPL_Augmented_Posefeatures/more_video_augment/'
     videos = os.listdir(video_dir)
     videos.sort()
     video_length = len(videos)
@@ -133,11 +137,13 @@ def label_person_id(now_video, coco, fps):
 
 def label_video(video_name, coco, fps):
     if coco:
-        outpath = ('jpl_augmented/features/crop/coco_wholebody/')
-        ori_json_path = 'Alphapose_coco_wholebody/' + video_name.split('.')[0] + '.json'
+        outpath = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
+        ori_json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_coco_wholebody/' + \
+                        video_name.split('.')[0] + '.json'
     else:
-        outpath = 'jpl_augmented/features/crop/halpe136/'
-        ori_json_path = 'Alphapose_halpe136/' + video_name.split('.')[0] + '.json'
+        outpath = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
+        ori_json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_halpe136/' + \
+                        video_name.split('.')[0] + '.json'
 
     # rebuild json structure
     with open(ori_json_path, "r") as f:
@@ -154,7 +160,8 @@ def label_video(video_name, coco, fps):
                  'box': pose['box']}]
 
     # label for person
-    labels = read_jpl_labels()
+    # labels = read_jpl_labels()
+    labels = 8
     new_json = {'video_name': video_name, 'persons': {}}
     now_id = 1
     for person_id in persons.keys():
@@ -178,7 +185,8 @@ def label_video(video_name, coco, fps):
                 if answer[0] == 'y':
                     # 1 for ori class, 2 for not interested, 3 for interested
                     if int(answer[1]) == 1:
-                        action_class = int(labels[video_name.split('-')[0]])
+                        # action_class = int(labels[video_name.split('-')[0]])
+                        action_class = 8
                     elif int(answer[1]) == 2:
                         action_class = 7
                     elif int(answer[1]) == 3:
@@ -236,7 +244,7 @@ def label_video(video_name, coco, fps):
 
 
 def play_video_box(video_name, boxes, fps):
-    video_dir = 'jpl_augmented/videos/'
+    video_dir = '../JPL_Augmented_Posefeatures/more_video_augment/'
     cap = cv2.VideoCapture(video_dir + video_name)
     success, frame = cap.read()
     index = 0
@@ -256,9 +264,10 @@ def play_video_box(video_name, boxes, fps):
 
 
 def refactor_jsons():
-    coco_path = 'Alphapose_coco_wholebody/'
+    coco_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_coco_wholebody/'
     files = os.listdir(coco_path)
     for file in files:
+        print(file)
         if len(file.split('.')) < 2:
             # if file.split('.')[-1]=='avi':
             print(file, 'coco')
@@ -267,9 +276,10 @@ def refactor_jsons():
         else:
             continue
 
-    halpe_path = 'Alphapose_halpe136/'
+    halpe_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_halpe136/'
     files = os.listdir(halpe_path)
     for file in files:
+        print(file)
         if len(file.split('.')) < 2:
             # if file.split('.')[-1] == 'avi':
             print(file, 'halpe')
@@ -286,8 +296,8 @@ if __name__ == "__main__":
     #     del_json_content('11_5', 2, i, False)
     # del_json_content('12_2', 1, 245, False)
     # select_user_from_jpl()
-    # video_augmentation('jpl_interaction_segmented_iyuv/', 'jpl_augmented/videos/')
-    label_person_id('2_1-resize85-0.avi', True, 1)
+    # video_augmentation('../JPL_Augmented_Posefeatures/more_video/', '../JPL_Augmented_Posefeatures/more_video_augment/')
+    label_person_id('c5-resize95-1.avi', True, 1)
     # refactor_jsons()
 
     # video_files = os.listdir('jpl_augmented/videos/')

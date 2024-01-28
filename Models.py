@@ -7,9 +7,8 @@ halpe_body_point_num = 26
 head_point_num = 68
 hands_point_num = 42
 box_feature_num = 4
-ori_action_class_num = 7
 action_class_num = 9
-attitude_class_num = 3
+attitude_class_num = 4
 fps = 30
 if torch.cuda.is_available():
     device = torch.device("cuda:0")
@@ -31,17 +30,12 @@ def get_points_num(is_coco, body_part):
 
 
 class DNN(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part, model):
+    def __init__(self, is_coco, body_part, model):
         super(DNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
-        # self.input_size = 2 * points_num + box_feature_num
         self.input_size = 2 * points_num
-        if action_recognition:
-            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
-        else:
-            self.output_size = attitude_class_num
         if model == 'avg':
             self.fc = nn.Sequential(
                 nn.Linear(self.input_size, 128),
@@ -56,7 +50,6 @@ class DNN(nn.Module):
                 nn.ReLU(),
                 # nn.Dropout(0.5),
                 nn.BatchNorm1d(16),
-                nn.Linear(16, self.output_size),
             )
         elif model == 'perframe':
             self.fc = nn.Sequential(
@@ -75,14 +68,19 @@ class DNN(nn.Module):
                 nn.Linear(32, 16),
                 nn.BatchNorm1d(16),
                 # nn.Dropout(0.5),
-                nn.ReLU(),
-                nn.Linear(16, self.output_size),
             )
+        self.attitude_head = nn.Sequential(nn.ReLU(),
+                                           nn.Linear(16, attitude_class_num))
+        self.action_head = nn.Sequential(nn.BatchNorm1d(16 + attitude_class_num),
+                                         # nn.Dropout(0.5),
+                                         nn.ReLU(),
+                                         nn.Linear(16 + attitude_class_num, action_class_num))
 
     def forward(self, x):
-        x = self.fc(x)
-        # x = nn.Softmax(dim=1)(x)
-        return x
+        y = self.fc(x)
+        y1 = self.attitude_head(y)
+        y2 = self.action_head(torch.cat((y, y1), dim=1))
+        return y1, y2
 
 
 class RNN(nn.Module):
@@ -94,11 +92,6 @@ class RNN(nn.Module):
         self.input_size = 2 * points_num
         self.hidden_size = 512
         self.bidirectional = bidirectional
-        if action_recognition:
-            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
-        else:
-            self.output_size = attitude_class_num
-
         if gru:
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
                               batch_first=True)
@@ -109,9 +102,16 @@ class RNN(nn.Module):
             #                    bidirectional=bidirectional, dropout=0.5, batch_first=True)
 
         # Readout layer
-        self.fc = nn.Linear(self.hidden_size * (2 if bidirectional else 1), self.output_size)
         self.dropout = nn.Dropout(0.5)
         self.BatchNorm1d = nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1))
+        self.attitude_head = nn.Sequential(nn.ReLU(),
+                                           nn.Linear(self.hidden_size * (2 if bidirectional else 1),
+                                                     attitude_class_num))
+        self.action_head = nn.Sequential(
+            nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1) + attitude_class_num),
+            # nn.Dropout(0.5),
+            nn.ReLU(),
+            nn.Linear(self.hidden_size * (2 if bidirectional else 1) + attitude_class_num, action_class_num))
 
     def forward(self, x):
         on, (hn, _) = self.rnn(x)
@@ -128,11 +128,11 @@ class RNN(nn.Module):
             for i in range(out_pad.data.shape[0]):
                 index = out_length[i] - 1
                 out[i] = out_pad.data[i, index, :]
-        out = nn.ReLU(out)
+        y = self.BatchNorm1d(out)
         # out = self.dropout(out)
-        out = self.BatchNorm1d(out)
-        out = self.fc(out)
-        return out
+        y1 = self.attitude_head(y)
+        y2 = self.action_head(torch.cat((y, y1), dim=0))
+        return y1, y2
 
 
 class Cnn1D(nn.Module):
@@ -142,10 +142,6 @@ class Cnn1D(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        if action_recognition:
-            self.output_size = ori_action_class_num if action_recognition == 1 else action_class_num
-        else:
-            self.output_size = attitude_class_num
         self.cnn = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.MaxPool1d(2, stride=2),
@@ -166,18 +162,24 @@ class Cnn1D(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(80, 32),
             nn.BatchNorm1d(32),
-            nn.ReLU(),
             # nn.Dropout(0.5),
+            nn.ReLU(),
             nn.Linear(32, 16),
             nn.BatchNorm1d(16),
-            nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.Linear(16, self.output_size)
         )
+        self.attitude_head = nn.Sequential(nn.ReLU(),
+                                           nn.Linear(16, attitude_class_num))
+        self.action_head = nn.Sequential(nn.BatchNorm1d(16 + attitude_class_num),
+                                         # nn.Dropout(0.5),
+                                         nn.ReLU(),
+                                         nn.Linear(16 + attitude_class_num, action_class_num))
 
     def forward(self, x):
         x = torch.transpose(x, 1, 2)
         x = self.cnn(x)
         x = x.flatten(1)
-        x = self.fc(x)
-        return x
+        y = self.fc(x)
+        y1 = self.attitude_head(y)
+        y2 = self.action_head(torch.cat((y, y1), dim=0))
+        return y1, y2

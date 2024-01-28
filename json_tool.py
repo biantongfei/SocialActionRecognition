@@ -5,33 +5,42 @@ import numpy as np
 
 
 def summarize_features(feature_path):
-    action_class_list = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested',
-                         'interested', 'total']
-    summaize_dict = {}
+    attitude_class_list = ['positive', 'neutral', 'negative', 'uninterested']
+    action_class_list = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested',
+                         'interested']
+    attitude_dict = {}
+    action_dict = {}
+    for i in range(len(attitude_class_list)):
+        attitude_dict[i] = {'count': 0, 'total_frames': 0}
     for i in range(len(action_class_list)):
-        summaize_dict[i] = {'count': 0, 'total_frames': 0}
+        action_dict[i] = {'count': 0, 'total_frames': 0}
     feature_list = os.listdir(feature_path)
     feature_list.sort()
     for feature in feature_list:
-        print(feature)
-        if 'json' not in feature or 'ori_' not in feature:
+        # print(feature)
+        if 'json' not in feature:
             continue
         with open(feature_path + feature, "r") as f:
             feature_json = json.load(f)
-        summaize_dict[feature_json['action_class']]['count'] += 1
-        summaize_dict[feature_json['action_class']]['total_frames'] += feature_json['frames_number']
-        summaize_dict[len(action_class_list) - 1]['count'] += 1
-        summaize_dict[len(action_class_list) - 1]['total_frames'] += feature_json['frames_number']
+            f.close()
+        # if feature_json['action_class']==0:
+        #     print(feature)
+        attitude_dict[feature_json['attitude_class']]['count'] += 1
+        attitude_dict[feature_json['attitude_class']]['total_frames'] += feature_json['detected_frames_number']
+        action_dict[feature_json['action_class']]['count'] += 1
+        action_dict[feature_json['action_class']]['total_frames'] += feature_json['detected_frames_number']
 
-    for action_class in summaize_dict.keys():
-        print('%s:{count:%d, avg_frames:%s}' % (action_class_list[action_class], summaize_dict[action_class]['count'],
-                                                '{:.2f}'.format(summaize_dict[action_class]['total_frames'] /
-                                                                summaize_dict[action_class]['count'])))
+    for c in attitude_dict.keys():
+        print('attitude: %s: {count:%d, avg_frames:%s}' % (attitude_class_list[c], attitude_dict[c]['count'], '{:.2f}'.format(
+            attitude_dict[c]['total_frames'] / attitude_dict[c]['count'])))
+    for c in action_dict.keys():
+        print('action: %s: {count:%d, avg_frames:%s}' % (action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
+            action_dict[c]['total_frames'] / action_dict[c]['count'])))
 
 
 def refactor_jsons():
-    video_path = 'videos/'
-    json_path = 'features/crop/coco_wholebody/'
+    video_path = '../JPL_Augmented_Posefeatures/more_video_augment/'
+    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
     jsons = os.listdir(json_path)
     jsons.sort()
     for file in jsons:
@@ -65,7 +74,7 @@ def refactor_jsons():
                 json.dump(new_json, outfile)
         os.system('rm -rf %s' % (json_path + file))
 
-    json_path = 'features/crop/halpe136/'
+    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
     jsons = os.listdir(json_path)
     jsons.sort()
     for file in jsons:
@@ -122,8 +131,8 @@ def gaussion_augment():
     sigma_str = ['10', '05', '01']
     augment_times = 3
 
-    json_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
-    out_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
+    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/more_video_features/gaussian/coco_wholebody/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
@@ -162,8 +171,8 @@ def gaussion_augment():
                               "w") as outfile:
                         json.dump(new_json, outfile)
 
-    json_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
-    out_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
+    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
+    out_path = '../JPL_Augmented_Posefeatures/more_video_features/gaussian/halpe136/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
@@ -204,16 +213,31 @@ def gaussion_augment():
 
 
 def mixed_augment():
-    sigma_list = [0.01, 0.005]
-    sigma_str = ['10', '05']
-    augment_times = 2
+    same = False
+    if same:
+        sigma_list = [0.005]
+        sigma_str = ['05']
+        augment_times = 1
+    else:
+        sigma_list = [0.01, 0.005]
+        sigma_str = ['10', '05']
+        augment_times = 2
 
-    crop_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
-    out_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
+    crop_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/more_video_features/mixed/same/coco_wholebody/' if same else '../JPL_Augmented_Posefeatures/more_video_features/mixed/large/coco_wholebody/'
     files = os.listdir(crop_path)
     files.sort()
     for file in files:
         print(file, 'coco')
+        print(file.split('_p')[0].split('resize'))
+        if 'json' not in file:
+            continue
+        elif same and 'resize' in file and file.split('_p')[0].split('resize')[1] not in ['75-0', '75-0-flip', '75-1',
+                                                                                          '75-1-flip', '85-0',
+                                                                                          '85-0-flip',
+                                                                                          '85-1', '85-1-flip']:
+            continue
+
         with open(crop_path + file, "r") as f:
             ori_json = json.load(f)
             f.close()
@@ -242,11 +266,18 @@ def mixed_augment():
                     json.dump(new_json, outfile)
                     outfile.close()
 
-    crop_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
-    out_path = '../JPL_Augmented_Posefeatures/mixed/halpe136/'
+    crop_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
+    out_path = '../JPL_Augmented_Posefeatures/more_video_features/mixed/same/halpe136/' if same else '../JPL_Augmented_Posefeatures/more_video_features/mixed/large/halpe136/'
     files = os.listdir(crop_path)
     files.sort()
     for file in files:
+        if 'json' not in file:
+            continue
+        elif same and 'resize' in file and file.split('_p')[0].split('resize')[1] not in ['75-0', '75-0-flip', '75-1',
+                                                                                          '75-1-flip', '85-0',
+                                                                                          '85-0-flip', '85-1',
+                                                                                          '85-1-flip']:
+            continue
         print(file, 'halpe')
         with open(crop_path + file, "r") as f:
             ori_json = json.load(f)
@@ -277,11 +308,43 @@ def mixed_augment():
                     outfile.close()
 
 
+def add_attitude_class():
+    augment_method = ['crop', 'gaussian', 'mixed/same', 'mixed/large']
+    format = ['coco_wholebody', 'halpe136']
+    for a in augment_method:
+        for fm in format:
+            json_path = '../JPL_Augmented_Posefeatures/%s/%s/' % (a, fm)
+            files = os.listdir(json_path)
+            for file in files:
+                if 'json' not in file:
+                    continue
+                print(file, a, fm)
+                with open(json_path + file) as f:
+                    old_json = json.load(f)
+                    f.close()
+                action_class = old_json['action_class']
+                if action_class in [0, 1, 2, 3]:
+                    attitude_class = 0
+                elif action_class in [4, 8]:
+                    attitude_class = 1
+                elif action_class in [5, 6]:
+                    attitude_class = 2
+                else:
+                    attitude_class = 3
+                new_json = {'video_name': old_json['video_name'], 'frame_size': old_json['frame_size'],
+                            'video_frames_number': old_json['frames_number'],
+                            'detected_frames_number': len(old_json['frames']), 'person_id': old_json['person_id'],
+                            'attitude_class': attitude_class, 'action_class': action_class,
+                            'frames': old_json['frames']}
+                with open(json_path + file, 'w') as f:
+                    json.dump(new_json, f)
+                    f.close()
+
+
 if __name__ == '__main__':
     # refactor_jsons()
-    # feature_path = '../JPL_Augmented_Posefeatures/features/crop/coco_wholebody/'
-    # feature_path = '../JPL_Augmented_Posefeatures/features/crop/halpe136/'
-    # summarize_features(feature_path)
+    feature_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
+    summarize_features(feature_path)
     # gaussion_augment()
     # adjust_box()
     # files = os.listdir(feature_path)
@@ -294,4 +357,5 @@ if __name__ == '__main__':
     #         if feature_json['action_class'] == 0:
     #             print(file)
     #     pre_video = file.split('p')[0]
-    mixed_augment()
+    # mixed_augment()
+    # add_attitude_class()

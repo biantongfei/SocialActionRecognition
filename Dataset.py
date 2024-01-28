@@ -14,36 +14,39 @@ halpe_point_num = 136
 video_fps = 30
 
 
-def get_data_path(augment, is_coco):
-    if augment=='crop':
+def get_data_path(augment_method, is_coco):
+    if augment_method == 'crop':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
-    elif augment=='noise':
+    elif augment_method == 'noise':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    else:
+    elif augment_method == 'mixed_same':
         if is_coco:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
+            data_path = '../JPL_Augmented_Posefeatures/mixed/same/coco_wholebody/'
         else:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/halpe136/'
+            data_path = '../JPL_Augmented_Posefeatures/mixed/same/halpe136/'
+    elif augment_method == 'mixed_large':
+        if is_coco:
+            data_path = '../JPL_Augmented_Posefeatures/mixed/large/coco_wholebody/'
+        else:
+            data_path = '../JPL_Augmented_Posefeatures/mixed/large/halpe136/'
     return data_path
 
 
-def get_tra_test_files(augment, is_coco, not_add_class, ori_videos=False):
-    data_path = get_data_path(augment, is_coco)
+def get_tra_test_files(augment_method, is_coco, ori_videos=False):
+    data_path = get_data_path(augment_method, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
     for file in files:
         if '-ori_' in file:
             with open(data_path + file, 'r') as f:
                 feature_json = json.load(f)
-                if not_add_class and feature_json['action_class'] in [7, 8]:
-                    continue
-                elif feature_json['action_class'] in ori_videos_dict.keys():
+                if feature_json['action_class'] in ori_videos_dict.keys():
                     ori_videos_dict[feature_json['action_class']].append(file)
                 else:
                     ori_videos_dict[feature_json['action_class']] = [file]
@@ -66,12 +69,6 @@ def get_tra_test_files(augment, is_coco, not_add_class, ori_videos=False):
                 test_videos_dict[file.split('-')[0]]:
             if ori_videos and '-ori_' not in file:
                 continue
-            if not_add_class:
-                with open(data_path + file, 'r') as f:
-                    feature_json = json.load(f)
-                    if feature_json['action_class'] in [7, 8]:
-                        continue
-                    f.close()
             tra_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
@@ -99,13 +96,12 @@ def get_body_part(feature, is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, action_recognition, augment, is_coco, body_part, model, sample_fps, video_len=99999,
+    def __init__(self, data_files, augment_method, is_coco, body_part, model, sample_fps, video_len=99999,
                  empty_frame=False):
         super(Dataset, self).__init__()
         self.files = data_files
-        self.data_path = get_data_path(augment=augment, is_coco=is_coco)
-        self.action_recognition = action_recognition  # 0 for origin 7 classes; 1 for add not interested and interested; False for attitude recognition
-        self.augment = augment
+        self.data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
+        self.augment_method = augment_method
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.model = model
@@ -175,15 +171,7 @@ class Dataset(Dataset):
                         features.append(frame_feature)
 
         features = np.array(features)
-        if self.action_recognition:
-            label = feature_json['action_class']
-        else:
-            if feature_json['action_class'] == 7:
-                label = 1
-            elif feature_json['action_class'] == 8:
-                label = 2
-            else:
-                label = 0
+        label = (feature_json['attitude_class'], feature_json['action_class'])
         if self.model == 'avg':
             features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)
@@ -204,15 +192,17 @@ class Dataset(Dataset):
 
 
 if __name__ == '__main__':
-    augment = 'crop'
+    augment_method = 'crop'
     is_coco = True
-    tra_files, test_files = get_tra_test_files(augment=augment, is_coco=is_coco, not_add_class=False)
+    tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco, not_add_class=False)
     print(len(tra_files))
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, augment=augment,
-                      is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
+                      augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
+                      sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1, augment=augment,
-                      is_coco=is_coco, body_part=[True, True, True], model='lstm', sample_fps=30)
+    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
+                      augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
+                      sample_fps=30)
     features, labels = dataset.__getitem__(9)
     print(features.shape, labels)

@@ -33,39 +33,35 @@ else:
     print('Using CPU for training')
     device = torch.device('cpu')
 dtype = torch.float
-ori_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw']
-added_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'not_interested', 'interested']
-attitude_classes = ['interacting', 'not_interested', 'interested']
+attitude_classes = ['positive', 'neutral', 'negative', 'uninterested']
+action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested', 'interested']
 
 
-def draw_save(performance_model, action_recognition):
-    if action_recognition == 1:
-        classes = ori_classes
-    elif action_recognition == 2:
-        classes = added_classes
-    else:
-        classes = attitude_classes
+def draw_save(performance_model):
     y_true = {}
     y_pred = {}
-    best_acc = -1
+    att_best_acc = -1
     best_model = None
     with open('plots/performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         for index, p_m in enumerate(performance_model):
             data = [index + 1]
             for key in p_m.keys():
-                if best_acc < p_m[key]['accuracy']:
-                    best_acc = p_m[key]['accuracy']
+                if att_best_acc < p_m[key]['attitude_accuracy']:
+                    att_best_acc = p_m[key]['attitude_accuracy']
                     best_model = p_m[key]['model']
-                data.append(p_m[key]['accuracy'])
-                data.append(p_m[key]['f1'])
-                if key in y_true.keys():
-                    y_true[key] = torch.cat((y_true[key], p_m[key]['y_true']), dim=0)
-                    y_pred[key] = torch.cat((y_pred[key], p_m[key]['y_pred']), dim=0)
-                else:
-                    y_true[key] = p_m[key]['y_true']
-                    y_pred[key] = p_m[key]['y_pred']
-                plot_confusion_matrix(y_true[key], y_pred[key], classes, sub_name=key)
+                data.append(p_m[key]['attitude_accuracy'])
+                data.append(p_m[key]['attitude_f1'])
+                data.append(p_m[key]['action_accuracy'])
+                data.append(p_m[key]['action_f1'])
+                for task in ['attitude', 'action']:
+                    if key in y_true.keys():
+                        y_true[key] = torch.cat((y_true[key], p_m[key]['%s_y_true' % task]), dim=0)
+                        y_pred[key] = torch.cat((y_pred[key], p_m[key]['%s_y_pred' % task]), dim=0)
+                    else:
+                        y_true[key] = p_m[key]['%s_y_true' % task]
+                        y_pred[key] = p_m[key]['%sy_pred' % task]
+                    plot_confusion_matrix(y_true[key], y_pred[key], attitude_classes, sub_name="%s_%s" % (key, task))
             spamwriter.writerow(data)
         csvfile.close()
     torch.save(best_model.state_dict(), 'plots/model.pth')
@@ -85,30 +81,34 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori_videos=False):
+def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
     if body_part[0]:
-        train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+        train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
+                      'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     else:
-        train_dict = {'crop+coco': {}, 'noise+coco': {}}
+        train_dict = {'crop+coco': {}, 'noise+coco': {}, 'mixed_same+coco': {}, 'mixed_large+coco': {}}
     # if body_part[0]:
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
     #     train_dict = {'crop+coco': {}}
-    if body_part[0]:
-        train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    else:
-        train_dict = {'mixed+coco': {}}
+    # if body_part[0]:
+    #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
+    # else:
+    #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
     # train_dict = {'noise+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
-        trainging_process[key] = {'accuracy': [], 'f1': [], 'loss': []}
-        performance_model[key] = {'accuracy': None, 'f1': None, 'y_true': None, 'y_pred': None, 'model': None}
+        trainging_process[key] = {'attitude_accuracy': [], 'attitude_f1': [], 'action_accuracy': [], 'action_f1': [],
+                                  'loss': []}
+        performance_model[key] = {'attitude_accuracy': None, 'attitude_f1': None, 'attitude_y_true': None,
+                                  'attitude_y_pred': None, 'action_accuracy': None, 'action_f1': None,
+                                  'action_y_true': None, 'action_y_pred': None, 'model': None}
 
     if model == 'avg':
         batch_size = avg_batch_size
@@ -129,33 +129,33 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
-        augment = hyperparameter_group.split('+')[0]
+        augment_method = hyperparameter_group.split('+')[0]
         is_coco = True if 'coco' in hyperparameter_group else False
-        tra_files, test_files = get_tra_test_files(augment=augment, is_coco=is_coco,
-                                                   not_add_class=action_recognition == 1, ori_videos=ori_videos)
-        trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):],
-                           action_recognition=action_recognition, augment=augment, is_coco=is_coco,
-                           body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
-        valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)],
-                         action_recognition=action_recognition, augment=augment, is_coco=is_coco,
-                         body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
-        testset = Dataset(data_files=test_files, action_recognition=action_recognition, augment=augment,
-                          is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
+        tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
+                                                   ori_videos=ori_videos)
+        trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):], augment_method=augment_method,
+                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps,
+                           video_len=video_len)
+        valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)], augment_method=augment_method,
+                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
+        testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                          model=model, sample_fps=sample_fps, video_len=video_len)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
-            net = DNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, model=model)
+            net = DNN(is_coco=is_coco, body_part=body_part, model=model)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part, bidirectional=True,
+            net = RNN(is_coco=is_coco, body_part=body_part, bidirectional=True,
                       gru=model == 'gru')
         elif model == 'conv1d':
-            net = Cnn1D(is_coco=is_coco, action_recognition=action_recognition, body_part=body_part)
+            net = Cnn1D(is_coco=is_coco, body_part=body_part)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-        train_dict[hyperparameter_group] = {'augment': augment, 'is_coco': is_coco, 'trainset': trainset,
+        train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
-                                            'best_acc': -1, 'best_f1': -1, 'unimproved_epoch': 0}
+                                            'att_best_acc': -1, 'att_best_f1': -1, 'act_best_acc': -1,
+                                            'act_best_f1': -1, 'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -174,93 +174,136 @@ def train(model, action_recognition, body_part, sample_fps, video_len=99999, ori
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
-                    inputs, labels = data
+                    inputs, (att_labels, act_labels) = data
                 elif model in ['lstm', 'gru']:
-                    (inputs, labels), data_length = data
+                    (inputs, (att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+                inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(
+                    device)
                 net.train()
-                outputs = net(inputs)
-                loss = functional.cross_entropy(outputs, labels)
+                att_outputs, act_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(att_outputs, att_labels)
+                loss_2 = functional.cross_entropy(act_outputs, act_labels)
                 optimizer.zero_grad()
-                loss.backward()
+                total_loss = loss_1 + loss_2
+                total_loss.backward()
                 optimizer.step()
 
-            y_true, y_pred = [], []
+            att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
             for data in val_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
-                    inputs, labels = data
+                    inputs, (att_labels, act_labels) = data
                 elif model in ['lstm', 'gru']:
-                    (inputs, labels), data_length = data
+                    (inputs, (att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+                inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(
+                    device)
                 net.eval()
-                outputs = net(inputs)
-                pred = outputs.argmax(dim=1)
+                att_outputs, act_outputs = net(inputs)
+                att_pred = att_outputs.argmax(dim=1)
+                act_pred = act_outputs.argmax(dim=1)
                 # print(pred)
-                y_true += labels.tolist()
-                y_pred += pred.tolist()
-            y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
+                att_y_true += att_labels.tolist()
+                att_y_pred += att_pred.tolist()
+                act_y_true += act_labels.tolist()
+                act_y_pred += act_pred.tolist()
+            att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(att_y_true), torch.Tensor(
+                att_y_pred), torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
-                y_true, y_pred = transform_preframe_result(y_true, y_pred,
-                                                           train_dict[hyperparameter_group]['valset'].frame_number_list)
-            acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
-            f1 = f1_score(y_true, y_pred, average='weighted')
-            trainging_process[hyperparameter_group]['accuracy'].append(acc)
-            trainging_process[hyperparameter_group]['f1'].append(f1)
-            trainging_process[hyperparameter_group]['loss'].append(float(loss))
-            if acc > train_dict[hyperparameter_group]['best_acc'] or f1 > train_dict[hyperparameter_group]['best_f1']:
-                train_dict[hyperparameter_group]['best_acc'] = acc if acc > train_dict[hyperparameter_group][
-                    'best_acc'] else train_dict[hyperparameter_group]['best_acc']
-                train_dict[hyperparameter_group]['best_f1'] = f1 if f1 > train_dict[hyperparameter_group][
-                    'best_f1'] else train_dict[hyperparameter_group]['best_f1']
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
+                                                                   train_dict[hyperparameter_group][
+                                                                       'valset'].frame_number_list)
+                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
+                                                                   train_dict[hyperparameter_group][
+                                                                       'valset'].frame_number_list)
+            att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+            att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+            act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+            act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+            trainging_process[hyperparameter_group]['attitude_accuracy'].append(att_acc)
+            trainging_process[hyperparameter_group]['attitude_f1'].append(att_f1)
+            trainging_process[hyperparameter_group]['action_accuracy'].append(act_acc)
+            trainging_process[hyperparameter_group]['action_f1'].append(act_f1)
+            trainging_process[hyperparameter_group]['loss'].append(float(total_loss))
+            if att_acc > train_dict[hyperparameter_group]['att_best_acc'] or att_f1 > train_dict[hyperparameter_group][
+                'att_best_f1'] or act_acc > train_dict[hyperparameter_group]['act_best_acc'] or act_f1 > \
+                    train_dict[hyperparameter_group]['act_best_f1']:
+                train_dict[hyperparameter_group]['att_best_acc'] = att_acc if att_acc > \
+                                                                              train_dict[hyperparameter_group][
+                                                                                  'att_best_acc'] else \
+                    train_dict[hyperparameter_group]['att_best_acc']
+                train_dict[hyperparameter_group]['att_best_f1'] = att_f1 if att_f1 > train_dict[hyperparameter_group][
+                    'att_best_f1'] else train_dict[hyperparameter_group]['att_best_f1']
+                train_dict[hyperparameter_group]['act_best_acc'] = act_acc if act_acc > \
+                                                                              train_dict[hyperparameter_group][
+                                                                                  'act_best_acc'] else \
+                    train_dict[hyperparameter_group]['act_best_acc']
+                train_dict[hyperparameter_group]['act_best_f1'] = act_f1 if act_f1 > train_dict[hyperparameter_group][
+                    'act_best_f1'] else train_dict[hyperparameter_group]['act_best_f1']
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-            print('%s, epcoch: %d, unimproved_epoch: %d, acc: %s, f1: %s, loss: %s' % (
+            print('%s, epcoch: %d, unimproved_epoch: %d, att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s, loss: %s' % (
                 hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                "%.2f%%" % (acc * 100), "%.4f" % (f1), "%.4f" % loss))
+                "%.2f%%" % (att_acc * 100), "%.4f" % att_f1, "%.2f%%" % (act_acc * 100), "%.4f" % act_f1,
+                "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
                                     max_length=max_length, batch_size=batch_size)
-        y_true, y_pred = [], []
+        att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
-                inputs, labels = data
+                inputs, (att_labels, act_labels) = data
             elif model in ['lstm', 'gru']:
-                (inputs, labels), data_length = data
+                (inputs, (att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-            inputs, labels = inputs.to(dtype).to(device), labels.to(device)
+            inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
-            outputs = net(inputs)
-            pred = outputs.argmax(dim=1)
-            y_true += labels.tolist()
-            y_pred += pred.tolist()
-        y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
+            att_outputs, act_outputs = net(inputs)
+            att_pred = att_outputs.argmax(dim=1)
+            act_pred = act_outputs.argmax(dim=1)
+            att_y_true += att_labels.tolist()
+            att_y_pred += att_pred.tolist()
+            act_y_true += act_labels.tolist()
+            act_y_pred += act_pred.tolist()
+        att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(att_y_true), torch.Tensor(
+            att_y_pred), torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         if model == 'perframe':
-            y_true, y_pred = transform_preframe_result(y_true, y_pred,
-                                                       train_dict[hyperparameter_group]['testset'].frame_number_list)
-        acc = y_pred.eq(y_true).sum().float().item() / y_pred.size(dim=0)
-        f1 = f1_score(y_true, y_pred, average='weighted')
-        performance_model[hyperparameter_group]['accuracy'] = acc
-        performance_model[hyperparameter_group]['f1'] = f1
-        performance_model[hyperparameter_group]['y_true'] = y_true
-        performance_model[hyperparameter_group]['y_pred'] = y_pred
+            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
+                                                               train_dict[hyperparameter_group][
+                                                                   'valset'].frame_number_list)
+            act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
+                                                               train_dict[hyperparameter_group][
+                                                                   'valset'].frame_number_list)
+        att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+        att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+        act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+        act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+        performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
+        performance_model[hyperparameter_group]['attitude_f1'] = att_f1
+        performance_model[hyperparameter_group]['attitude_y_true'] = att_y_true
+        performance_model[hyperparameter_group]['attitude_y_pred'] = att_y_pred
+        performance_model[hyperparameter_group]['action_accuracy'] = att_acc
+        performance_model[hyperparameter_group]['action_accuracy'] = att_acc
+        performance_model[hyperparameter_group]['action_f1'] = act_f1
+        performance_model[hyperparameter_group]['action_y_true'] = act_y_true
+        performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
         performance_model[hyperparameter_group]['model'] = net
-        print('%s: acc: %s, f1_score: %s' % (hyperparameter_group, "%.2f%%" % (acc * 100), "%.4f" % (f1)))
+        print('%s: att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s' % (
+            hyperparameter_group, "%.2f%%" % (att_acc * 100), "%.4f" % att_f1, "%.2f%%" % (act_acc * 100),
+            "%.4f" % act_f1))
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    draw_training_process(trainging_process)
+    # draw_training_process(trainging_process)
     return performance_model
 
 
 if __name__ == '__main__':
-    model = 'conv1d'
-    action_recognition = 1
-    body_part = [True, True, True]
+    model = 'avg'
+    body_part = [True, False, False]
     ori_video = False
     sample_fps = 30
     video_len = False
@@ -270,15 +313,13 @@ if __name__ == '__main__':
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
-            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                        sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len)
+            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video,
+                        video_len=video_len)
         else:
-            p_m = train(model=model, action_recognition=action_recognition, body_part=body_part,
-                        sample_fps=sample_fps, ori_videos=ori_video)
+            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(performance_model, action_recognition=action_recognition)
-    print('model: %s, action_recognition: %s, body_part:' % (model, str(action_recognition)), body_part,
-          ', sample_fps: %d, video_len: %s' % (sample_fps, str(video_len)))
+    draw_save(performance_model)
+    print('model: %s, body_part:' % model, body_part, ', sample_fps: %d, video_len: %s' % (sample_fps, str(video_len)))
