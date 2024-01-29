@@ -18,7 +18,7 @@ conv1d_batch_size = 64
 avg_train_epoch = 3
 perframe_train_epoch = 2
 rnn_train_epoch = 5
-conv1d_epoch = 5
+conv1d_epoch = 3
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
 rnn_learning_rate = 1e-3
@@ -94,11 +94,11 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    if body_part[0]:
-        train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
-                      'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    else:
-        train_dict = {'crop+coco': {}, 'noise+coco': {}, 'mixed_same+coco': {}, 'mixed_large+coco': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
+                  'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
+                  'mixed_same+halpe': {}}
+    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # if body_part[0]:
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
@@ -107,7 +107,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    # train_dict = {'mixed_large+coco': {}}
+    train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -311,7 +311,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 if __name__ == '__main__':
     model = 'avg'
-    body_part = [True, True, True]
+    body_part = [True, False, False]
     ori_video = False
     sample_fps = 30
     video_len = False
