@@ -112,25 +112,23 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
-            print(feature.shape)
-            if feature.shape[0] < 1:
-                continue
-            if index == 0:
-                if self.model in ['avg', 'perframe']:
-                    self.features = feature
-                elif self.model in ['lstm', 'gru', 'conv1d']:
-                    self.features = [feature]
-            else:
-                if self.model in ['avg', 'perframe']:
-                    self.features = np.append(self.features, feature, axis=0)
-                elif self.model in ['lstm', 'gru', 'conv1d']:
-                    self.features.append(feature)
+            if feature.any() and feature.shape[0] > 1:
+                if index == 0:
+                    if self.model in ['avg', 'perframe']:
+                        self.features = feature
+                    elif self.model in ['lstm', 'gru', 'conv1d']:
+                        self.features = [feature]
+                else:
+                    if self.model in ['avg', 'perframe']:
+                        self.features = np.append(self.features, feature, axis=0)
+                    elif self.model in ['lstm', 'gru', 'conv1d']:
+                        self.features.append(feature)
 
-            if model == 'perframe':
-                self.labels += label
-            else:
-                self.labels.append(label)
-            self.frame_number_list.append(int(feature.shape[0]))
+                if model == 'perframe':
+                    self.labels += label
+                else:
+                    self.labels.append(label)
+                self.frame_number_list.append(int(feature.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -173,14 +171,17 @@ class Dataset(Dataset):
 
         features = np.array(features)
         label = (feature_json['attitude_class'], feature_json['action_class'])
-        if self.model == 'avg':
-            features = np.mean(features, axis=0)
-            features = features.reshape(1, features.size)
-        elif self.model == 'perframe':
-            label = [label for _ in range(int(features.shape[0]))]
-        elif self.model in ['lstm', 'gru', 'conv1d']:
-            features = torch.from_numpy(features)
-        return features, label
+        if features.ndim == 1:
+            return features, label
+        else:
+            if self.model == 'avg':
+                features = np.mean(features, axis=0)
+                features = features.reshape(1, features.size)
+            elif self.model == 'perframe':
+                label = [label for _ in range(int(features.shape[0]))]
+            elif self.model in ['lstm', 'gru', 'conv1d']:
+                features = torch.from_numpy(features)
+            return features, label
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
