@@ -257,7 +257,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
                 "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
-        break
+        # break
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
