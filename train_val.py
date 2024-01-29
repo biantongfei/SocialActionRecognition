@@ -102,7 +102,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    # train_dict = {'noise+coco': {}}
+    train_dict = {'mixed_large+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -305,7 +305,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 if __name__ == '__main__':
     model = 'avg'
-    body_part = [True, False, True]
+    body_part = [False, True, False]
     ori_video = False
     sample_fps = 30
     video_len = False
