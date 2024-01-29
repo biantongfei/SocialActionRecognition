@@ -42,11 +42,13 @@ def draw_save(performance_model):
     best_model = None
     with open('plots/performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
+        att_y_true = {}
+        att_y_pred = {}
+        act_y_true = {}
+        act_y_pred = {}
         for index, p_m in enumerate(performance_model):
             data = [index + 1]
             for key in p_m.keys():
-                y_true = {}
-                y_pred = {}
                 if att_best_acc < p_m[key]['attitude_accuracy']:
                     att_best_acc = p_m[key]['attitude_accuracy']
                     best_model = p_m[key]['model']
@@ -54,18 +56,21 @@ def draw_save(performance_model):
                 data.append(p_m[key]['attitude_f1'])
                 data.append(p_m[key]['action_accuracy'])
                 data.append(p_m[key]['action_f1'])
-                for task in ['attitude', 'action']:
-                    if key in y_true.keys():
-                        y_true[key] = torch.cat((y_true[key], p_m[key]['%s_y_true' % task]), dim=0)
-                        y_pred[key] = torch.cat((y_pred[key], p_m[key]['%s_y_pred' % task]), dim=0)
-                    else:
-                        y_true[key] = p_m[key]['%s_y_true' % task]
-                        y_pred[key] = p_m[key]['%s_y_pred' % task]
-                    plot_confusion_matrix(y_true[key], y_pred[key],
-                                          attitude_classes if task == 'attitude' else action_classes,
-                                          sub_name="%s_%s" % (key, task))
+                if key in att_y_true.keys():
+                    att_y_true[key] = torch.cat((att_y_true[key], p_m[key]['attitude_y_true']), dim=0)
+                    att_y_pred[key] = torch.cat((att_y_pred[key], p_m[key]['attitude_y_pred']), dim=0)
+                    act_y_true[key] = torch.cat((act_y_true[key], p_m[key]['action_y_true']), dim=0)
+                    act_y_pred[key] = torch.cat((act_y_pred[key], p_m[key]['action_y_pred']), dim=0)
+                else:
+                    att_y_true[key] = p_m[key]['attitude_y_true']
+                    att_y_pred[key] = p_m[key]['attitude_y_pred']
+                    act_y_true[key] = p_m[key]['action_y_true']
+                    act_y_pred[key] = p_m[key]['action_y_pred']
             spamwriter.writerow(data)
         csvfile.close()
+    for key in att_y_true.keys():
+        plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
+        plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes, sub_name="%s_action" % key)
     torch.save(best_model.state_dict(), 'plots/model.pth')
 
 
@@ -102,7 +107,8 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -251,7 +257,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
                 "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
-        # break
+        break
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
@@ -305,7 +311,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 if __name__ == '__main__':
     model = 'avg'
-    body_part = [False, True, False]
+    body_part = [True, True, True]
     ori_video = False
     sample_fps = 30
     video_len = False
