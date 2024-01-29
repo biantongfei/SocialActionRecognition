@@ -311,9 +311,9 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 if __name__ == '__main__':
     model = 'avg'
-    body_part = [True, False, True]
+    body_part = [True, True, True]
     ori_video = False
-    sample_fps = 30
+    sample_fps = 15
     video_len = False
     performance_model = []
     i = 0
