@@ -284,10 +284,10 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
         if model == 'perframe':
             att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                train_dict[hyperparameter_group][
-                                                                   'valset'].frame_number_list)
+                                                                   'testset'].frame_number_list)
             act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                train_dict[hyperparameter_group][
-                                                                   'valset'].frame_number_list)
+                                                                   'testset'].frame_number_list)
         att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
         att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
