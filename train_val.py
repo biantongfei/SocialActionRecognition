@@ -313,8 +313,8 @@ if __name__ == '__main__':
     model = 'avg'
     body_part = [True, True, True]
     ori_video = False
-    sample_fps = 6
-    video_len = False
+    sample_fps = 30
+    video_len = 2
     performance_model = []
     i = 0
     while i < 10:
