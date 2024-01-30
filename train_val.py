@@ -313,7 +313,7 @@ if __name__ == '__main__':
     model = 'avg'
     body_part = [True, True, True]
     ori_video = False
-    sample_fps = 30
+    sample_fps = 15
     video_len = 0.5
     performance_model = []
     i = 0
