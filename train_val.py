@@ -94,11 +94,11 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
-                  'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
+    #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
                   'mixed_same+halpe': {}}
-    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # if body_part[0]:
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
@@ -107,7 +107,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
     # else:
     #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    train_dict = {'mixed_large+halpe': {}}
+    # train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -310,11 +310,11 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 
 if __name__ == '__main__':
-    model = 'avg'
+    model = 'perframe'
     body_part = [True, True, True]
     ori_video = False
-    sample_fps = 15
-    video_len = 0.5
+    sample_fps = 30
+    video_len = False
     performance_model = []
     i = 0
     while i < 10:
