@@ -16,7 +16,7 @@ perframe_batch_size = 2048
 rnn_batch_size = 32
 conv1d_batch_size = 64
 avg_train_epoch = 3
-perframe_train_epoch = 2
+perframe_train_epoch = 3
 rnn_train_epoch = 5
 conv1d_epoch = 3
 valset_rate = 0.2
@@ -96,9 +96,9 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
-    #               'mixed_same+halpe': {}}
-    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
+                  'mixed_same+halpe': {}}
+    # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # if body_part[0]:
     #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
     # else:
