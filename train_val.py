@@ -98,16 +98,10 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
     #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}}
-    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # if body_part[0]:
-    #     train_dict = {'crop+coco': {}, 'crop+halpe': {}}
-    # else:
-    #     train_dict = {'crop+coco': {}}
-    # if body_part[0]:
-    #     train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_same': {}}
-    # else:
-    #     train_dict = {'mixed_same+coco': {}, 'mixed_large+coco': {}}
-    train_dict = {'mixed_large+halpe': {}}
+    train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
+    # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}}
+    # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    # train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -310,11 +304,11 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
 
 if __name__ == '__main__':
-    model = 'perframe'
-    body_part = [True, False, True]
+    model = 'conv1d'
+    body_part = [True, True, True]
     ori_video = False
-    sample_fps = 6
-    video_len = 2
+    sample_fps = 30
+    video_len = False
     performance_model = []
     i = 0
     while i < 10:
