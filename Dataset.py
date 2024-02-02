@@ -121,10 +121,7 @@ class Dataset(Dataset):
                     self.features = [feature]
             else:
                 if self.model in ['avg', 'perframe']:
-                    try:
-                        self.features = np.append(self.features, feature, axis=0)
-                    except ValueError:
-                        print(feature.size)
+                    self.features = np.append(self.features, feature, axis=0)
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
 
