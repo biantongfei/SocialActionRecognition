@@ -112,7 +112,9 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
-            if index == 0:
+            if feature.size == 0:
+                continue
+            elif index == 0:
                 if self.model in ['avg', 'perframe']:
                     self.features = feature
                 elif self.model in ['lstm', 'gru', 'conv1d']:
@@ -122,8 +124,7 @@ class Dataset(Dataset):
                     try:
                         self.features = np.append(self.features, feature, axis=0)
                     except ValueError:
-                        print(feature)
-                        continue
+                        print(feature.size)
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
 
@@ -174,17 +175,14 @@ class Dataset(Dataset):
 
         features = np.array(features)
         label = (feature_json['attitude_class'], feature_json['action_class'])
-        if features.ndim == 1:
-            return features, label
-        else:
-            if self.model == 'avg':
-                features = np.mean(features, axis=0)
-                features = features.reshape(1, features.size)
-            elif self.model == 'perframe':
-                label = [label for _ in range(int(features.shape[0]))]
-            elif self.model in ['lstm', 'gru', 'conv1d']:
-                features = torch.from_numpy(features)
-            return features, label
+        if self.model == 'avg':
+            features = np.mean(features, axis=0)
+            features = features.reshape(1, features.size)
+        elif self.model == 'perframe':
+            label = [label for _ in range(int(features.shape[0]))]
+        elif self.model in ['lstm', 'gru', 'conv1d']:
+            features = torch.from_numpy(features)
+        return features, label
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
