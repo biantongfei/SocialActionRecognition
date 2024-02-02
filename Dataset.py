@@ -109,23 +109,21 @@ class Dataset(Dataset):
         self.video_len = video_len
         self.empty_frame = empty_frame  # how to deal with empty frames: 'zero' for zero padding; 'same' for last frame padding
 
-        self.features, self.labels, self.frame_number_list = None, [], []
-        for index, file in enumerate(self.files):
+        self.features, self.labels, self.frame_number_list = 0, [], []
+        index = 0
+        for file in self.files:
             feature, label = self.get_data_from_file(file)
             if type(feature) == int or feature.size == 0 or feature.ndim == 0:
                 continue
             elif index == 0:
+                index += 1
                 if self.model in ['avg', 'perframe']:
                     self.features = feature
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features = [feature]
             else:
                 if self.model in ['avg', 'perframe']:
-                    try:
-                        self.features = np.append(self.features, feature, axis=0)
-                    except ValueError:
-                        print(feature)
-                        print(feature.size, feature.ndim)
+                    self.features = np.append(self.features, feature, axis=0)
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
 
