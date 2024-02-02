@@ -160,7 +160,11 @@ class Cnn1D(nn.Module):
             # nn.Dropout(0.5),
         )
         self.fc = nn.Sequential(
-            nn.Linear(80, 32),
+            nn.Linear(80, 64),
+            nn.BatchNorm1d(64),
+            # nn.Dropout(0.5),
+            nn.ReLU(),
+            nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             # nn.Dropout(0.5),
             nn.ReLU(),
