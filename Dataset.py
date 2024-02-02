@@ -112,7 +112,7 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
-            if feature.size == 0:
+            if feature.size == 0 or feature.ndim == 0:
                 continue
             elif index == 0:
                 if self.model in ['avg', 'perframe']:
