@@ -122,6 +122,7 @@ class Dataset(Dataset):
                     try:
                         self.features = np.append(self.features, feature, axis=0)
                     except ValueError:
+                        print(feature)
                         continue
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
