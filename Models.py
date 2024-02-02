@@ -136,7 +136,7 @@ class RNN(nn.Module):
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, is_coco, action_recognition, body_part):
+    def __init__(self, is_coco, body_part):
         super(Cnn1D, self).__init__()
         super().__init__()
         self.is_coco = is_coco
