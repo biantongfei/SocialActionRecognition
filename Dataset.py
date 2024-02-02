@@ -112,7 +112,7 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
-            if feature.size == 0 or feature.ndim == 0:
+            if type(feature) == int or feature.size == 0 or feature.ndim == 0:
                 continue
             elif index == 0:
                 if self.model in ['avg', 'perframe']:
@@ -173,7 +173,8 @@ class Dataset(Dataset):
                         #     [box_width / frame_width, box_height / frame_height]], axis=0)
                         frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                         features.append(frame_feature)
-
+        if len(features) == 0:
+            return 0, None
         features = np.array(features)
         label = (feature_json['attitude_class'], feature_json['action_class'])
         if self.model == 'avg':

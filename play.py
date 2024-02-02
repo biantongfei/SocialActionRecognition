@@ -23,5 +23,5 @@ import numpy as np
 # output = nn.MaxPool1d(2, stride=2)(output)
 # print(output.shape)
 # print(np.append(np.zeros((2, 2)), np.zeros((2, 2)), axis=0))
-a = 1
-print(type(a) == 'int')
+a = None
+print(type(a) == int)
