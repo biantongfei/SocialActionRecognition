@@ -131,7 +131,7 @@ class RNN(nn.Module):
         y = self.BatchNorm1d(out)
         # out = self.dropout(out)
         y1 = self.attitude_head(y)
-        y2 = self.action_head(torch.cat((y, y1), dim=0))
+        y2 = self.action_head(torch.cat((y, y1), dim=1))
         return y1, y2
 
 
@@ -185,5 +185,5 @@ class Cnn1D(nn.Module):
         x = x.flatten(1)
         y = self.fc(x)
         y1 = self.attitude_head(y)
-        y2 = self.action_head(torch.cat((y, y1), dim=0))
+        y2 = self.action_head(torch.cat((y, y1), dim=1))
         return y1, y2

@@ -88,7 +88,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
+def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -137,11 +137,12 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
                                                    ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):], augment_method=augment_method,
                            is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps,
-                           video_len=video_len)
+                           video_len=video_len, empty_frame=empty_frame)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)], augment_method=augment_method,
-                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
+                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len,
+                         empty_frame=empty_frame)
         testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                          model=model, sample_fps=sample_fps, video_len=video_len)
+                          model=model, sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
@@ -169,9 +170,10 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
             else:
                 continue
             train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
-                                         batch_size=batch_size, max_length=max_length, shuffle=True)
+                                         batch_size=batch_size, max_length=max_length, shuffle=True,
+                                         empty_frame=empty_frame)
             val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
-                                       max_length=max_length, batch_size=batch_size)
+                                       max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
             net = train_dict[hyperparameter_group]['net']
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
@@ -255,7 +257,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False):
 
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                    max_length=max_length, batch_size=batch_size)
+                                    max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
         att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
@@ -309,6 +311,7 @@ if __name__ == '__main__':
     ori_video = False
     sample_fps = 30
     video_len = False
+    empty_frame = False
     performance_model = []
     i = 0
     while i < 10:
@@ -316,12 +319,14 @@ if __name__ == '__main__':
         # try:
         if video_len:
             p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video,
-                        video_len=video_len)
+                        video_len=video_len, empty_frame=empty_frame)
         else:
-            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video)
+            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video,
+                        empty_frame=empty_frame)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
     draw_save(performance_model)
-    print('model: %s, body_part:' % model, body_part, ', sample_fps: %d, video_len: %s' % (sample_fps, str(video_len)))
+    print('model: %s, body_part:' % model, body_part,
+          ', sample_fps: %d, video_len: %s, empty_frame: %s' % (sample_fps, str(video_len), str(empty_frame)))
