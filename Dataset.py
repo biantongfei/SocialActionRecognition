@@ -112,17 +112,19 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = None, [], []
         for index, file in enumerate(self.files):
             feature, label = self.get_data_from_file(file)
-            if feature.any() and feature.shape[0 if self.model == 'perframe' else 1] > 0:
-                if index == 0:
-                    if self.model in ['avg', 'perframe']:
-                        self.features = feature
-                    elif self.model in ['lstm', 'gru', 'conv1d']:
-                        self.features = [feature]
-                else:
-                    if self.model in ['avg', 'perframe']:
+            if index == 0:
+                if self.model in ['avg', 'perframe']:
+                    self.features = feature
+                elif self.model in ['lstm', 'gru', 'conv1d']:
+                    self.features = [feature]
+            else:
+                if self.model in ['avg', 'perframe']:
+                    try:
                         self.features = np.append(self.features, feature, axis=0)
-                    elif self.model in ['lstm', 'gru', 'conv1d']:
-                        self.features.append(feature)
+                    except ValueError:
+                        continue
+                elif self.model in ['lstm', 'gru', 'conv1d']:
+                    self.features.append(feature)
 
                 if model == 'perframe':
                     self.labels += label
