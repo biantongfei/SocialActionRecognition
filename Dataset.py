@@ -121,15 +121,19 @@ class Dataset(Dataset):
                     self.features = [feature]
             else:
                 if self.model in ['avg', 'perframe']:
-                    self.features = np.append(self.features, feature, axis=0)
+                    try:
+                        self.features = np.append(self.features, feature, axis=0)
+                    except ValueError:
+                        print(feature)
+                        print(feature.size, feature.ndim)
                 elif self.model in ['lstm', 'gru', 'conv1d']:
                     self.features.append(feature)
 
-                if model == 'perframe':
-                    self.labels += label
-                else:
-                    self.labels.append(label)
-                self.frame_number_list.append(int(feature.shape[0]))
+            if model == 'perframe':
+                self.labels += label
+            else:
+                self.labels.append(label)
+            self.frame_number_list.append(int(feature.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
