@@ -313,8 +313,8 @@ if __name__ == '__main__':
     model = 'perframe'
     body_part = [True, False, True]
     ori_video = False
-    sample_fps = 15
-    video_len = 1
+    sample_fps = 6
+    video_len = 2
     performance_model = []
     i = 0
     while i < 10:
