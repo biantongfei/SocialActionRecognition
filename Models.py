@@ -36,39 +36,20 @@ class DNN(nn.Module):
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
-        if model == 'avg':
-            self.fc = nn.Sequential(
-                nn.Linear(self.input_size, 128),
-                nn.ReLU(),
-                # nn.Dropout(0.5),
-                nn.BatchNorm1d(128),
-                nn.Linear(128, 64),
-                nn.ReLU(),
-                # nn.Dropout(0.5),
-                nn.BatchNorm1d(64),
-                nn.Linear(64, 16),
-                nn.ReLU(),
-                # nn.Dropout(0.5),
-                nn.BatchNorm1d(16),
-            )
-        elif model == 'perframe':
-            self.fc = nn.Sequential(
-                nn.Linear(self.input_size, 128),
-                nn.BatchNorm1d(128),
-                # nn.Dropout(0.5),
-                nn.ReLU(),
-                nn.Linear(128, 64),
-                nn.BatchNorm1d(64),
-                # nn.Dropout(0.5),
-                nn.ReLU(),
-                nn.Linear(64, 32),
-                nn.BatchNorm1d(32),
-                # nn.Dropout(0.5),
-                nn.ReLU(),
-                nn.Linear(32, 16),
-                nn.BatchNorm1d(16),
-                # nn.Dropout(0.5),
-            )
+        self.fc = nn.Sequential(
+            nn.Linear(self.input_size, 128),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.BatchNorm1d(128),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.BatchNorm1d(64),
+            nn.Linear(64, 16),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.BatchNorm1d(16),
+        )
         self.attitude_head = nn.Sequential(nn.ReLU(),
                                            nn.Linear(16, attitude_class_num))
         self.action_head = nn.Sequential(nn.BatchNorm1d(16 + attitude_class_num),
@@ -160,11 +141,7 @@ class Cnn1D(nn.Module):
             # nn.Dropout(0.5),
         )
         self.fc = nn.Sequential(
-            nn.Linear(80, 64),
-            nn.BatchNorm1d(64),
-            # nn.Dropout(0.5),
-            nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(80, 32),
             nn.BatchNorm1d(32),
             # nn.Dropout(0.5),
             nn.ReLU(),
