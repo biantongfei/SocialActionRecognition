@@ -306,7 +306,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
 
 
 if __name__ == '__main__':
-    model = 'conv1d'
+    model = 'perframe'
     body_part = [True, True, True]
     ori_video = False
     sample_fps = 30
