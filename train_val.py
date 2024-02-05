@@ -307,7 +307,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
 
 if __name__ == '__main__':
     model = 'perframe'
-    body_part = [False, True, False]
+    body_part = [True, True, False]
     ori_video = False
     sample_fps = 30
     video_len = False
