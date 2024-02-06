@@ -26,7 +26,7 @@ class JPLDataLoader(DataLoader):
 
     def conv1d_collate_fn(self, data):
         padding = 'same' if self.empty_frame == 'same' else 'zero'
-        input, att_label, act_label = None, [], []
+        input, int_label, att_label, act_label = None, [], [], []
         for index, d in enumerate(data):
             x = d[0]
             while x.shape[0] < self.max_length:
@@ -35,6 +35,7 @@ class JPLDataLoader(DataLoader):
                     dim=0)
             input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
                 (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
-            att_label.append(d[1][0])
-            act_label.append(d[1][1])
-        return input, (torch.Tensor(att_label).long(), torch.Tensor(act_label).long())
+            int_label.append(d[1][0])
+            att_label.append(d[1][1])
+            act_label.append(d[1][2])
+        return input, (torch.Tensor(int_label).long(), torch.Tensor(att_label).long(), torch.Tensor(act_label).long())

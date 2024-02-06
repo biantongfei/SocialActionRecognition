@@ -98,20 +98,14 @@ def get_body_part(feature, is_coco, body_part):
 def get_labels(att_class, act_class):
     if att_class in [0, 2]:
         intent_class = 0
-        attitude_class = att_class if act_class == 0 else 1
-    elif act_class == 1:
+        attitude_class = att_class if att_class == 0 else 1
+    elif att_class == 1:
         intent_class = 1
         attitude_class = 2
     else:
         intent_class = 2
         attitude_class = 2
-    if act_class in [4, 7, 8]:
-        action_class = 6
-    elif act_class in [0, 1, 2, 3]:
-        action_class = act_class
-    else:
-        action_class = act_class - 1
-    return intent_class, attitude_class, action_class
+    return intent_class, attitude_class, act_class
 
 
 class Dataset(Dataset):

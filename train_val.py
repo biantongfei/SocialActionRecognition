@@ -33,15 +33,16 @@ else:
     print('Using CPU for training')
     device = torch.device('cpu')
 dtype = torch.float
-attitude_classes = ['positive', 'neutral', 'negative', 'uninterested']
+intent_class = ['interacting', 'interested', 'uninterested']
+attitude_classes = ['positive', 'negative', 'others']
 action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested', 'interested']
 
 
 def draw_save(performance_model):
-    att_best_acc = -1
-    best_model = None
     with open('plots/performance.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
+        int_y_true = {}
+        int_y_pred = {}
         att_y_true = {}
         att_y_pred = {}
         act_y_true = {}
@@ -49,19 +50,22 @@ def draw_save(performance_model):
         for index, p_m in enumerate(performance_model):
             data = [index + 1]
             for key in p_m.keys():
-                if att_best_acc < p_m[key]['attitude_accuracy']:
-                    att_best_acc = p_m[key]['attitude_accuracy']
-                    best_model = p_m[key]['model']
+                data.append(p_m[key]['intent_accuracy'])
+                data.append(p_m[key]['intent_f1'])
                 data.append(p_m[key]['attitude_accuracy'])
                 data.append(p_m[key]['attitude_f1'])
                 data.append(p_m[key]['action_accuracy'])
                 data.append(p_m[key]['action_f1'])
                 if key in att_y_true.keys():
+                    int_y_true[key] = torch.cat((int_y_true[key], p_m[key]['intent_y_true']), dim=0)
+                    int_y_pred[key] = torch.cat((int_y_pred[key], p_m[key]['intent_y_pred']), dim=0)
                     att_y_true[key] = torch.cat((att_y_true[key], p_m[key]['attitude_y_true']), dim=0)
                     att_y_pred[key] = torch.cat((att_y_pred[key], p_m[key]['attitude_y_pred']), dim=0)
                     act_y_true[key] = torch.cat((act_y_true[key], p_m[key]['action_y_true']), dim=0)
                     act_y_pred[key] = torch.cat((act_y_pred[key], p_m[key]['action_y_pred']), dim=0)
                 else:
+                    int_y_true[key] = p_m[key]['intent_y_true']
+                    int_y_pred[key] = p_m[key]['intent_y_pred']
                     att_y_true[key] = p_m[key]['attitude_y_true']
                     att_y_pred[key] = p_m[key]['attitude_y_pred']
                     act_y_true[key] = p_m[key]['action_y_true']
@@ -69,9 +73,9 @@ def draw_save(performance_model):
             spamwriter.writerow(data)
         csvfile.close()
     for key in att_y_true.keys():
+        plot_confusion_matrix(int_y_true[key], int_y_pred[key], intent_class, sub_name="%s_intent" % key)
         plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
         plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes, sub_name="%s_action" % key)
-    torch.save(best_model.state_dict(), 'plots/model.pth')
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
@@ -111,7 +115,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model[key] = {'intent_accuracy': None, 'intent_f1': None, 'intent_y_true': None,
                                   'intent_y_pred': None, 'attitude_accuracy': None, 'attitude_f1': None,
                                   'attitude_y_true': None, 'attitude_y_pred': None, 'action_accuracy': None,
-                                  'action_f1': None, 'action_y_true': None, 'action_y_pred': None, 'model': None}
+                                  'action_f1': None, 'action_y_true': None, 'action_y_pred': None}
 
     if model == 'avg':
         batch_size = avg_batch_size
@@ -264,7 +268,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
                                     max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
-        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
                 inputs, (int_labels, att_labels, act_labels) = data
@@ -316,7 +320,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model[hyperparameter_group]['action_f1'] = act_f1
         performance_model[hyperparameter_group]['action_y_true'] = act_y_true
         performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
-        performance_model[hyperparameter_group]['model'] = net
         print('%s: int_acc: %s, int_f1: %s, att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s' % (
             hyperparameter_group, "%.2f%%" % (int_acc * 100), "%.4f" % int_f1, "%.2f%%" % (att_acc * 100),
             "%.4f" % att_f1, "%.2f%%" % (act_acc * 100), "%.4f" % act_f1))
@@ -327,9 +330,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 if __name__ == '__main__':
     model = 'conv1d'
-    body_part = [True, False, True]
+    body_part = [True, True, True]
     framework = 'parallel'
-    # framework = 'hierarchical'
+    # framework = 'tree'
+    # framework = 'chain'
     ori_video = False
     sample_fps = 30
     video_len = False
@@ -338,15 +342,15 @@ if __name__ == '__main__':
     i = 0
     while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        # try:
-        if video_len:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                        ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
-        else:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                        ori_videos=ori_video, empty_frame=empty_frame)
-        # except ValueError:
-        #     continue
+        try:
+            if video_len:
+                p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                            ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
+            else:
+                p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                            ori_videos=ori_video, empty_frame=empty_frame)
+        except ValueError:
+            continue
         performance_model.append(p_m)
         i += 1
     draw_save(performance_model)
