@@ -101,7 +101,7 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_same+coco': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -306,12 +306,12 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
 
 
 if __name__ == '__main__':
-    model = 'perframe'
+    model = 'conv1d'
     body_part = [True, False, True]
     ori_video = False
-    sample_fps = 6
-    video_len = 1
-    empty_frame = False
+    sample_fps = 30
+    video_len = False
+    empty_frame = 'zero'
     performance_model = []
     i = 0
     while i < 10:
