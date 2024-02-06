@@ -151,7 +151,7 @@ class Dataset(Dataset):
                 if self.empty_frame and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
                     if self.empty_frame == 'zero':
                         features.append(
-                            np.zeros((get_points_num(is_coco=self.is_coco, body_part=self.body_part))).astype(float))
+                            np.zeros((1, get_points_num(is_coco=self.is_coco, body_part=self.body_part))))
                     elif self.empty_frame == 'same':
                         features.append(features[-1])
                 else:
