@@ -95,6 +95,25 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
+def get_labels(att_class, act_class):
+    if att_class in [0, 2]:
+        intent_class = 0
+        attitude_class = att_class if act_class == 0 else 1
+    elif act_class == 1:
+        intent_class = 1
+        attitude_class = 2
+    else:
+        intent_class = 2
+        attitude_class = 2
+    if act_class in [4, 7, 8]:
+        action_class = 6
+    elif act_class in [0, 1, 2, 3]:
+        action_class = act_class
+    else:
+        action_class = act_class - 1
+    return intent_class, attitude_class, action_class
+
+
 class Dataset(Dataset):
     def __init__(self, data_files, augment_method, is_coco, body_part, model, sample_fps, video_len=99999,
                  empty_frame=False):
@@ -175,7 +194,7 @@ class Dataset(Dataset):
         if len(features) == 0:
             return 0, None
         features = np.array(features)
-        label = (feature_json['attitude_class'], feature_json['action_class'])
+        label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
         if self.model == 'avg':
             features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)

@@ -88,7 +88,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
+def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -106,11 +106,12 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
-        trainging_process[key] = {'attitude_accuracy': [], 'attitude_f1': [], 'action_accuracy': [], 'action_f1': [],
-                                  'loss': []}
-        performance_model[key] = {'attitude_accuracy': None, 'attitude_f1': None, 'attitude_y_true': None,
-                                  'attitude_y_pred': None, 'action_accuracy': None, 'action_f1': None,
-                                  'action_y_true': None, 'action_y_pred': None, 'model': None}
+        trainging_process[key] = {'intent_accuracy': [], 'intent_f1': [], 'attitude_accuracy': [], 'attitude_f1': [],
+                                  'action_accuracy': [], 'action_f1': [], 'loss': []}
+        performance_model[key] = {'intent_accuracy': None, 'intent_f1': None, 'intent_y_true': None,
+                                  'intent_y_pred': None, 'attitude_accuracy': None, 'attitude_f1': None,
+                                  'attitude_y_true': None, 'attitude_y_pred': None, 'action_accuracy': None,
+                                  'action_f1': None, 'action_y_true': None, 'action_y_pred': None, 'model': None}
 
     if model == 'avg':
         batch_size = avg_batch_size
@@ -147,18 +148,17 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
-            net = DNN(is_coco=is_coco, body_part=body_part, model=model)
+            net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, bidirectional=True,
-                      gru=model == 'gru')
+            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=True, gru=model == 'gru')
         elif model == 'conv1d':
-            net = Cnn1D(is_coco=is_coco, body_part=body_part)
+            net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
-                                            'att_best_acc': -1, 'att_best_f1': -1, 'act_best_acc': -1,
-                                            'act_best_f1': -1, 'unimproved_epoch': 0}
+                                            'int_best_f1': -1, 'att_best_f1': -1, 'act_best_f1': -1,
+                                            'unimproved_epoch': 0}
     print('Start Training!!!')
     epoch = 1
     continue_train = True
@@ -178,79 +178,85 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
             optimizer = train_dict[hyperparameter_group]['optimizer']
             for data in train_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
-                    inputs, (att_labels, act_labels) = data
+                    inputs, (int_labels, att_labels, act_labels) = data
                 elif model in ['lstm', 'gru']:
-                    (inputs, (att_labels, act_labels)), data_length = data
+                    (inputs, (int_labels, att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(
-                    device)
+                inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
+                    device), att_labels.to(device), act_labels.to(device)
                 net.train()
-                att_outputs, act_outputs = net(inputs)
-                loss_1 = functional.cross_entropy(att_outputs, att_labels)
-                loss_2 = functional.cross_entropy(act_outputs, act_labels)
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 optimizer.zero_grad()
-                total_loss = loss_1 + loss_2
+                total_loss = loss_1 + loss_2 + loss_3
                 total_loss.backward()
                 optimizer.step()
 
-            att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
+            int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
             for data in val_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
-                    inputs, (att_labels, act_labels) = data
+                    inputs, (int_labels, att_labels, act_labels) = data
                 elif model in ['lstm', 'gru']:
-                    (inputs, (att_labels, act_labels)), data_length = data
+                    (inputs, (int_labels, att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(
-                    device)
+                inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
+                    device), att_labels.to(device), act_labels.to(device)
                 net.eval()
-                att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                int_pred = int_outputs.argmax(dim=1)
                 att_pred = att_outputs.argmax(dim=1)
                 act_pred = act_outputs.argmax(dim=1)
-                # print(pred)
+                int_y_true += int_labels.tolist()
                 att_y_true += att_labels.tolist()
-                att_y_pred += att_pred.tolist()
                 act_y_true += act_labels.tolist()
+                int_y_pred += int_pred.tolist()
+                att_y_pred += att_pred.tolist()
                 act_y_pred += act_pred.tolist()
-            att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(att_y_true), torch.Tensor(
-                att_y_pred), torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+            int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(
+                int_y_true), torch.Tensor(int_y_pred), torch.Tensor(att_y_true), torch.Tensor(att_y_pred), torch.Tensor(
+                act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
+                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
+                                                                   train_dict[hyperparameter_group][
+                                                                       'valset'].frame_number_list)
                 att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                    train_dict[hyperparameter_group][
                                                                        'valset'].frame_number_list)
                 act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                    train_dict[hyperparameter_group][
                                                                        'valset'].frame_number_list)
+            int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+            int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+            trainging_process[hyperparameter_group]['intent_accuracy'].append(att_acc)
+            trainging_process[hyperparameter_group]['intent_f1'].append(att_f1)
             trainging_process[hyperparameter_group]['attitude_accuracy'].append(att_acc)
             trainging_process[hyperparameter_group]['attitude_f1'].append(att_f1)
             trainging_process[hyperparameter_group]['action_accuracy'].append(act_acc)
             trainging_process[hyperparameter_group]['action_f1'].append(act_f1)
             trainging_process[hyperparameter_group]['loss'].append(float(total_loss))
-            if att_acc > train_dict[hyperparameter_group]['att_best_acc'] or att_f1 > train_dict[hyperparameter_group][
-                'att_best_f1'] or act_acc > train_dict[hyperparameter_group]['act_best_acc'] or act_f1 > \
-                    train_dict[hyperparameter_group]['act_best_f1']:
-                train_dict[hyperparameter_group]['att_best_acc'] = att_acc if att_acc > \
-                                                                              train_dict[hyperparameter_group][
-                                                                                  'att_best_acc'] else \
-                    train_dict[hyperparameter_group]['att_best_acc']
+            if int_f1 > train_dict[hyperparameter_group]['int_best_f1'] or att_f1 > train_dict[hyperparameter_group][
+                'att_best_f1'] or act_f1 > train_dict[hyperparameter_group]['act_best_f1']:
+                train_dict[hyperparameter_group]['int_best_f1'] = int_f1 if int_f1 > train_dict[hyperparameter_group][
+                    'int_best_f1'] else train_dict[hyperparameter_group]['int_best_f1']
                 train_dict[hyperparameter_group]['att_best_f1'] = att_f1 if att_f1 > train_dict[hyperparameter_group][
                     'att_best_f1'] else train_dict[hyperparameter_group]['att_best_f1']
-                train_dict[hyperparameter_group]['act_best_acc'] = act_acc if act_acc > \
-                                                                              train_dict[hyperparameter_group][
-                                                                                  'act_best_acc'] else \
-                    train_dict[hyperparameter_group]['act_best_acc']
                 train_dict[hyperparameter_group]['act_best_f1'] = act_f1 if act_f1 > train_dict[hyperparameter_group][
                     'act_best_f1'] else train_dict[hyperparameter_group]['act_best_f1']
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-            print('%s, epcoch: %d, unimproved_epoch: %d, att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s, loss: %s' % (
-                hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
-                "%.2f%%" % (att_acc * 100), "%.4f" % att_f1, "%.2f%%" % (act_acc * 100), "%.4f" % act_f1,
-                "%.4f" % total_loss))
+            print(
+                '%s, epcoch: %d, unimproved_epoch: %d, int_acc: %s, int_f1: %s, att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s, loss: %s' % (
+                    hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'],
+                    "%.2f%%" % (int_acc * 100), "%.4f" % int_f1, "%.2f%%" % (att_acc * 100), "%.4f" % att_f1,
+                    "%.2f%%" % (act_acc * 100), "%.4f" % act_f1,
+                    "%.4f" % total_loss))
         epoch += 1
         print('------------------------------------------')
         # break
@@ -258,36 +264,50 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
     for hyperparameter_group in train_dict:
         test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
                                     max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
-        att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], []
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
-                inputs, (att_labels, act_labels) = data
+                inputs, (int_labels, att_labels, act_labels) = data
             elif model in ['lstm', 'gru']:
-                (inputs, (att_labels, act_labels)), data_length = data
+                (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-            inputs, att_labels, act_labels = inputs.to(dtype).to(device), att_labels.to(device), act_labels.to(device)
+            inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
+                device), att_labels.to(device), act_labels.to(device)
             net = train_dict[hyperparameter_group]['net'].to(device)
             net.eval()
-            att_outputs, act_outputs = net(inputs)
+            int_outputs, att_outputs, act_outputs = net(inputs)
+            int_pred = int_outputs.argmax(dim=1)
             att_pred = att_outputs.argmax(dim=1)
             act_pred = act_outputs.argmax(dim=1)
+            int_y_true += int_labels.tolist()
+            int_y_pred += int_pred.tolist()
             att_y_true += att_labels.tolist()
             att_y_pred += att_pred.tolist()
             act_y_true += act_labels.tolist()
             act_y_pred += act_pred.tolist()
-        att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(att_y_true), torch.Tensor(
-            att_y_pred), torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(int_y_true), torch.Tensor(
+            int_y_pred), torch.Tensor(att_y_true), torch.Tensor(att_y_pred), torch.Tensor(act_y_true), torch.Tensor(
+            act_y_pred)
         if model == 'perframe':
+            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
+                                                               train_dict[hyperparameter_group][
+                                                                   'testset'].frame_number_list)
             att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                train_dict[hyperparameter_group][
                                                                    'testset'].frame_number_list)
             act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                train_dict[hyperparameter_group][
                                                                    'testset'].frame_number_list)
+        int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+        int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
         att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
         att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
         act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+        performance_model[hyperparameter_group]['intent_accuracy'] = int_acc
+        performance_model[hyperparameter_group]['intent_f1'] = int_f1
+        performance_model[hyperparameter_group]['intent_y_true'] = int_y_true
+        performance_model[hyperparameter_group]['intent_y_pred'] = int_y_pred
         performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
         performance_model[hyperparameter_group]['attitude_f1'] = att_f1
         performance_model[hyperparameter_group]['attitude_y_true'] = att_y_true
@@ -297,9 +317,9 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
         performance_model[hyperparameter_group]['action_y_true'] = act_y_true
         performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
         performance_model[hyperparameter_group]['model'] = net
-        print('%s: att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s' % (
-            hyperparameter_group, "%.2f%%" % (att_acc * 100), "%.4f" % att_f1, "%.2f%%" % (act_acc * 100),
-            "%.4f" % act_f1))
+        print('%s: int_acc: %s, int_f1: %s, att_acc: %s, att_f1: %s, act_acc: %s, act_f1: %s' % (
+            hyperparameter_group, "%.2f%%" % (int_acc * 100), "%.4f" % int_f1, "%.2f%%" % (att_acc * 100),
+            "%.4f" % att_f1, "%.2f%%" % (act_acc * 100), "%.4f" % act_f1))
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)
     return performance_model
@@ -308,21 +328,23 @@ def train(model, body_part, sample_fps, video_len=99999, ori_videos=False, empty
 if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, False, True]
+    framework = 'parallel'
+    # framework = 'hierarchical'
     ori_video = False
     sample_fps = 30
     video_len = False
-    empty_frame = 'zero'
+    empty_frame = False
     performance_model = []
     i = 0
     while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
-            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video,
-                        video_len=video_len, empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
         else:
-            p_m = train(model=model, body_part=body_part, sample_fps=sample_fps, ori_videos=ori_video,
-                        empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video, empty_frame=empty_frame)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
