@@ -118,7 +118,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    train_dict = {'mixed_same+coco': {}, 'mixed_large+halpe': {}}
+    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
