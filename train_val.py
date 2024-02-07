@@ -335,8 +335,8 @@ if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, True, True]
     # framework = 'parallel'
-    framework = 'tree'
-    # framework = 'chain'
+    # framework = 'tree'
+    framework = 'chain'
     ori_video = False
     sample_fps = 30
     video_len = False
