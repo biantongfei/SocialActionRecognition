@@ -335,8 +335,8 @@ if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, True, True]
     # framework = 'parallel'
-    # framework = 'tree'
-    framework = 'chain'
+    framework = 'tree'
+    # framework = 'chain'
     ori_video = False
     sample_fps = 30
     video_len = False
@@ -358,4 +358,5 @@ if __name__ == '__main__':
         i += 1
     draw_save(performance_model)
     print('model: %s, body_part:' % model, body_part,
-          ', sample_fps: %d, video_len: %s, empty_frame: %s' % (sample_fps, str(video_len), str(empty_frame)))
+          ', framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
+          framework, sample_fps, str(video_len), str(empty_frame)))
