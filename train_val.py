@@ -330,12 +330,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
         act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-        performance_model[hyperparameter_group]['intention_accuracy'].append(int_acc)
-        performance_model[hyperparameter_group]['intention_f1'].append(int_f1)
-        performance_model[hyperparameter_group]['attitude_accuracy'].append(att_acc)
-        performance_model[hyperparameter_group]['attitude_f1'].append(att_f1)
-        performance_model[hyperparameter_group]['action_accuracy'].append(act_acc)
-        performance_model[hyperparameter_group]['action_f1'].append(act_f1)
+        performance_model[hyperparameter_group]['intention_accuracy'] = int_acc
+        performance_model[hyperparameter_group]['intention_f1'] = int_f1
+        performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
+        performance_model[hyperparameter_group]['attitude_f1'] = att_f1
+        performance_model[hyperparameter_group]['action_accuracy'] = act_acc
+        performance_model[hyperparameter_group]['action_f1'] = act_f1
         performance_model[hyperparameter_group]['intention_y_true'] = int_y_true
         performance_model[hyperparameter_group]['intention_y_pred'] = int_y_pred
         performance_model[hyperparameter_group]['attitude_y_true'] = att_y_true
