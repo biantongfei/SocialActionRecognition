@@ -187,12 +187,10 @@ class Cnn1D(nn.Module):
                                          )
 
         if self.framework == 'parallel':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16),
-                                               nn.ReLU(),
+            self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16),
-                                             nn.ReLU(),
+            self.action_head = nn.Sequential(nn.ReLU(),
                                              nn.Linear(16, action_class_num)
                                              )
         elif self.framework == 'tree':
@@ -209,9 +207,9 @@ class Cnn1D(nn.Module):
                                                nn.ReLU(),
                                                nn.Linear(16 + intent_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + attitude_class_num, action_class_num)
+                                             nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, x):
@@ -228,5 +226,5 @@ class Cnn1D(nn.Module):
             y3 = self.action_head(torch.cat((y, y1), dim=1))
         elif self.framework == 'chain':
             y2 = self.attitude_head(torch.cat((y, y1), dim=1))
-            y3 = self.action_head(torch.cat((y, y2), dim=1))
+            y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
         return y1, y2, y3
