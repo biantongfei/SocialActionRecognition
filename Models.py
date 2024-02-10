@@ -1,3 +1,5 @@
+import math
+
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
@@ -193,13 +195,15 @@ class RNN(nn.Module):
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, is_coco, body_part, framework):
+    def __init__(self, is_coco, body_part, framework, max_length):
         super(Cnn1D, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         points_num = get_points_num(is_coco, body_part)
         self.input_size = 2 * points_num
         self.framework = framework
+        self.hidden_dim = 16 * int(
+            (math.ceil(int((math.ceil(int((math.ceil(max_length / 3) + 2) / 2) / 3) + 2) / 2) / 3) + 2) / 2)
         self.cnn = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.MaxPool1d(2, stride=2, padding=1),
@@ -218,7 +222,7 @@ class Cnn1D(nn.Module):
             # nn.Dropout(0.5),
         )
         self.fc = nn.Sequential(
-            nn.Linear(96, 32),
+            nn.Linear(self.hidden_dim, 32),
             nn.BatchNorm1d(32),
             # nn.Dropout(0.5),
             nn.ReLU(),
