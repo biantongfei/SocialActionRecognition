@@ -202,23 +202,23 @@ class Cnn1D(nn.Module):
         self.framework = framework
         self.cnn = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
-            nn.MaxPool1d(2, stride=2),
+            nn.MaxPool1d(2, stride=2, padding=1),
             nn.BatchNorm1d(64),
             nn.ReLU(),
             # nn.Dropout(0.5),
             nn.Conv1d(64, 32, kernel_size=7, stride=3, padding=3),
-            nn.MaxPool1d(2, stride=2),
+            nn.MaxPool1d(2, stride=2, padding=1),
             nn.BatchNorm1d(32),
             nn.ReLU(),
             # nn.Dropout(0.5),
             nn.Conv1d(32, 16, kernel_size=7, stride=3, padding=3),
-            nn.MaxPool1d(2, stride=2),
+            nn.MaxPool1d(2, stride=2, padding=1),
             nn.BatchNorm1d(16),
             nn.ReLU(),
             # nn.Dropout(0.5),
         )
         self.fc = nn.Sequential(
-            nn.Linear(80, 32),
+            nn.Linear(96, 32),
             nn.BatchNorm1d(32),
             # nn.Dropout(0.5),
             nn.ReLU(),
