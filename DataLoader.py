@@ -5,13 +5,16 @@ import torch.nn.utils.rnn as rnn_utils
 
 def rnn_collate_fn(data):
     data.sort(key=lambda feature: feature[0].shape[0], reverse=True)
-    x, y = [], []
+    x, intention_labels, attitude_labels, action_labels = [], [], [], []
     for d in data:
         x.append(d[0])
-        y.append(d[1])
+        intention_labels.append(d[1][0])
+        attitude_labels.append((d[1][1]))
+        action_labels.append(d[1][2])
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
-    return (x, torch.Tensor(y).long()), data_length
+    return (x, (torch.Tensor(intention_labels).long(), torch.Tensor(attitude_labels).long(),
+            torch.Tensor(action_labels).long())), data_length
 
 
 class JPLDataLoader(DataLoader):

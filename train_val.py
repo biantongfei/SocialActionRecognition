@@ -118,10 +118,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
+    # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -169,7 +169,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         if model in ['avg', 'perframe']:
             net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=True, gru=model == 'gru')
+            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=False,
+                      gru=model == 'gru')
         elif model == 'conv1d':
             net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework)
         net.to(device)
@@ -233,6 +234,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 int_y_pred += int_pred.tolist()
                 att_y_pred += att_pred.tolist()
                 act_y_pred += act_pred.tolist()
+                # print(int_labels, 'labels')
+                # print(int_pred, 'preds')
             int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = torch.Tensor(
                 int_y_true), torch.Tensor(int_y_pred), torch.Tensor(att_y_true), torch.Tensor(att_y_pred), torch.Tensor(
                 act_y_true), torch.Tensor(act_y_pred)
@@ -353,9 +356,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, True, True]
-    framework = 'parallel'
+    # framework = 'parallel'
     # framework = 'tree'
-    # framework = 'chain'
+    framework = 'chain'
     ori_video = False
     sample_fps = 30
     video_len = False
