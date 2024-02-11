@@ -120,8 +120,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'mixed_large+coco': {}}
-    train_dict = {'mixed_large+halpe': {}}
+    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}}
     trainging_process = {}
     performance_model = {}
@@ -357,8 +357,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, True, True]
-    framework = 'parallel'
-    # framework = 'tree'
+    # framework = 'parallel'
+    framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
