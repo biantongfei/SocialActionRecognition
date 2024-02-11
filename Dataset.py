@@ -5,6 +5,8 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import torch
+from torch_geometric.data import InMemoryDataset, Data
 
 from Models import get_points_num
 
@@ -205,6 +207,48 @@ class Dataset(Dataset):
             return self.features.shape[0]
         elif self.model in ['lstm', 'gru', 'conv1d']:
             return len(self.features)
+
+#
+# class MyCustomDataset(InMemoryDataset):
+#     def __init__():
+#         self.filename =..  # List of raw files, in your case point cloud
+#         super(MyCustomDataset, self).__init()
+#
+#     @property
+#     def raw_file_names(self):
+#         return self.filename
+#
+#     @property
+#     def processed_file_names(self):
+#         """ return list of files should be in processed dir, if found - skip processing."""
+#         processed_filename = []
+#         return processed_filename
+#
+#     def download(self):
+#         pass
+#
+#     def process(self):
+#         for file in self.raw_paths:
+#             self._process_one_step(file)
+#
+#     def _process_one_step(self, path):
+#         out_path = (self.processed_dir, "some_unique_filename.pt")
+#         # read your point cloud here,
+#         # convert point cloud to Data object
+#         data = Data(x=node_features,
+#                     edge_index=edge_index,
+#                     edge_attr=edge_attr,
+#                     y=label  # you can add more arguments as you like
+#                     )
+#         torch.save(data, out_path)
+#         return
+#
+#     def __len__(self):
+#         return len(self.processed_file_names)
+#
+#     def __getitem__(self, idx):
+#         data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
+#         return data
 
 
 if __name__ == '__main__':
