@@ -363,7 +363,7 @@ if __name__ == '__main__':
     ori_video = False
     sample_fps = 30
     video_len = False
-    empty_frame = 'zero'
+    empty_frame = 'same'
     performance_model = []
     i = 0
     while i < 10:
