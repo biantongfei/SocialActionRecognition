@@ -31,6 +31,7 @@ def draw_training_process(training_process):
     plt.savefig('plots/loss.png')
     plt.close()
 
+
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
@@ -64,7 +65,8 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                 recall = '0'
             TP_FNs.append(TP_FN)
             plt.text(x_val, y_val, str(TP_FN) + '\n' + str(recall), color='black', va='center', ha='center')
-        elif x_val != max_index and y_val == max_index:  # 绘制最下行即各数据类别的查准率
+        elif x_val != max_index and y_val == max_index:
+            # 绘制最下行即各数据类别的查准率
             TP = diags[x_val]
             TP_FP = cm.sum(axis=0)[x_val]
             precision = TP / (TP_FP)

@@ -14,12 +14,13 @@ def rnn_collate_fn(data):
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
     return (x, (torch.Tensor(intention_labels).long(), torch.Tensor(attitude_labels).long(),
-            torch.Tensor(action_labels).long())), data_length
+                torch.Tensor(action_labels).long())), data_length
 
 
 class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, max_length, shuffle=False, empty_frame=False):
-        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle)
+        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                            drop_last=True)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':

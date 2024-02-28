@@ -14,7 +14,7 @@ import csv
 avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 32
-conv1d_batch_size = 64
+conv1d_batch_size = 32
 avg_train_epoch = 3
 perframe_train_epoch = 1
 rnn_train_epoch = 5
@@ -81,13 +81,13 @@ def draw_save(performance_model, framework):
                         act_y_pred[key] = p_m[key]['action_y_pred']
             spamwriter.writerow(data)
         csvfile.close()
-    for key in keys:
-        if 'intent' in tasks:
-            plot_confusion_matrix(int_y_true[key], int_y_pred[key], intent_class, sub_name="%s_intent" % key)
-        if 'attitude' in tasks:
-            plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
-        if 'action' in tasks:
-            plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes, sub_name="%s_action" % key)
+    # for key in keys:
+    #     if 'intent' in tasks:
+    #         plot_confusion_matrix(int_y_true[key], int_y_pred[key], intent_class, sub_name="%s_intent" % key)
+    #     if 'attitude' in tasks:
+    #         plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
+    #     if 'action' in tasks:
+    #         plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes, sub_name="%s_action" % key)
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
@@ -405,7 +405,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 if __name__ == '__main__':
     model = 'conv1d'
-    body_part = [False, False, True]
+    body_part = [True, True, True]
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
