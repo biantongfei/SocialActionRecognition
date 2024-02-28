@@ -18,7 +18,7 @@ conv1d_batch_size = 32
 avg_train_epoch = 3
 perframe_train_epoch = 1
 rnn_train_epoch = 5
-conv1d_train_epoch = 1
+conv1d_train_epoch = 2
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
 rnn_learning_rate = 1e-3
@@ -405,7 +405,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 if __name__ == '__main__':
     model = 'conv1d'
-    body_part = [False, True, False]
+    body_part = [True, True, True]
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
