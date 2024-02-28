@@ -222,9 +222,11 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     total_loss = functional.cross_entropy(int_outputs, int_labels)
                 elif framework == 'attitude':
                     att_outputs = net(inputs)
+                    att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                     total_loss = functional.cross_entropy(att_outputs, att_labels)
                 elif framework == 'action':
                     act_outputs = net(inputs)
+                    act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                     total_loss = functional.cross_entropy(act_outputs, act_labels)
                 else:
                     int_outputs, att_outputs, act_outputs = net(inputs)
@@ -286,7 +288,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                        train_dict[hyperparameter_group][
                                                                            'valset'].frame_number_list)
-                att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred)
+                att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred, 'attitude')
                 att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
                 att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
                 if att_f1 > train_dict[hyperparameter_group]['attitude_best_f1']:
@@ -299,6 +301,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                        train_dict[hyperparameter_group][
                                                                            'valset'].frame_number_list)
+                act_y_true, act_y_pred = filter_others_from_result(act_y_true, act_y_pred, 'action')
                 act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
                 act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
                 if act_f1 > train_dict[hyperparameter_group]['action_best_f1']:
@@ -370,7 +373,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                    train_dict[hyperparameter_group][
                                                                        'testset'].frame_number_list)
-            att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred)
+            att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred, 'attitude')
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
             performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
@@ -384,6 +387,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                    train_dict[hyperparameter_group][
                                                                        'testset'].frame_number_list)
+            act_y_true, act_y_pred = filter_others_from_result(act_y_true, act_y_pred, 'action')
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
             performance_model[hyperparameter_group]['action_accuracy'] = act_acc
