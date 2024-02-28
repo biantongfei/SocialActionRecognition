@@ -270,8 +270,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     act_y_true += act_labels.tolist()
                     act_y_pred += act_pred.tolist()
 
-            result_str = '%s, epcoch: %d, unimproved_epoch: %d, ' % (
-                hyperparameter_group, epoch, train_dict[hyperparameter_group]['unimproved_epoch'])
+            result_str = '%s, epcoch: %d, ' % (hyperparameter_group, epoch)
             if 'intent' in tasks:
                 int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
                 if model == 'perframe':
@@ -314,8 +313,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 train_dict[hyperparameter_group]['unimproved_epoch'] = 0
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-
-            print(result_str + "loss: %.4f" % total_loss)
+            print(result_str + "loss: %.4f, unimproved_epoch: %d" % (
+            total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
         epoch += 1
         print('------------------------------------------')
         # break
