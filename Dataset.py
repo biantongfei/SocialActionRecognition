@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torch
-from torch_geometric.data import InMemoryDataset, Data
 
 from Models import get_points_num
 
