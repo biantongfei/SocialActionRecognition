@@ -104,10 +104,10 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def filter_others_from_result(y_true, y_pred):
+def filter_others_from_result(y_true, y_pred, task):
     i = 0
     while i < y_true.shape[0]:
-        if y_true[i] == 2:
+        if (task == 'attitude' and y_true[i] == 2) or (task == 'action' and y_true[i] in [4, 7, 8]):
             if i == y_true.shape[0] - 1:
                 y_true = y_true[:i]
                 y_pred = y_pred[:i]
@@ -399,16 +399,16 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 if __name__ == '__main__':
     model = 'conv1d'
-    body_part = [True, True, True]
+    body_part = [True, False, False]
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
-    framework = 'parallel'
-    # framework = 'tree'
+    # framework = 'parallel'
+    framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
-    video_len = 0.5
+    video_len = 2
     empty_frame = 'same'
     performance_model = []
     i = 0
