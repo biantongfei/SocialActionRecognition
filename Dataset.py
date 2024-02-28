@@ -156,14 +156,18 @@ class Dataset(Dataset):
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        first_id = feature_json['frames'][0]['frame_id']
+        for i in range(len(feature_json['frames'])):
+            if feature_json['frames'][i]['frame_id'] % (video_fps / self.sample_fps) == 0:
+                first_id = feature_json['frames'][i]['frame_id']
+                break
         index = 0
         while len(features) < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
                 break
             else:
                 frame = feature_json['frames'][index]
-                if self.empty_frame and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
+                if self.empty_frame and frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (
+                        video_fps / self.sample_fps):
                     if self.empty_frame == 'zero':
                         features.append(np.zeros((2 * get_points_num(is_coco=self.is_coco, body_part=self.body_part))))
                     elif self.empty_frame == 'same':
@@ -207,6 +211,7 @@ class Dataset(Dataset):
             return self.features.shape[0]
         elif self.model in ['lstm', 'gru', 'conv1d']:
             return len(self.features)
+
 
 #
 # class MyCustomDataset(InMemoryDataset):

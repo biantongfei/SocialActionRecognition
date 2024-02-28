@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-# import numpy as np
+import numpy as np
 import math
 
 m1 = nn.Conv1d(266, 64, 7, stride=3, padding=3)
