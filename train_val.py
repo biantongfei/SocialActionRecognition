@@ -413,7 +413,7 @@ if __name__ == '__main__':
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
-    video_len = 1
+    video_len = 0.5
     empty_frame = 'same'
     performance_model = []
     i = 0
