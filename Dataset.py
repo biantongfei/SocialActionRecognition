@@ -155,10 +155,13 @@ class Dataset(Dataset):
         features = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        for i in range(len(feature_json['frames'])):
-            if feature_json['frames'][i]['frame_id'] % (video_fps / self.sample_fps) == 0:
-                first_id = feature_json['frames'][i]['frame_id']
+        first_id = -1
+        for frame in feature_json['frames']:
+            if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+                first_id = frame['frame_id']
                 break
+        if first_id == -1:
+            return 0, 0
         index = 0
         while len(features) < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
