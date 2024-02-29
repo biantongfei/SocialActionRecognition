@@ -78,7 +78,7 @@ class DNN(nn.Module):
                                                nn.ReLU(),
                                                nn.Linear(16 + intent_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
                                              nn.ReLU(),
                                              nn.Linear(16 + attitude_class_num, action_class_num)
                                              )
@@ -105,7 +105,7 @@ class DNN(nn.Module):
             elif self.framework == 'chain':
                 y1 = self.intent_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
-                y3 = self.action_head(torch.cat((y, y2), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
 
 
@@ -210,7 +210,7 @@ class RNN(nn.Module):
             elif self.framework == 'chain':
                 y1 = self.intent_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
-                y3 = self.action_head(torch.cat((y, y2), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
 
 
@@ -304,5 +304,5 @@ class Cnn1D(nn.Module):
             elif self.framework == 'chain':
                 y1 = self.intent_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
-                y3 = self.action_head(torch.cat((y, y2), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
