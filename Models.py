@@ -189,7 +189,7 @@ class RNN(nn.Module):
             for i in range(out_pad.data.shape[0]):
                 index = out_length[i] - 1
                 out[i] = out_pad.data[i, index, :]
-        y = self.fc(x)
+        y = self.fc(out)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
                 y = self.intent_head(y)
