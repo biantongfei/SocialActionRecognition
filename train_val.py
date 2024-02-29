@@ -230,8 +230,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     total_loss = functional.cross_entropy(act_outputs, act_labels)
                 else:
                     int_outputs, att_outputs, act_outputs = net(inputs)
-                    # att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
-                    # act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
+                    att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
+                    act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
                     loss_2 = functional.cross_entropy(att_outputs, att_labels)
                     loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -407,9 +407,9 @@ if __name__ == '__main__':
     body_part = [True, True, True]
     # framework = 'intent'
     # framework = 'attitude'
-    # framework = 'action'
+    framework = 'action'
     # framework = 'parallel'
-    framework = 'tree'
+    # framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
