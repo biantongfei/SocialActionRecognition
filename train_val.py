@@ -406,8 +406,8 @@ if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, False, True]
     # framework = 'intent'
-    framework = 'attitude'
-    # framework = 'action'
+    # framework = 'attitude'
+    framework = 'action'
     # framework = 'parallel'
     # framework = 'tree'
     # framework = 'chain'
