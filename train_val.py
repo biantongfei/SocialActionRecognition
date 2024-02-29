@@ -406,14 +406,14 @@ if __name__ == '__main__':
     model = 'conv1d'
     body_part = [True, False, True]
     # framework = 'intent'
-    # framework = 'attitude'
+    framework = 'attitude'
     # framework = 'action'
     # framework = 'parallel'
     # framework = 'tree'
-    framework = 'chain'
+    # framework = 'chain'
     ori_video = False
     sample_fps = 30
-    video_len = 1
+    video_len = 0.5
     empty_frame = 'same'
     performance_model = []
     i = 0
