@@ -408,8 +408,8 @@ if __name__ == '__main__':
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
-    framework = 'parallel'
-    # framework = 'tree'
+    # framework = 'parallel'
+    framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
