@@ -119,6 +119,7 @@ class RNN(nn.Module):
         self.input_size = 2 * points_num
         self.hidden_size = 256
         self.bidirectional = bidirectional
+        self.gru = gru
         if gru:
             self.rnn = nn.GRU(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=bidirectional,
                               batch_first=True)
@@ -176,7 +177,10 @@ class RNN(nn.Module):
             )
 
     def forward(self, x):
-        on, (hn, _) = self.rnn(x)
+        if self.gru:
+            on, hn = self.rnn(x)
+        else:
+            on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
         if self.bidirectional:
             out = torch.zeros(out_pad.data.shape[0], self.hidden_size * 2).to(device)
