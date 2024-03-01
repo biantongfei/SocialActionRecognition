@@ -181,7 +181,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         if model in ['avg', 'perframe']:
             net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=False,
+            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=True,
                       gru=model == 'gru')
         elif model == 'conv1d':
             net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
