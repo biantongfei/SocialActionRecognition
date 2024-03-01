@@ -407,12 +407,12 @@ if __name__ == '__main__':
     body_part = [True, False, True]
     # framework = 'intent'
     # framework = 'attitude'
-    # framework = 'action'
+    framework = 'action'
     # framework = 'parallel'
     # framework = 'tree'
-    framework = 'chain'
+    # framework = 'chain'
     ori_video = False
-    sample_fps = 15
+    sample_fps = 6
     video_len = 1
     empty_frame = 'same'
     performance_model = []
