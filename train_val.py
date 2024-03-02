@@ -403,8 +403,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 
 if __name__ == '__main__':
-    model = 'gru'
-    body_part = [True, True, True]
+    model = 'lstm'
+    body_part = [True, False, False]
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
