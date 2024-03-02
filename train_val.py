@@ -407,8 +407,8 @@ if __name__ == '__main__':
     body_part = [True, True, True]
     # framework = 'intent'
     # framework = 'attitude'
-    framework = 'action'
-    # framework = 'parallel'
+    # framework = 'action'
+    framework = 'parallel'
     # framework = 'tree'
     # framework = 'chain'
     ori_video = False
