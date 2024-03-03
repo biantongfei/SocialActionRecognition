@@ -406,8 +406,8 @@ if __name__ == '__main__':
     model = 'lstm'
     body_part = [True, True, True]
     # framework = 'intent'
-    framework = 'attitude'
-    # framework = 'action'
+    # framework = 'attitude'
+    framework = 'action'
     # framework = 'parallel'
     # framework = 'tree'
     # framework = 'chain'
