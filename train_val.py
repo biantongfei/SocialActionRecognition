@@ -403,7 +403,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 
 if __name__ == '__main__':
-    model = 'lstm'
+    model = 'gru'
     body_part = [True, True, True]
     # framework = 'intent'
     # framework = 'attitude'
@@ -413,7 +413,7 @@ if __name__ == '__main__':
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
-    video_len = 1
+    video_len = 2
     empty_frame = 'zero'
     performance_model = []
     i = 0
