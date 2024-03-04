@@ -117,7 +117,7 @@ class RNN(nn.Module):
         points_num = get_points_num(is_coco, body_part)
         self.framework = framework
         self.input_size = 2 * points_num
-        self.hidden_size = 512
+        self.hidden_size = 256
         self.bidirectional = bidirectional
         self.gru = gru
         if gru:
@@ -132,10 +132,7 @@ class RNN(nn.Module):
         # Readout layer
         self.fc = nn.Sequential(
             nn.BatchNorm1d(self.hidden_size * (2 if bidirectional else 1)),
-            nn.Linear(self.hidden_size * (2 if bidirectional else 1), 512),
-            nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.Linear(512, 128),
+            nn.Linear(self.hidden_size * (2 if bidirectional else 1), 128),
             nn.ReLU(),
             nn.BatchNorm1d(128),
             nn.Linear(128, 64),
