@@ -405,8 +405,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 if __name__ == '__main__':
     model = 'lstm'
     body_part = [True, True, True]
-    framework = 'intent'
-    # framework = 'attitude'
+    # framework = 'intent'
+    framework = 'attitude'
     # framework = 'action'
     # framework = 'parallel'
     # framework = 'tree'
