@@ -258,7 +258,8 @@ class Dataset(Dataset):
                 if self.empty_frame and frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (
                         video_fps / self.sample_fps):
                     if self.empty_frame == 'zero':
-                        features.append(np.zeros((get_inputs_size(is_coco=self.is_coco, body_part=self.body_part))))
+                        features.append(np.zeros((get_inputs_size(is_coco=self.is_coco, body_part=self.body_part,
+                                                                  data_format=self.data_format))))
                     elif self.empty_frame == 'same':
                         features.append(features[-1])
                 else:
