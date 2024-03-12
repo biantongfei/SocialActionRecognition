@@ -1,6 +1,6 @@
 from train_val import train, draw_save
 
-model = 'convid'
+model = 'conv1d'
 body_part = [True, True, True]
 # data_format = 'coordinates'
 # data_format = 'manhattan'
