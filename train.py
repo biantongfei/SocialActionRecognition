@@ -1,10 +1,10 @@
 from train_val import train, draw_save
 
-model = 'lstm'
+model = 'convid'
 body_part = [True, True, True]
 # data_format = 'coordinates'
-data_format = 'manhattan'
-# data_format = 'dis_angel'
+# data_format = 'manhattan'
+data_format = 'dis_angel'
 
 # framework = 'intent'
 # framework = 'attitude'
