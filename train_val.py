@@ -15,10 +15,12 @@ avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 32
 conv1d_batch_size = 32
-avg_train_epoch = 3
+gnn_batch_size = 32
+avg_train_epoch = 1
 perframe_train_epoch = 1
 rnn_train_epoch = 1
 conv1d_train_epoch = 1
+gnn_train_epoch = 1
 valset_rate = 0.2
 dnn_learning_rate = 1e-3
 rnn_learning_rate = 1e-3
@@ -119,7 +121,7 @@ def filter_others_from_result(y_true, y_pred, task):
     return y_true, y_pred
 
 
-def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
+def train(model, body_part, data_format, framework, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -168,23 +170,25 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
                                                    ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):], augment_method=augment_method,
-                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps,
-                           video_len=video_len, empty_frame=empty_frame)
+                           is_coco=is_coco, body_part=body_part, data_format=data_format, model=model,
+                           sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)], augment_method=augment_method,
-                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len,
-                         empty_frame=empty_frame)
+                         is_coco=is_coco, body_part=body_part, data_format=data_format, model=model,
+                         sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
         testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                          model=model, sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
+                          data_format=data_format, model=model, sample_fps=sample_fps, video_len=video_len,
+                          empty_frame=empty_frame)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
             len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
-            net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
+            net = DNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, bidirectional=True,
-                      gru=model == 'gru')
+            net = RNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
+                      bidirectional=True, gru=model == 'gru')
         elif model == 'conv1d':
-            net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
+            net = Cnn1D(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
+                        max_length=max_length)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
@@ -314,7 +318,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             else:
                 train_dict[hyperparameter_group]['unimproved_epoch'] += 1
             print(result_str + "loss: %.4f, unimproved_epoch: %d" % (
-            total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
+                total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
         epoch += 1
         print('------------------------------------------')
         # break
@@ -403,8 +407,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 
 if __name__ == '__main__':
-    model = 'gru'
+    model = 'conv1d'
     body_part = [True, True, True]
+    # data_format = 'coordinates'
+    data_format = 'manhattan'
+    # data_format = 'dis_angel'
+
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
@@ -414,18 +422,18 @@ if __name__ == '__main__':
     ori_video = False
     sample_fps = 30
     video_len = 2
-    empty_frame = 'zero'
+    empty_frame = 'same'
     performance_model = []
     i = 0
     while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                        ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, data_format=data_format, framework=framework,
+                        sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
         else:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                        ori_videos=ori_video, empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, data_format=data_format, framework=framework,
+                        sample_fps=sample_fps, ori_videos=ori_video, empty_frame=empty_frame)
         # except ValueError:
         #     continue
         performance_model.append(p_m)

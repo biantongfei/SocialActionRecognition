@@ -1,13 +1,13 @@
 import math
+import numpy as np
 
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
+from torch_geometric.nn import GATConv, GCNConv
 
-coco_body_point_num = 23
-halpe_body_point_num = 26
-head_point_num = 68
-hands_point_num = 42
+from Dataset import get_inputs_size
+
 box_feature_num = 4
 intent_class_num = 3
 attitude_class_num = 3
@@ -21,25 +21,13 @@ else:
     device = torch.device('cpu')
 
 
-def get_points_num(is_coco, body_part):
-    points_num = 0
-    if body_part[0]:
-        points_num += coco_body_point_num if is_coco else halpe_body_point_num
-    if body_part[1]:
-        points_num += head_point_num
-    if body_part[2]:
-        points_num += hands_point_num
-    return points_num
-
-
 class DNN(nn.Module):
-    def __init__(self, is_coco, body_part, framework):
+    def __init__(self, is_coco, body_part, data_format, framework):
         super(DNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
-        points_num = get_points_num(is_coco, body_part)
         self.framework = framework
-        self.input_size = 2 * points_num
+        self.input_size = get_inputs_size(is_coco, body_part, data_format)
         self.fc = nn.Sequential(
             nn.Linear(self.input_size, 128),
             nn.ReLU(),
@@ -110,13 +98,12 @@ class DNN(nn.Module):
 
 
 class RNN(nn.Module):
-    def __init__(self, is_coco, body_part, framework, bidirectional=False, gru=False):
+    def __init__(self, is_coco, body_part, data_format, framework, bidirectional=False, gru=False):
         super(RNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
-        points_num = get_points_num(is_coco, body_part)
         self.framework = framework
-        self.input_size = 2 * points_num
+        self.input_size = get_inputs_size(is_coco, body_part, data_format)
         self.hidden_size = 256
         self.bidirectional = bidirectional
         self.gru = gru
@@ -219,14 +206,13 @@ class RNN(nn.Module):
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, is_coco, body_part, framework, max_length):
+    def __init__(self, is_coco, body_part, data_format, framework, max_length):
         super(Cnn1D, self).__init__()
         super().__init__()
         self.is_coco = is_coco
-        points_num = get_points_num(is_coco, body_part)
-        self.input_size = 2 * points_num
+        self.input_size = get_inputs_size(is_coco, body_part, data_format)
         self.framework = framework
-        self.hidden_dim = 8 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+        self.hidden_dim = 16 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         self.cnn = nn.Sequential(
             nn.Conv1d(self.input_size, 128, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(128),
@@ -234,14 +220,8 @@ class Cnn1D(nn.Module):
             nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Conv1d(64, 32, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
-            nn.Conv1d(32, 16, kernel_size=3, stride=1, padding=1),
+            nn.Conv1d(64, 16, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm1d(16),
-            nn.ReLU(),
-            nn.Conv1d(16, 8, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(8),
             nn.ReLU(),
         )
         self.fc = nn.Sequential(
@@ -287,6 +267,173 @@ class Cnn1D(nn.Module):
         x = torch.transpose(x, 1, 2)
         x = self.cnn(x)
         x = x.flatten(1)
+        y = self.fc(x)
+        if self.framework in ['intent', 'attitude', 'action']:
+            if self.framework == 'intent':
+                y = self.intent_head(y)
+            elif self.framework == 'attitude':
+                y = self.attitude_head(y)
+            elif self.framework == 'chain':
+                y = self.action_head(y)
+            return y
+        else:
+            y1 = self.intent_head(y)
+            if self.framework == 'parallel':
+                y2 = self.attitude_head(y)
+                y3 = self.action_head(y)
+            elif self.framework == 'tree':
+                y1 = self.intent_head(y)
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1), dim=1))
+            elif self.framework == 'chain':
+                y1 = self.intent_head(y)
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
+            return y1, y2, y3
+
+
+class GNN(torch.nn.Module):
+    def __init__(self, is_coco, body_part, data_format, framework, model, max_length, attention):
+        super(GNN, self).__init__()
+        super().__init__()
+        self.is_coco = is_coco
+        self.input_size = get_inputs_size(is_coco, body_part, data_format)
+        self.framework = framework
+        self.model = model
+        self.max_length = max_length
+        self.attention = attention
+        self.num_heads = 4
+        self.keypoint_hidden_dim = 16
+        self.time_hidden_dim = 256
+        self.out_channels = 4
+        if self.model in ['gnn_lstm', 'gnn_conv1d']:
+            if attention:
+                self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
+                self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim,
+                                              heads=self.num_heads)
+                self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.out_channels, heads=1)
+            else:
+                self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
+                self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
+                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
+            if self.model == 'gnn_lstm':
+                self.time_model = nn.LSTM(self.input_size / 2 * self.out_channels, hidden_size=256, num_layers=3,
+                                          bidirectional=True, batch_first=True)
+                self.fc_input_size = 256 * 2
+            else:
+                self.time_model = nn.Sequential(
+                    nn.Conv1d(self.input_size / 2 * self.out_channels, 256, kernel_size=7, stride=3, padding=3),
+                    nn.BatchNorm1d(256),
+                    nn.ReLU(),
+                    nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
+                    nn.BatchNorm1d(128),
+                    nn.ReLU(),
+                    nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
+                    nn.BatchNorm1d(64),
+                    nn.ReLU(),
+                )
+                self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+        if self.model in ['gnn_time', 'gnn2+1d']:
+            if attention:
+                self.GCN1_time = GATConv(16 if self.model == 'gnn_time' else self.input_size / 2 * self.out_channels,
+                                         self.time_hidden_dim, heads=self.num_heads)
+                self.GCN2_time = GATConv(self.time_hidden_dim * self.num_heads, self.time_hidden_dim,
+                                         heads=self.num_heads)
+                self.GCN3_time = GATConv(self.time_hidden_dim * self.num_heads, self.out_channels, heads=1)
+            else:
+                self.GCN1_time = GCNConv(16 if self.model == 'gnn_time' else self.input_size / 2 * self.out_channels,
+                                         self.time_hidden_dim)
+                self.GCN2_time = GCNConv(self.time_hidden_dim, self.time_hidden_dim)
+                self.GCN3_time = GCNConv(self.time_hidden_dim, self.out_channels)
+            if self.model == 'gnn_time':
+                self.keypoints_fc = nn.Sequential(
+                    nn.Linear(self.input_size, 128),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(128),
+                    nn.Linear(128, 64),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(64),
+                    nn.Linear(64, 16),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(16),
+                )
+                self.fc_input_size = 16 * self.out_channels
+            else:
+                self.fc_input_size = self.max_length * self.out_channels
+        self.fc = nn.Sequential(
+            nn.Linear(self.fc_input_size, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Linear(64, 16),
+            nn.BatchNorm1d(16),
+        )
+        self.intent_head = nn.Sequential(nn.ReLU(),
+                                         nn.Linear(16, intent_class_num)
+                                         )
+
+        if self.framework in ['parallel', 'intent', 'attitude', 'action']:
+            self.attitude_head = nn.Sequential(nn.ReLU(),
+                                               nn.Linear(16, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(16, action_class_num)
+                                             )
+        elif self.framework == 'tree':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intent_class_num, action_class_num)
+                                             )
+        elif self.framework == 'chain':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
+                                             )
+
+    def forward(self, x):
+        time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
+                                       dtype=torch.long).t().contiguous()
+        if self.model != 'gnn_time':
+            x, edge_index = x.x, x.edge_index
+            x = self.GCN1_keypoints(x, edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = self.GCN2_keypoints(x, edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x))
+            x = self.GCN3_keypoints(x, edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x))
+            if self.model == 'gnn_lstm':
+                x = self.time_model(x)
+                out = torch.zeros(x[0].data.shape[0], self.hidden_size * 2).to(device)
+                for i in range(x[0].data.shape[0]):
+                    index = x[0][i] - 1
+                    out[i] = torch.cat((x[0].data[i, index, :self.hidden_size], x[0].data[i, 0, self.hidden_size:]),
+                                       dim=0)
+                x = out
+            elif self.model == 'gnn_conv1d':
+                x = self.time_model(x)
+                x = x.flatten(1)
+            else:
+                x = self.GCN1_time(x, time_edge_index)
+                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+                x = self.GCN2_time(x, time_edge_index)
+                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+                x = self.GCN3_time(x, time_edge_index)
+                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+        else:
+            x = self.keypoints_fc(x)
+            x = self.GCN1_time(x, time_edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = self.GCN2_time(x, time_edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = self.GCN3_time(x, time_edge_index)
+            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
         y = self.fc(x)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
