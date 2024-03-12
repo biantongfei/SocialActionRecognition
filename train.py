@@ -1,10 +1,10 @@
 from train_val import train, draw_save
 
-model = 'conv1d'
+model = 'lstm'
 body_part = [True, True, True]
 # data_format = 'coordinates'
-# data_format = 'manhattan'
-data_format = 'dis_angel'
+data_format = 'manhattan'
+# data_format = 'dis_angel'
 
 # framework = 'intent'
 # framework = 'attitude'
@@ -15,7 +15,7 @@ framework = 'tree'
 ori_video = False
 sample_fps = 30
 video_len = 2
-empty_frame = 'same'
+empty_frame = 'zero'
 performance_model = []
 i = 0
 while i < 10:
