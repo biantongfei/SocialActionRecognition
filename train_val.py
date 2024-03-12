@@ -132,9 +132,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'mixed_large+coco': {}}
+    train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -189,14 +189,14 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         elif 'gnn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
                       max_length=max_length, attention=False)
-            net.to(device)
-            optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-            train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
-                                                'trainset': trainset,
-                                                'valset': valset, 'testset': testset, 'net': net,
-                                                'optimizer': optimizer,
-                                                'intent_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
-                                                'unimproved_epoch': 0}
+        net.to(device)
+        optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+        train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
+                                            'trainset': trainset,
+                                            'valset': valset, 'testset': testset, 'net': net,
+                                            'optimizer': optimizer,
+                                            'intent_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
+                                            'unimproved_epoch': 0}
         print('Start Training!!!')
         epoch = 1
         continue_train = True
