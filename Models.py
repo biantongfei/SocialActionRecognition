@@ -335,13 +335,13 @@ class GNN(torch.nn.Module):
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
-                self.GCN1_time = GATConv(16 if self.model == 'gnn_time' else self.input_size / 2 * self.out_channels,
+                self.GCN1_time = GATConv(16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
                                          self.time_hidden_dim, heads=self.num_heads)
                 self.GCN2_time = GATConv(self.time_hidden_dim * self.num_heads, self.time_hidden_dim,
                                          heads=self.num_heads)
                 self.GCN3_time = GATConv(self.time_hidden_dim * self.num_heads, self.out_channels, heads=1)
             else:
-                self.GCN1_time = GCNConv(16 if self.model == 'gnn_time' else self.input_size / 2 * self.out_channels,
+                self.GCN1_time = GCNConv(16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
                                          self.time_hidden_dim)
                 self.GCN2_time = GCNConv(self.time_hidden_dim, self.time_hidden_dim)
                 self.GCN3_time = GCNConv(self.time_hidden_dim, self.out_channels)
