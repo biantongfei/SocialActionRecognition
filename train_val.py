@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN, RNN, Cnn1D
+from Models import DNN, RNN, Cnn1D, GNN
 from draw_utils import draw_training_process, plot_confusion_matrix
 
 import torch
@@ -22,9 +22,7 @@ rnn_train_epoch = 1
 conv1d_train_epoch = 1
 gnn_train_epoch = 1
 valset_rate = 0.2
-dnn_learning_rate = 1e-3
-rnn_learning_rate = 1e-3
-conv1d_learning_rate = 1e-3
+learning_rate = 1e-3
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
@@ -149,19 +147,18 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     if model == 'avg':
         batch_size = avg_batch_size
         epoch_limit = avg_train_epoch
-        learning_rate = dnn_learning_rate
     elif model == 'perframe':
         batch_size = perframe_batch_size
         epoch_limit = perframe_train_epoch
-        learning_rate = dnn_learning_rate
     elif model in ['lstm', 'gru']:
         batch_size = rnn_batch_size
         epoch_limit = rnn_train_epoch
-        learning_rate = rnn_learning_rate
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
         epoch_limit = conv1d_train_epoch
-        learning_rate = conv1d_learning_rate
+    elif 'gnn' in model:
+        batch_size = gnn_batch_size
+        epoch_limit = gnn_train_epoch
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -189,6 +186,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         elif model == 'conv1d':
             net = Cnn1D(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
                         max_length=max_length)
+        elif 'gnn' in model:
+            net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
+                      max_length=max_length)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
@@ -215,25 +215,31 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
             for data in train_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
                     inputs, (int_labels, att_labels, act_labels) = data
+                    inputs = inputs.to(dtype).to(device)
                 elif model in ['lstm', 'gru']:
                     (inputs, (int_labels, att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
-                    device), att_labels.to(device), act_labels.to(device)
+                    inputs = inputs.to(dtype).to(device)
+                elif 'gnn' in model:
+                    graph, (int_labels, att_labels, act_labels) = data
+                    inputs, edge_index = graph.x, graph.edge_index
+                    inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+                int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.train()
                 if framework == 'intent':
-                    int_outputs = net(inputs)
+                    int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                     total_loss = functional.cross_entropy(int_outputs, int_labels)
                 elif framework == 'attitude':
-                    att_outputs = net(inputs)
+                    att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                     att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                     total_loss = functional.cross_entropy(att_outputs, att_labels)
                 elif framework == 'action':
-                    act_outputs = net(inputs)
+                    act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                     act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                     total_loss = functional.cross_entropy(act_outputs, act_labels)
                 else:
-                    int_outputs, att_outputs, act_outputs = net(inputs)
+                    int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs,
+                                                                                                       edge_index)
                     att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                     act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
@@ -247,20 +253,26 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
             for data in val_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
                     inputs, (int_labels, att_labels, act_labels) = data
+                    inputs = inputs.to(dtype).to(device)
                 elif model in ['lstm', 'gru']:
                     (inputs, (int_labels, att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
-                    device), att_labels.to(device), act_labels.to(device)
+                    inputs = inputs.to(dtype).to(device)
+                elif 'gnn' in model:
+                    graph, (int_labels, att_labels, act_labels) = data
+                    inputs, edge_index = graph.x, graph.edge_index
+                    inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+                int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
                 if framework == 'intent':
-                    int_outputs = net(inputs)
+                    int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                 elif framework == 'attitude':
-                    att_outputs = net(inputs)
+                    att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                 elif framework == 'action':
-                    act_outputs = net(inputs)
+                    act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                 else:
-                    int_outputs, att_outputs, act_outputs = net(inputs)
+                    int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs,
+                                                                                                       edge_index)
                 if 'intent' in tasks:
                     int_pred = int_outputs.argmax(dim=1)
                     int_y_true += int_labels.tolist()
@@ -330,22 +342,26 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         for data in test_loader:
             if model in ['avg', 'perframe', 'conv1d']:
                 inputs, (int_labels, att_labels, act_labels) = data
+                inputs = inputs.to(dtype).to(device)
             elif model in ['lstm', 'gru']:
                 (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-            inputs, int_labels, att_labels, act_labels = inputs.to(dtype).to(device), int_labels.to(
-                device), att_labels.to(device), act_labels.to(device)
-            net = train_dict[hyperparameter_group]['net'].to(device)
+                inputs = inputs.to(dtype).to(device)
+            elif 'gnn' in model:
+                graph, (int_labels, att_labels, act_labels) = data
+                inputs, edge_index = graph.x, graph.edge_index
+                inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+            int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
             net.eval()
             if framework in ['intent', 'attitude', 'action']:
                 if framework == 'intent':
-                    int_outputs = net(inputs)
+                    int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                 elif framework == 'attitude':
-                    att_outputs = net(inputs)
+                    att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
                 else:
-                    act_outputs = net(inputs)
+                    act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
             else:
-                int_outputs, att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
             if 'intent' in tasks:
                 int_pred = int_outputs.argmax(dim=1)
                 int_y_true += int_labels.tolist()
@@ -407,17 +423,17 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
 
 
 if __name__ == '__main__':
-    model = 'conv1d'
+    model = 'gnn_conv1d'
     body_part = [True, True, True]
-    # data_format = 'coordinates'
-    data_format = 'manhattan'
+    data_format = 'coordinates'
+    # data_format = 'manhattan'
     # data_format = 'dis_angel'
 
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
-    # framework = 'parallel'
-    framework = 'tree'
+    framework = 'parallel'
+    # framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
