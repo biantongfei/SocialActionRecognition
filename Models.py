@@ -306,7 +306,7 @@ class GNN(torch.nn.Module):
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = 256
         self.out_channels = 4
-        if self.model in ['gnn_lstm', 'gnn_conv1d']:
+        if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
                 self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
                 self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim,
@@ -316,7 +316,7 @@ class GNN(torch.nn.Module):
                 self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
                 self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
                 self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
-            if self.model == 'gnn_lstm':
+            if self.model == 'gnn_keypoint_lstm':
                 self.time_model = nn.LSTM(self.input_size / 2 * self.out_channels, hidden_size=256, num_layers=3,
                                           bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2

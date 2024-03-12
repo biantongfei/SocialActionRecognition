@@ -232,7 +232,9 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
-            self.frame_number_list.append(int(feature.shape[0]))
+            self.frame_number_list.append(
+                int(feature.shape[0]) if model not in ['gnn_keypoint_conv1d', 'gnn_keypoint', 'gnn2+1d'] else len(
+                    feature))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -352,11 +354,12 @@ class Dataset(Dataset):
                 frame_feature[index][0] = (features[pair[0]][0] - features[pair[1]][0]) / frame_width
                 frame_feature[index][1] = (features[pair[0]][1] - features[pair[1]][1]) / frame_height
             elif data_format == 'dis_angle':
-                frame_feature[index][0] = pow(pow(features[pair[0]][0] - features[pair[1]][0], 2) - pow(
-                    features[pair[0]][1] - features[pair[1]][1], 2), 0.5) / pow(
-                    (pow(frame_width, 2) + pow(frame_height, 2)), 0.5)
+                frame_feature[index][0] = (((features[pair[0]][0] - features[pair[1]][0]) ** 2 + (
+                        features[pair[0]][1] - features[pair[1]][1]) ** 2) / (
+                                                   frame_width ** 2 + frame_height ** 2) ** 0.5)
                 frame_feature[index][1] = (features[pair[0]][0] - features[pair[1]][0]) / (
-                        features[pair[0]][1] - features[pair[1]][1])
+                        (features[pair[0]][0] - features[pair[1]][0]) ** 2 + (
+                        features[pair[0]][1] - features[pair[1]][1]) ** 2) ** 0.5
         return frame_feature
 
     def __getitem__(self, idx):
