@@ -339,7 +339,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
@@ -455,7 +455,7 @@ if __name__ == '__main__':
     empty_frame = 'same'
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 2:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:

@@ -409,25 +409,28 @@ class GNN(torch.nn.Module):
                 device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
-                    print(i, ii)
                     x_t = self.GCN1_keypoints(x[i][ii], edge_index[i][ii]).to(dtype).to(device)
                     x_t = nn.ReLU()(
-                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x_t))
+                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
+                            x_t))
                     x_t = self.GCN2_keypoints(x_t, edge_index[i][ii])
-                    x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x_t))
+                    x_t = nn.ReLU()(
+                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
+                            x_t))
                     x_t = self.GCN3_keypoints(x_t, edge_index[i][ii])
-                    x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x_t))
+                    x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels).to(device)(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
-            print(x_time.shape, edge_index.shape)
-            if self.model == 'gnn_lstm':
-                x = self.time_model(x)
+            print(x_time.shape)
+            if self.model == 'gnn_keypoint_lstm':
+                x = self.time_model(x_time)
                 out = torch.zeros(x[0].data.shape[0], self.hidden_size * 2).to(device)
                 for i in range(x[0].data.shape[0]):
                     index = x[0][i] - 1
                     out[i] = torch.cat((x[0].data[i, index, :self.hidden_size], x[0].data[i, 0, self.hidden_size:]),
                                        dim=0)
                 x = out
-            elif self.model == 'gnn_conv1d':
+            elif self.model == 'gnn_keypoint_conv1d':
+                x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
