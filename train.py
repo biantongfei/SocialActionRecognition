@@ -4,7 +4,7 @@ model = 'conv1d'
 body_part = [True, True, True]
 # data_format = 'coordinates'
 # data_format = 'manhattan'
-data_format = 'dis_angle'
+data_format = 'coordinates+manhattan'
 
 # framework = 'intent'
 # framework = 'attitude'

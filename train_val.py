@@ -132,9 +132,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -223,9 +223,11 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
-                        graph, (int_labels, att_labels, act_labels) = data
-                        inputs, edge_index = graph.x, graph.edge_index
-                        inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+                        x, (int_labels, att_labels, act_labels) = data
+                        inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                        # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
+                        # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                        #     2].to(dtype).to(device)
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.train()
@@ -426,19 +428,20 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
             # draw_training_process(trainging_process)
         return performance_model
 
+
 if __name__ == '__main__':
-    model = 'avg'
-    model = 'perframe'
-    model = 'conv1d'
-    model = 'lstm'
+    # model = 'avg'
+    # model = 'perframe'
+    # model = 'conv1d'
+    # model = 'lstm'
     model = 'gnn_keypoint_conv1d'
-    model = 'gnn_keypoint_lstm'
-    model = 'gnn_time'
-    model = 'gnn2+1d'
+    # model = 'gnn_keypoint_lstm'
+    # model = 'gnn_time'
+    # model = 'gnn2+1d'
     body_part = [True, True, True]
     data_format = 'coordinates'
     # data_format = 'manhattan'
-    # data_format = 'dis_angel'
+    # data_format = 'coordinates+manhattan'
 
     # framework = 'intent'
     # framework = 'attitude'

@@ -19,6 +19,7 @@ elif torch.backends.mps.is_available():
     device = torch.device('mps')
 else:
     device = torch.device('cpu')
+dtype = torch.float
 
 
 class DNN(nn.Module):
@@ -317,12 +318,12 @@ class GNN(torch.nn.Module):
                 self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
                 self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
             if self.model == 'gnn_keypoint_lstm':
-                self.time_model = nn.LSTM(self.input_size / 2 * self.out_channels, hidden_size=256, num_layers=3,
+                self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                                           bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
             else:
                 self.time_model = nn.Sequential(
-                    nn.Conv1d(self.input_size / 2 * self.out_channels, 256, kernel_size=7, stride=3, padding=3),
+                    nn.Conv1d(int(self.input_size / 2 * self.out_channels), 256, kernel_size=7, stride=3, padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
                     nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
@@ -335,14 +336,16 @@ class GNN(torch.nn.Module):
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
-                self.GCN1_time = GATConv(16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
-                                         self.time_hidden_dim, heads=self.num_heads)
+                self.GCN1_time = GATConv(
+                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
+                    self.time_hidden_dim, heads=self.num_heads)
                 self.GCN2_time = GATConv(self.time_hidden_dim * self.num_heads, self.time_hidden_dim,
                                          heads=self.num_heads)
                 self.GCN3_time = GATConv(self.time_hidden_dim * self.num_heads, self.out_channels, heads=1)
             else:
-                self.GCN1_time = GCNConv(16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
-                                         self.time_hidden_dim)
+                self.GCN1_time = GCNConv(
+                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
+                    self.time_hidden_dim)
                 self.GCN2_time = GCNConv(self.time_hidden_dim, self.time_hidden_dim)
                 self.GCN3_time = GCNConv(self.time_hidden_dim, self.out_channels)
             if self.model == 'gnn_time':
@@ -397,17 +400,25 @@ class GNN(torch.nn.Module):
                                              nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
                                              )
 
-    def forward(self, x):
+    def forward(self, x, edge_index):
+        print(x.shape, edge_index.shape)
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
-            x, edge_index = x.x, x.edge_index
-            x = self.GCN1_keypoints(x, edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
-            x = self.GCN2_keypoints(x, edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x))
-            x = self.GCN3_keypoints(x, edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x))
+            x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.out_channels))).to(dtype).to(
+                device)
+            for i in range(x.shape[0]):
+                for ii in range(x.shape[1]):
+                    print(i, ii)
+                    x_t = self.GCN1_keypoints(x[i][ii], edge_index[i][ii]).to(dtype).to(device)
+                    x_t = nn.ReLU()(
+                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x_t))
+                    x_t = self.GCN2_keypoints(x_t, edge_index[i][ii])
+                    x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x_t))
+                    x_t = self.GCN3_keypoints(x_t, edge_index[i][ii])
+                    x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels)(x_t))
+                    x_time[i][ii] = x_t.reshape(1, -1)[0]
+            print(x_time.shape, edge_index.shape)
             if self.model == 'gnn_lstm':
                 x = self.time_model(x)
                 out = torch.zeros(x[0].data.shape[0], self.hidden_size * 2).to(device)

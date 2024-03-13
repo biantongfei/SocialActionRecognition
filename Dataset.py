@@ -5,7 +5,6 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from torch_geometric.data import Data
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -206,13 +205,13 @@ class Dataset(Dataset):
         index = 0
         for file in self.files:
             if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d', 'gnn2+1d']:
-                feature, label = self.get_graph_data_from_file(file)
-                if type(feature) == int:
+                x, edge_index, edge_attr, label = self.get_graph_data_from_file(file)
+                if type(x) == int:
                     continue
                 elif type(self.features) == int:
-                    self.features = [feature]
+                    self.features = [(x, edge_index, edge_attr)]
                 else:
-                    self.features.append(feature)
+                    self.features.append((x, edge_index, edge_attr))
             else:
                 feature, label = self.get_data_from_file(file)
                 if type(feature) == int or feature.size == 0 or feature.ndim == 0:
@@ -233,8 +232,8 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gnn_keypoint_conv1d', 'gnn_keypoint', 'gnn2+1d'] else len(
-                    feature))
+                int(feature.shape[0]) if model not in ['gnn_keypoint_conv1d', 'gnn_keypoint_lstm', 'gnn2+1d'] else int(
+                    x.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -271,18 +270,17 @@ class Dataset(Dataset):
                     elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                         frame_feature = np.array(frame['keypoints'])[:, :2]
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        if self.data_format in ['manhattan', 'dis_angle']:
-                            frame_feature = self.feature_transform(frame_feature, frame_width, frame_height,
-                                                                   self.data_format)
-                        elif self.data_format == 'coordinates':
+                        if self.data_format == 'coordinates':
                             frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
                             frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
-                        else:  # coordinates+manhattan or coordinates+dis_angle
+                        elif self.data_format == 'manhattan':
+                            frame_feature = self.feature_transform(frame_feature, frame_width, frame_height)
+                        else:  # coordinates+manhattan
                             frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
                             frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
                             frame_feature = np.append(frame_feature,
-                                                      self.feature_transform(frame_feature, frame_width, frame_height,
-                                                                             self.data_format.split('+')[1]), axis=1)
+                                                      self.feature_transform(frame_feature, frame_width, frame_height),
+                                                      axis=1)
                         frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                         features.append(frame_feature)
         if len(features) == 0:
@@ -304,7 +302,9 @@ class Dataset(Dataset):
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
-        features = []
+        x_list = []
+        edge_index_list = []
+        edge_attr_list = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
         label = torch.tensor(get_labels(feature_json['attitude_class'], feature_json['action_class']))
@@ -316,13 +316,15 @@ class Dataset(Dataset):
         if first_id == -1:
             return 0, 0
         index = 0
-        while len(features) < int(self.video_len * self.sample_fps):
+        while len(x_list) < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
                 break
             else:
                 frame = feature_json['frames'][index]
-                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
-                    features.append(features[-1])
+                if frame['frame_id'] > first_id and frame['frame_id'] > len(x_list) * (video_fps / self.sample_fps):
+                    x_list.append(x_list[-1])
+                    edge_index_list.append(edge_index_list[-1])
+                    edge_attr_list.append(edge_attr_list[-1])
                 else:
                     index += 1
                     if frame['frame_id'] - first_id > int(video_fps * self.video_len):
@@ -330,43 +332,34 @@ class Dataset(Dataset):
                     elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                         frame_feature = np.array(frame['keypoints'])[:, :2]
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        # coordinates
                         frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
                         frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
                         x = torch.tensor(frame_feature)
-                        edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height,
-                                                                        data_format='dis_angle'))
-
-                        data = Data(x=x, edge_index=edge_index)  # nodes
-                        # data = Data(edge_index=edge_index, edge_attr=edge_attr)  # edges
-                        # data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)  # nodes + edges
-                        features.append(data)
+                        edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height))
+                        x_list.append(x)
+                        edge_index_list.append(edge_index)
+                        edge_attr_list.append(edge_attr)
+                        # features.append((edge_index, edge_attr))
+                        # features.append((x, edge_index, edge_attr))
+        while len(x_list) < self.sample_fps * self.video_len:
+            x_list.append(x_list[-1])
+            edge_index_list.append(edge_index_list[-1])
+            edge_attr_list.append(edge_attr_list[-1])
         label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
-        if len(features) == 0:
+        if len(x_list) == 0:
             return 0
-        return features, label
+        return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
 
-    def feature_transform(self, features, frame_width, frame_height, data_format):
+    def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)
         frame_feature = np.zeros((len(l_pair), 2))
         for index, pair in enumerate(l_pair):
-            if data_format == 'manhattan':
-                frame_feature[index][0] = (features[pair[0]][0] - features[pair[1]][0]) / frame_width
-                frame_feature[index][1] = (features[pair[0]][1] - features[pair[1]][1]) / frame_height
-            elif data_format == 'dis_angle':
-                frame_feature[index][0] = (((features[pair[0]][0] - features[pair[1]][0]) ** 2 + (
-                        features[pair[0]][1] - features[pair[1]][1]) ** 2) / (
-                                                   frame_width ** 2 + frame_height ** 2) ** 0.5)
-                frame_feature[index][1] = (features[pair[0]][0] - features[pair[1]][0]) / (
-                        (features[pair[0]][0] - features[pair[1]][0]) ** 2 + (
-                        features[pair[0]][1] - features[pair[1]][1]) ** 2) ** 0.5
+            frame_feature[index][0] = (features[pair[0]][0] - features[pair[1]][0]) / frame_width
+            frame_feature[index][1] = (features[pair[0]][1] - features[pair[1]][1]) / frame_height
         return frame_feature
 
     def __getitem__(self, idx):
-        if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d', 'gnn_time', 'gnn21d']:
-            return (self.features[idx].x, self.features[idx].edge_index), self.features[idx].y
-        else:
-            return self.features[idx], self.labels[idx]
+        return self.features[idx], self.labels[idx]
 
     def __len__(self):
         if self.model in ['avg', 'perframe']:
