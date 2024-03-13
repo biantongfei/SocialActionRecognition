@@ -264,9 +264,11 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
-                        graph, (int_labels, att_labels, act_labels) = data
-                        inputs, edge_index = graph.x, graph.edge_index
-                        inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+                        x, (int_labels, att_labels, act_labels) = data
+                        inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                        # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
+                        # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                        #     2].to(dtype).to(device)
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.eval()
@@ -354,9 +356,11 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                     inputs = inputs.to(dtype).to(device)
                 elif 'gnn' in model:
-                    graph, (int_labels, att_labels, act_labels) = data
-                    inputs, edge_index = graph.x, graph.edge_index
-                    inputs, edge_index = inputs.to(dtype).to(device), edge_index.to(dtype).to(device)
+                    x, (int_labels, att_labels, act_labels) = data
+                    inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                    # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
+                    # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                    #     2].to(dtype).to(device)
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
                 if framework in ['intent', 'attitude', 'action']:

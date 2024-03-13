@@ -401,7 +401,6 @@ class GNN(torch.nn.Module):
                                              )
 
     def forward(self, x, edge_index):
-        print(x.shape, edge_index.shape)
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
@@ -420,7 +419,6 @@ class GNN(torch.nn.Module):
                     x_t = self.GCN3_keypoints(x_t, edge_index[i][ii])
                     x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels).to(device)(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
-            print(x_time.shape)
             if self.model == 'gnn_keypoint_lstm':
                 x = self.time_model(x_time)
                 out = torch.zeros(x[0].data.shape[0], self.hidden_size * 2).to(device)
