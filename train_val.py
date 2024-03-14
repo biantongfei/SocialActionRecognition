@@ -133,8 +133,8 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_large+coco': {}}
-    # train_dict = {'mixed_large+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    train_dict = {'mixed_large+halpe': {}}
+    # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -341,7 +341,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
@@ -436,9 +436,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
 if __name__ == '__main__':
     # model = 'avg'
     # model = 'perframe'
-    # model = 'conv1d'
+    model = 'conv1d'
     # model = 'lstm'
-    model = 'gnn_keypoint_conv1d'
+    # model = 'gnn_keypoint_conv1d'
     # model = 'gnn_keypoint_lstm'
     # model = 'gnn_time'
     # model = 'gnn2+1d'
@@ -459,7 +459,7 @@ if __name__ == '__main__':
     empty_frame = 'same'
     performance_model = []
     i = 0
-    while i < 2:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:

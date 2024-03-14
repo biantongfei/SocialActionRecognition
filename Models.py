@@ -420,32 +420,27 @@ class GNN(torch.nn.Module):
                     x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels).to(device)(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
-                x = self.time_model(x_time)
-                out = torch.zeros(x[0].data.shape[0], self.hidden_size * 2).to(device)
-                for i in range(x[0].data.shape[0]):
-                    index = x[0][i] - 1
-                    out[i] = torch.cat((x[0].data[i, index, :self.hidden_size], x[0].data[i, 0, self.hidden_size:]),
-                                       dim=0)
-                x = out
+                _, (hn, _) = self.time_model(x_time)
+                x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
                 x = self.GCN2_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
                 x = self.GCN3_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
         else:
             x = self.keypoints_fc(x)
             x = self.GCN1_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
             x = self.GCN2_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
             x = self.GCN3_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.hidden_dim * (self.num_heads if self.attention else 1))(x))
+            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
         y = self.fc(x)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
