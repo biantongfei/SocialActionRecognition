@@ -2,9 +2,9 @@ from train_val import train, draw_save
 
 model = 'conv1d'
 body_part = [True, True, True]
-# data_format = 'coordinates'
+data_format = 'coordinates'
 # data_format = 'manhattan'
-data_format = 'coordinates+manhattan'
+# data_format = 'coordinates+manhattan'
 
 # framework = 'intent'
 # framework = 'attitude'
