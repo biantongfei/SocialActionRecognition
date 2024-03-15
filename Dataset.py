@@ -280,7 +280,7 @@ class Dataset(Dataset):
                             frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
                             frame_feature = np.append(frame_feature,
                                                       self.feature_transform(frame_feature, frame_width, frame_height),
-                                                      axis=1)
+                                                      axis=0)
                         frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                         features.append(frame_feature)
         if len(features) == 0:
