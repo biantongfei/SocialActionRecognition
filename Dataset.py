@@ -99,15 +99,15 @@ def get_body_part(feature, is_coco, body_part):
 
 def get_inputs_size(is_coco, body_part, data_format):
     input_size = 0
-    if data_format == 'coordinates':
+    if data_format in ['coordinates', 'coordinates+manhattan']:
         if body_part[0]:
             input_size += coco_body_point_num if is_coco else halpe_body_point_num
         if body_part[1]:
             input_size += head_point_num
         if body_part[2]:
             input_size += hands_point_num
-    else:
-        input_size = len(get_l_pair(is_coco, body_part))
+    if data_format in ['manhattan', 'coordinates+manhattan']:
+        input_size += len(get_l_pair(is_coco, body_part))
     return 2 * input_size
 
 
