@@ -15,7 +15,7 @@ framework = 'tree'
 ori_video = False
 sample_fps = 30
 video_len = 2
-empty_frame = 'same'
+empty_frame = 'zero'
 performance_model = []
 i = 0
 while i < 10:
