@@ -400,8 +400,8 @@ class GNN(torch.nn.Module):
                                              nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
                                              )
 
-    # def forward(self, x, edge_index):
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index):
+    # def forward(self, x, edge_index, edge_attr):
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
