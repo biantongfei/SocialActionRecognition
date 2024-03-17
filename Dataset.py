@@ -339,8 +339,6 @@ class Dataset(Dataset):
                         x_list.append(x)
                         edge_index_list.append(edge_index)
                         edge_attr_list.append(edge_attr)
-                        # features.append((edge_index, edge_attr))
-                        # features.append((x, edge_index, edge_attr))
         while len(x_list) < self.sample_fps * self.video_len:
             x_list.append(x_list[-1])
             edge_index_list.append(edge_index_list[-1])

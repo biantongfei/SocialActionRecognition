@@ -224,10 +224,10 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
                         x, (int_labels, att_labels, act_labels) = data
-                        inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                        # inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
                         # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                        # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                        #     2].to(dtype).to(device)
+                        inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                            2].to(dtype).to(device)
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.train()
@@ -265,10 +265,10 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
                         x, (int_labels, att_labels, act_labels) = data
-                        inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                        # inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
                         # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                        # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                        #     2].to(dtype).to(device)
+                        inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                            2].to(dtype).to(device)
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.eval()
@@ -303,7 +303,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                                                                                'valset'].frame_number_list)
                     int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
                     int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-                    if int_f1 > train_dict[hyperparameter_group]['intent_best_f1'] + 0.005:
+                    if int_f1 > train_dict[hyperparameter_group]['intent_best_f1']:
                         train_dict[hyperparameter_group]['intent_best_f1'] = int_f1
                         train_dict[hyperparameter_group]['unimproved_epoch'] = -1
                     result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f%%" % (int_acc * 100), "%.4f" % int_f1)
@@ -316,7 +316,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred, 'attitude')
                     att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
                     att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-                    if att_f1 > train_dict[hyperparameter_group]['attitude_best_f1'] + 0.005:
+                    if att_f1 > train_dict[hyperparameter_group]['attitude_best_f1']:
                         train_dict[hyperparameter_group]['attitude_best_f1'] = att_f1
                         train_dict[hyperparameter_group]['unimproved_epoch'] = -1
                     result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f%%" % (att_acc * 100), "%.4f" % att_f1)
@@ -329,7 +329,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     act_y_true, act_y_pred = filter_others_from_result(act_y_true, act_y_pred, 'action')
                     act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
                     act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-                    if act_f1 > train_dict[hyperparameter_group]['action_best_f1'] + 0.005:
+                    if act_f1 > train_dict[hyperparameter_group]['action_best_f1']:
                         train_dict[hyperparameter_group]['action_best_f1'] = act_f1
                         train_dict[hyperparameter_group]['unimproved_epoch'] = -1
                     result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
@@ -357,10 +357,10 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     inputs = inputs.to(dtype).to(device)
                 elif 'gnn' in model:
                     x, (int_labels, att_labels, act_labels) = data
-                    inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
+                    # inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
                     # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                    # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                    #     2].to(dtype).to(device)
+                    inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                        2].to(dtype).to(device)
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
                 if framework in ['intent', 'attitude', 'action']:

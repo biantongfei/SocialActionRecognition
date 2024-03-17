@@ -400,7 +400,8 @@ class GNN(torch.nn.Module):
                                              nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
                                              )
 
-    def forward(self, x, edge_index):
+    # def forward(self, x, edge_index):
+    def forward(self, x, edge_index, edge_attr):
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
@@ -410,7 +411,7 @@ class GNN(torch.nn.Module):
                 for ii in range(x.shape[1]):
                     x_t = x[i][ii]
                     # x_t = nn.Dropout(0.5)(x[i][ii])
-                    x_t = self.GCN1_keypoints(x_t, edge_index[i][ii]).to(dtype).to(device)
+                    x_t = self.GCN1_keypoints(x_t, edge_index[i][ii], edge_attr).to(dtype).to(device)
                     x_t = nn.ReLU()(
                         nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
                             x_t))
