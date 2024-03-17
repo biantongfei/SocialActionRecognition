@@ -408,17 +408,18 @@ class GNN(torch.nn.Module):
                 device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
-                    x_t = nn.Dropout(0.5)(x[i][ii])
+                    x_t = x[i][ii]
+                    # x_t = nn.Dropout(0.5)(x[i][ii])
                     x_t = self.GCN1_keypoints(x_t, edge_index[i][ii]).to(dtype).to(device)
                     x_t = nn.ReLU()(
                         nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
                             x_t))
-                    x_t = nn.Dropout(0.5)(x_t)
+                    # x_t = nn.Dropout(0.5)(x_t)
                     x_t = self.GCN2_keypoints(x_t, edge_index[i][ii])
                     x_t = nn.ReLU()(
                         nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
                             x_t))
-                    x_t = nn.Dropout(0.5)(x_t)
+                    # x_t = nn.Dropout(0.5)(x_t)
                     x_t = self.GCN3_keypoints(x_t, edge_index[i][ii])
                     x_t = nn.ReLU()(nn.BatchNorm1d(self.out_channels).to(device)(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
