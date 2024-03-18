@@ -391,7 +391,7 @@ class GNN(torch.nn.Module):
                 # Compute attention scores
                 scores = self.fc(x)
                 # Apply softmax to compute attention weights
-                weights = nn.Softmax(scores)
+                weights = nn.Softmax()(scores)
                 # Apply attention weights to input features
                 output = torch.mul(x, weights)
                 return output
@@ -463,7 +463,7 @@ class GNN(torch.nn.Module):
                 _, (hn, _) = self.time_model(x_time)
                 x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
                 if self.attention:
-                    attention_weights = nn.Softmax(self.attention(x))
+                    attention_weights = nn.Softmax()(self.attention(x))
                     x = torch.sum(x * attention_weights, dim=1)
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
