@@ -203,6 +203,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         while continue_train:
             continue_train = False
             for hyperparameter_group in train_dict.keys():
+                print('Training')
                 if train_dict[hyperparameter_group]['unimproved_epoch'] < epoch_limit:
                     continue_train = True
                 else:
@@ -251,6 +252,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     optimizer.zero_grad()
                     total_loss.backward()
                     optimizer.step()
+                print('Validating')
                 int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
                 for data in val_loader:
                     if model in ['avg', 'perframe', 'conv1d']:
@@ -339,6 +341,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
             print('------------------------------------------')
             break
 
+        print('Testing')
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
                                         max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
