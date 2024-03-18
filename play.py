@@ -1,3 +1,2 @@
-from train_val import bless_str
-
-print(bless_str)
+a = 14
+print(a // 3 * 3)
