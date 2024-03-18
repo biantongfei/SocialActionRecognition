@@ -381,6 +381,21 @@ class GNN(torch.nn.Module):
                 self.fc_input_size = 16 * self.out_channels
             else:
                 self.fc_input_size = self.max_length * self.out_channels
+
+        class FCAttention(nn.Module):
+            def __init__(self, input_dim):
+                super(FCAttention, self).__init__()
+                self.fc = nn.Linear(input_dim, 1)
+
+            def forward(self, x):
+                # Compute attention scores
+                scores = self.fc(x)
+                # Apply softmax to compute attention weights
+                weights = nn.Softmax(scores, dim=1)
+                # Apply attention weights to input features
+                output = torch.mul(x, weights)
+                return output
+
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
             nn.BatchNorm1d(64),
@@ -388,6 +403,7 @@ class GNN(torch.nn.Module):
             nn.Linear(64, 16),
             nn.BatchNorm1d(16),
         )
+        self.fc_attention = FCAttention(16)
         self.intent_head = nn.Sequential(nn.ReLU(),
                                          nn.Linear(16, intent_class_num)
                                          )
@@ -470,6 +486,7 @@ class GNN(torch.nn.Module):
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
         y = self.fc(x)
+        y = self.fc_attention(y)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
                 y = self.intent_head(y)
