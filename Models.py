@@ -307,7 +307,6 @@ class GNN(torch.nn.Module):
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = 256
         self.out_channels = 4
-        print(self.attention)
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
                 self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
@@ -322,7 +321,7 @@ class GNN(torch.nn.Module):
                 self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                                           bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
-                self.attention = nn.Linear(self.fc_input_size, 1)
+                self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
                     nn.Conv1d(int(self.input_size / 2 * self.out_channels), 256, kernel_size=7, stride=3, padding=3),
@@ -464,7 +463,7 @@ class GNN(torch.nn.Module):
                 _, (hn, _) = self.time_model(x_time)
                 x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
                 if self.attention:
-                    attention_weights = nn.Softmax(dim=1)(self.attention(x))
+                    attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
                     x = torch.sum(x * attention_weights, dim=1)
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
