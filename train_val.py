@@ -1,3 +1,5 @@
+import time
+
 from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN
 from draw_utils import draw_training_process, plot_confusion_matrix
@@ -132,9 +134,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'mixed_large+coco': {}}
+    train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -337,13 +339,14 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
         print('Testing')
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
                                         max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
             int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
+            process_time = 0
             for data in test_loader:
                 if model in ['avg', 'perframe', 'conv1d']:
                     inputs, (int_labels, att_labels, act_labels) = data
@@ -358,6 +361,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         2].to(dtype).to(device))
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
+                start_time = time.time()
                 if framework in ['intent', 'attitude', 'action']:
                     if framework == 'intent':
                         int_outputs = net(inputs)
@@ -367,6 +371,8 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         act_outputs = net(inputs)
                 else:
                     int_outputs, att_outputs, act_outputs = net(inputs)
+                end_time = time.time()
+                process_time += end_time - start_time
                 if 'intent' in tasks:
                     int_pred = int_outputs.argmax(dim=1)
                     int_y_true += int_labels.tolist()
@@ -421,7 +427,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 performance_model[hyperparameter_group]['action_y_true'] = act_y_true
                 performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
                 result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
-            print(result_str)
+            print(result_str + ', process_time_pre_sample: %.2f' % (process_time / 96))
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             # draw_training_process(trainging_process)
         return performance_model
