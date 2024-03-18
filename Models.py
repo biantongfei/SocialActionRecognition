@@ -468,7 +468,8 @@ class GNN(torch.nn.Module):
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
-                x = self.attention(x)
+                if self.attention:
+                    x = self.attention(x)
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x, time_edge_index)
@@ -486,7 +487,8 @@ class GNN(torch.nn.Module):
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
         y = self.fc(x)
-        y = self.fc_attention(y)
+        if self.attention:
+            y = self.fc_attention(y)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
                 y = self.intent_head(y)
