@@ -58,8 +58,9 @@ bless_str = ("                         _oo0oo_\n"
              "       =====`-.____`.___ \_____/___.-`___.-'=====\n"
              "                         `=---='\n"
              "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-             "             BUDDHA BLESS ME WITH NO BUGS\n"
+             "                 BLESS ME WITH NO BUGS\n"
              )
+print(bless_str)
 
 
 def draw_save(performance_model, framework):
@@ -149,7 +150,6 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    print(bless_str)
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
