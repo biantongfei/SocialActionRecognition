@@ -351,7 +351,7 @@ class GNN(torch.nn.Module):
                         output = torch.mul(x, weights)
                         return output
 
-                self.attention = Conv1DAttention(64, 64)
+                self.conv1d_attention = Conv1DAttention(64, 64)
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
@@ -446,7 +446,6 @@ class GNN(torch.nn.Module):
                 for ii in range(x.shape[1]):
                     x_t, edge_attr_t = x[i][ii], edge_attr[i][ii]
                     x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii]).to(dtype).to(device)
-                    print(x_t.shape, self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))
                     # x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t).to(dtype).to(
                     #     device)
                     x_t = nn.ReLU()(
@@ -471,7 +470,7 @@ class GNN(torch.nn.Module):
                 x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
                 if self.attention:
-                    x = self.attention(x)
+                    x = self.conv1d_attention(x)
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x, time_edge_index)
