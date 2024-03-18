@@ -32,7 +32,7 @@ for model in ['gnn_keypoint_conv1d', 'gnn_keypoint_lstm']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(performance_model, framework)
+    draw_save(model, performance_model, framework)
     print('model: %s, body_part:' % model, body_part,
           ', framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
               framework, sample_fps, str(video_len), str(empty_frame)))
