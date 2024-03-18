@@ -321,6 +321,7 @@ class GNN(torch.nn.Module):
                 self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                                           bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
+                self.attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
                     nn.Conv1d(int(self.input_size / 2 * self.out_channels), 256, kernel_size=7, stride=3, padding=3),
@@ -333,6 +334,23 @@ class GNN(torch.nn.Module):
                     nn.BatchNorm1d(64),
                     nn.ReLU(),
                 )
+
+                class Conv1DAttention(nn.Module):
+                    def __init__(self, in_channels, out_channels):
+                        super(Conv1DAttention, self).__init__()
+                        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size=1)
+                        self.softmax = nn.Softmax(dim=2)
+
+                    def forward(self, x):
+                        # Compute attention scores
+                        scores = self.conv(x)
+                        # Apply softmax to compute attention weights
+                        weights = self.softmax(scores)
+                        # Apply attention weights to input features
+                        output = torch.mul(x, weights)
+                        return output
+
+                self.attention = Conv1DAttention(64, 64)
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
@@ -429,9 +447,13 @@ class GNN(torch.nn.Module):
             if self.model == 'gnn_keypoint_lstm':
                 _, (hn, _) = self.time_model(x_time)
                 x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
+                if self.attention:
+                    attention_weights = nn.Softmax(self.attention(x), dim=1)
+                    x = torch.sum(x * attention_weights, dim=1)
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
+                x = self.attention(x)
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x, time_edge_index)
