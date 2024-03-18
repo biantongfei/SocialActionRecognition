@@ -410,6 +410,7 @@ class GNN(torch.nn.Module):
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
                     x_t, edge_attr_t = x[i][ii], edge_attr[i][ii]
+                    print(x_t.shape, edge_index=edge_index[i][ii])
                     x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii]).to(dtype).to(device)
                     # x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t).to(dtype).to(
                     #     device)
