@@ -1,6 +1,6 @@
 from train_val import train, draw_save
 
-model = 'gnn_keypoint_conv1d'
+model = 'gnn_keypoint_lstm'
 body_part = [True, True, True]
 data_format = 'coordinates'
 # data_format = 'manhattan'
