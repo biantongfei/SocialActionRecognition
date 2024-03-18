@@ -345,7 +345,7 @@ class GNN(torch.nn.Module):
                         # Compute attention scores
                         scores = self.conv(x)
                         # Apply softmax to compute attention weights
-                        weights = self.softmax(dim=1)(scores)
+                        weights = self.softmax(scores)
                         # Apply attention weights to input features
                         output = torch.mul(x, weights)
                         return output
