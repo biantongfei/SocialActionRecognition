@@ -420,7 +420,6 @@ class GNN(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, edge_attr = data[0], data[1], data[2]
-        print(x.shape)
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
