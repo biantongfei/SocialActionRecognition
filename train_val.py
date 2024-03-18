@@ -63,9 +63,9 @@ attitude_classes = ['positive', 'negative', 'others']
 action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested', 'interested']
 
 
-def draw_save(performance_model, framework):
+def draw_save(model, performance_model, framework):
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
-    with open('plots/performance.csv', 'w', newline='') as csvfile:
+    with open('plots/%s_performance.csv' % model, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         int_y_true = {}
         int_y_pred = {}
@@ -451,7 +451,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
                 result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
             print(result_str + ', process_time_pre_sample: %.4f' % (
-                        process_time / (len(testset) // batch_size * batch_size) / (video_len * sample_fps)))
+                    process_time / (len(testset) // batch_size * batch_size) / (video_len * sample_fps)))
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             # draw_training_process(trainging_process)
         return performance_model
@@ -496,7 +496,7 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(performance_model, framework)
+    draw_save(model, performance_model, framework)
     print('model: %s, body_part:' % model, body_part,
           ', framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
               framework, sample_fps, str(video_len), str(empty_frame)))
