@@ -264,10 +264,8 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
                         x, (int_labels, att_labels, act_labels) = data
-                        inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
-                        # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                        # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                        #     2].to(dtype).to(device)
+                        inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                            2].to(dtype).to(device))
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.eval()
@@ -356,10 +354,8 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     inputs = inputs.to(dtype).to(device)
                 elif 'gnn' in model:
                     x, (int_labels, att_labels, act_labels) = data
-                    inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
-                    # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                    # inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                    #     2].to(dtype).to(device)
+                    inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                        2].to(dtype).to(device))
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
                 if framework in ['intent', 'attitude', 'action']:
