@@ -307,6 +307,7 @@ class GNN(torch.nn.Module):
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = 256
         self.out_channels = 4
+        print(self.attention)
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
                 self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
@@ -445,6 +446,7 @@ class GNN(torch.nn.Module):
                 for ii in range(x.shape[1]):
                     x_t, edge_attr_t = x[i][ii], edge_attr[i][ii]
                     x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii]).to(dtype).to(device)
+                    print(x_t.shape)
                     # x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t).to(dtype).to(
                     #     device)
                     x_t = nn.ReLU()(
