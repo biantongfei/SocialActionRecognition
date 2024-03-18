@@ -19,7 +19,7 @@ empty_frame = 'same'
 for model in ['gnn_keypoint_conv1d', 'gnn_keypoint_lstm']:
     performance_model = []
     i = 0
-    while i < 1:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
