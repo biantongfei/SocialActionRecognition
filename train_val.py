@@ -132,9 +132,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -188,7 +188,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         max_length=max_length)
         elif 'gnn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
-                      max_length=max_length, attention=False)
+                      max_length=max_length, attention=True)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
@@ -224,27 +224,24 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         inputs = inputs.to(dtype).to(device)
                     elif 'gnn' in model:
                         x, (int_labels, att_labels, act_labels) = data
-                        # inputs, edge_index = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device)
-                        # edge_index, edge_attr = x[0].to(dtype).to(torch.int64), x[1].to(dtype).to(device)
-                        inputs, edge_index, edge_attr = x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                            2].to(dtype).to(device)
+                        inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
+                            2].to(dtype).to(device))
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.train()
                     if framework == 'intent':
-                        int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        int_outputs = net(inputs)
                         total_loss = functional.cross_entropy(int_outputs, int_labels)
                     elif framework == 'attitude':
-                        att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        att_outputs = net(inputs)
                         att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                         total_loss = functional.cross_entropy(att_outputs, att_labels)
                     elif framework == 'action':
-                        act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        act_outputs = net(inputs)
                         act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                         total_loss = functional.cross_entropy(act_outputs, act_labels)
                     else:
-                        int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs,
-                                                                                                           edge_index)
+                        int_outputs, att_outputs, act_outputs = net(inputs)
                         att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                         act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                         loss_1 = functional.cross_entropy(int_outputs, int_labels)
@@ -273,14 +270,13 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         device)
                     net.eval()
                     if framework == 'intent':
-                        int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        int_outputs = net(inputs)
                     elif framework == 'attitude':
-                        att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        att_outputs = net(inputs)
                     elif framework == 'action':
-                        act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        act_outputs = net(inputs)
                     else:
-                        int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs,
-                                                                                                           edge_index)
+                        int_outputs, att_outputs, act_outputs = net(inputs)
                     if 'intent' in tasks:
                         int_pred = int_outputs.argmax(dim=1)
                         int_y_true += int_labels.tolist()
@@ -365,14 +361,13 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 net.eval()
                 if framework in ['intent', 'attitude', 'action']:
                     if framework == 'intent':
-                        int_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        int_outputs = net(inputs)
                     elif framework == 'attitude':
-                        att_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        att_outputs = net(inputs)
                     else:
-                        act_outputs = net(inputs) if 'gnn' not in model else net(inputs, edge_index)
+                        act_outputs = net(inputs)
                 else:
-                    int_outputs, att_outputs, act_outputs = net(inputs) if 'gnn' not in model else net(inputs,
-                                                                                                       edge_index)
+                    int_outputs, att_outputs, act_outputs = net(inputs)
                 if 'intent' in tasks:
                     int_pred = int_outputs.argmax(dim=1)
                     int_y_true += int_labels.tolist()
@@ -436,9 +431,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
 if __name__ == '__main__':
     # model = 'avg'
     # model = 'perframe'
-    model = 'conv1d'
+    # model = 'conv1d'
     # model = 'lstm'
-    # model = 'gnn_keypoint_conv1d'
+    model = 'gnn_keypoint_conv1d'
     # model = 'gnn_keypoint_lstm'
     # model = 'gnn_time'
     # model = 'gnn2+1d'
@@ -450,8 +445,8 @@ if __name__ == '__main__':
     # framework = 'intent'
     # framework = 'attitude'
     # framework = 'action'
-    framework = 'parallel'
-    # framework = 'tree'
+    # framework = 'parallel'
+    framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
@@ -459,7 +454,7 @@ if __name__ == '__main__':
     empty_frame = 'same'
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 2:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
