@@ -452,6 +452,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
             print(result_str + ', process_time_pre_sample: %.4f' % (
                     process_time / (len(testset) // batch_size * batch_size) / (video_len * sample_fps)))
+            print(process_time)
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             # draw_training_process(trainging_process)
         return performance_model
