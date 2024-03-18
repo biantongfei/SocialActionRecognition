@@ -1,8 +1,3 @@
-import time
+from train_val import bless_str
 
-import torch
-
-a = time.time()
-time.sleep(1)
-c = time.time()
-print(c - a)
+print(bless_str)

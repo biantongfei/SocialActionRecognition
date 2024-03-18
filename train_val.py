@@ -39,6 +39,28 @@ intent_class = ['interacting', 'interested', 'uninterested']
 attitude_classes = ['positive', 'negative', 'others']
 action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested', 'interested']
 
+bless_str = ("                         _oo0oo_\n"
+             "                        o8888888o\n"
+             "                        88\" . \"88\n"
+             "                        (| -_- |)\n"
+             "                        0\  =  /0\n"
+             "                      ___/`---'\___\n"
+             "                    .' \\|     |// '.\n"
+             "                   / \\|||  :  |||// \ \n"
+             "                  / _||||| -:- |||||- \ \n"
+             "                 |   | \\\  - /// |   |\n"
+             "                 | \_|  ''\---/''  |_/ |\n"
+             "                 \  .-\__  '-'  ___/-. /\n"
+             "               ___'. .'  /--.--\  `. .'___\n"
+             "            .\"\" '<  `.___\_<|>_/___.' >' \"\".\n"
+             "           | | :  `- \`.;`\ _ /`;.`/ - ` : | |\n"
+             "           \  \ `_.   \_ __\ /__ _/   .-` /  /\n"
+             "       =====`-.____`.___ \_____/___.-`___.-'=====\n"
+             "                         `=---='\n"
+             "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+             "             BUDDHA BLESS ME WITH NO BUGS\n"
+             )
+
 
 def draw_save(performance_model, framework):
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
@@ -127,6 +149,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
+    print(bless_str)
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
     #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
@@ -134,9 +157,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'mixed_large+coco': {}}
+    train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -339,7 +362,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
         print('Testing')
         for hyperparameter_group in train_dict:
