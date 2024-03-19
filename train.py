@@ -16,7 +16,7 @@ ori_video = False
 sample_fps = 30
 video_len = 2
 empty_frame = 'same'
-for model, framework in zip(['gnn_keypoint_conv1d', 'gnn_keypoint_lstm'], ['smae'.zero]):
+for model, framework in zip(['gnn_keypoint_conv1d', 'gnn_keypoint_lstm'], ['same', 'zero']):
     performance_model = []
     i = 0
     while i < 10:
