@@ -454,9 +454,10 @@ class GNN(torch.nn.Module):
                     x_t = self.topkpooling(x=x_t, edge_index=edge_index[i][ii])[0]
                     x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
+                    print(x_t.shape, self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))
                     x_t = nn.ReLU()(
-                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(
-                            device)(x_t))
+                        nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
+                            x_t))
                     x_t = self.topkpooling(x=x_t, edge_index=edge_index[i][ii])[0]
                     x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
