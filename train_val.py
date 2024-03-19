@@ -480,7 +480,7 @@ if __name__ == '__main__':
     # model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
-    model = 'gnn_keypoint_lstm'
+    model = 'gnn_keypoint_conv1d'
     # model = 'gnn_keypoint_lstm'
     # model = 'gnn_time'
     # model = 'gnn2+1d'
