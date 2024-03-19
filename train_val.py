@@ -259,7 +259,6 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
                 for data in train_loader:
-                    print(1)
                     if model in ['avg', 'perframe', 'conv1d']:
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
