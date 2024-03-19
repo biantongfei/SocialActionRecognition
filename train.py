@@ -1,4 +1,4 @@
-from train_val import train, draw_save
+from train_val import train, draw_save, send_email
 
 # model = 'gnn_keypoint_conv1d'
 body_part = [True, True, True]
@@ -33,6 +33,7 @@ for model in ['gnn_keypoint_conv1d', 'gnn_keypoint_lstm']:
         performance_model.append(p_m)
         i += 1
     draw_save(model, performance_model, framework)
-    print('model: %s, body_part:' % model, body_part,
-          ', framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
-              framework, sample_fps, str(video_len), str(empty_frame)))
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
+        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len), str(empty_frame))
+    print(result_str)
+    send_email(result_str)

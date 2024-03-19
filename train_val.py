@@ -12,6 +12,8 @@ import torch.nn.utils.rnn as rnn_utils
 
 from sklearn.metrics import f1_score
 import csv
+import smtplib
+from email.mime.text import MIMEText
 
 bless_str = ("                         _oo0oo_\n"
              "                        o8888888o\n"
@@ -35,6 +37,22 @@ bless_str = ("                         _oo0oo_\n"
              "                 BLESS ME WITH NO BUGS\n"
              )
 print(bless_str)
+
+
+def send_email(body):
+    subject = "Training Is Done"
+    sender = "bian2016buaa@163.com"
+    recipients = ["tongfeibian@gmail.com"]
+    password = "EJWYZRYQNDKOQSFH"
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = ', '.join(recipients)
+    with smtplib.SMTP_SSL('smtp.163.com', 465) as smtp_server:
+        smtp_server.login(sender, password)
+        smtp_server.sendmail(sender, recipients, msg.as_string())
+    print("Email sent!")
+
 
 avg_batch_size = 128
 perframe_batch_size = 2048
@@ -157,9 +175,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -213,7 +231,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         max_length=max_length)
         elif 'gnn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
-                      max_length=max_length, attention=True)
+                      max_length=max_length, attention=False)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
@@ -241,6 +259,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
                 for data in train_loader:
+                    print(1)
                     if model in ['avg', 'perframe', 'conv1d']:
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
@@ -362,7 +381,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
         print('Testing')
         for hyperparameter_group in train_dict:
@@ -462,7 +481,7 @@ if __name__ == '__main__':
     # model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
-    model = 'gnn_keypoint_conv1d'
+    model = 'gnn_keypoint_lstm'
     # model = 'gnn_keypoint_lstm'
     # model = 'gnn_time'
     # model = 'gnn2+1d'
@@ -483,7 +502,7 @@ if __name__ == '__main__':
     empty_frame = 'same'
     performance_model = []
     i = 0
-    while i < 2:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
@@ -497,6 +516,7 @@ if __name__ == '__main__':
         performance_model.append(p_m)
         i += 1
     draw_save(model, performance_model, framework)
-    print('model: %s, body_part:' % model, body_part,
-          ', framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
-              framework, sample_fps, str(video_len), str(empty_frame)))
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
+        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len), str(empty_frame))
+    print(result_str)
+    # send_email(result_str)
