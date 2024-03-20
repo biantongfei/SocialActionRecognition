@@ -304,31 +304,37 @@ class GNN(torch.nn.Module):
         self.max_length = max_length
         self.attention = attention
         self.num_heads = 4
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = [16, 32, 64]
+        self.polling_rate = 0.8
         self.time_hidden_dim = 256
-        self.out_channels = 4
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
-                self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
+                self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim[0], heads=self.num_heads)
 
-                self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim * 2,
+                self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim[0] * self.num_heads, self.keypoint_hidden_dim[1],
                                               heads=self.num_heads)
-                self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim * 2 * self.num_heads, self.out_channels, heads=1)
+                self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim[1] * self.num_heads, self.keypoint_hidden_dim[2],
+                                              heads=1)
             else:
-                self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
-                self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
-                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
-            self.topkpooling = TopKPooling(self.keypoint_hidden_dim * self.num_heads if self.attention else 1)
-            self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))
-            self.bn2 = nn.BatchNorm1d(self.out_channels)
+                self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim[0])
+                self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim[0], self.keypoint_hidden_dim[1])
+                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim[1], self.keypoint_hidden_dim[2])
+            self.topkpooling1 = TopKPooling(self.keypoint_hidden_dim[0] * self.num_heads if self.attention else 1,
+                                            ratio=self.polling_rate)
+            self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim[1] * self.num_heads if self.attention else 1,
+                                            ratio=self.polling_rate)
+            self.topkpooling3 = TopKPooling(self.keypoint_hidden_dim[2], ratio=self.polling_rate)
+            self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1))
+            self.bn2 = nn.BatchNorm1d(self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1))
+            self.bn3 = nn.BatchNorm1d(self.keypoint_hidden_dim[2])
             if self.model == 'gnn_keypoint_lstm':
-                self.time_model = nn.LSTM(68, hidden_size=256, num_layers=3,
+                self.time_model = nn.LSTM(69 * 64, hidden_size=256, num_layers=3,
                                           bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
-                    nn.Conv1d(68, 256, kernel_size=7, stride=3, padding=3),
+                    nn.Conv1d(69 * 64, 256, kernel_size=7, stride=3, padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
                     nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
@@ -359,17 +365,17 @@ class GNN(torch.nn.Module):
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
                 self.GCN1_time = GATConv(
-                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
+                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.keypoint_hidden_dim[2]),
                     self.time_hidden_dim, heads=self.num_heads)
                 self.GCN2_time = GATConv(self.time_hidden_dim * self.num_heads, self.time_hidden_dim,
                                          heads=self.num_heads)
-                self.GCN3_time = GATConv(self.time_hidden_dim * self.num_heads, self.out_channels, heads=1)
+                self.GCN3_time = GATConv(self.time_hidden_dim * self.num_heads, self.keypoint_hidden_dim[2], heads=1)
             else:
                 self.GCN1_time = GCNConv(
-                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.out_channels),
+                    16 if self.model == 'gnn_time' else int(self.input_size / 2 * self.keypoint_hidden_dim[2]),
                     self.time_hidden_dim)
                 self.GCN2_time = GCNConv(self.time_hidden_dim, self.time_hidden_dim)
-                self.GCN3_time = GCNConv(self.time_hidden_dim, self.out_channels)
+                self.GCN3_time = GCNConv(self.time_hidden_dim, self.keypoint_hidden_dim[2])
             if self.model == 'gnn_time':
                 self.keypoints_fc = nn.Sequential(
                     nn.Linear(self.input_size, 128),
@@ -382,9 +388,9 @@ class GNN(torch.nn.Module):
                     nn.ReLU(),
                     nn.BatchNorm1d(16),
                 )
-                self.fc_input_size = 16 * self.out_channels
+                self.fc_input_size = 16 * self.keypoint_hidden_dim[2]
             else:
-                self.fc_input_size = self.max_length * self.out_channels
+                self.fc_input_size = self.max_length * self.keypoint_hidden_dim[2]
 
         class FCAttention(nn.Module):
             def __init__(self, input_dim):
@@ -443,7 +449,7 @@ class GNN(torch.nn.Module):
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
-            x_time = torch.zeros((x.shape[0], x.shape[1], 68)).to(dtype).to(device)
+            x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 64)).to(dtype).to(device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
                     x_t, edge_attr_t = x[i][ii], edge_attr[i][ii]
@@ -451,15 +457,15 @@ class GNN(torch.nn.Module):
                     # x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t).to(dtype).to(
                     #     device)
                     x_t = nn.ReLU()(self.bn1(x_t))
-                    x_t, new_edge_index, _, _, _, _ = self.topkpooling(x=x_t, edge_index=edge_index[i][ii])
+                    x_t, new_edge_index, _, _, _, _ = self.topkpooling1(x=x_t, edge_index=edge_index[i][ii])
                     x_t = self.GCN2_keypoints(x=x_t, edge_index=new_edge_index)
                     # x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn1(x_t))
-                    x_t, new_edge_index, _, _, _, _ = self.topkpooling(x=x_t, edge_index=new_edge_index)
+                    x_t = nn.ReLU()(self.bn2(x_t))
+                    x_t, new_edge_index, _, _, _, _ = self.topkpooling2(x=x_t, edge_index=new_edge_index)
                     x_t = self.GCN3_keypoints(x=x_t, edge_index=new_edge_index)
                     # x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn2(x_t))
-                    x_t = self.topkpooling(x=x_t, edge_index=new_edge_index)[0]
+                    x_t = nn.ReLU()(self.bn3(x_t))
+                    x_t = self.topkpooling3(x=x_t, edge_index=new_edge_index)[0]
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
                 _, (hn, _) = self.time_model(x_time)
