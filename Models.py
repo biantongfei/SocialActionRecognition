@@ -468,6 +468,7 @@ class GNN(torch.nn.Module):
             if self.model == 'gnn_keypoint_lstm':
                 _, (hn, _) = self.time_model(x_time)
                 x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
+                print(x.shape)
                 if self.attention:
                     attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
                     x = torch.sum(x * attention_weights, dim=1)
