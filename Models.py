@@ -467,6 +467,7 @@ class GNN(torch.nn.Module):
                     x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
                     x_t = nn.ReLU()(self.bn3(x_t))
+                    print(x_t.shape)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
                 _, (hn, _) = self.time_model(x_time)
