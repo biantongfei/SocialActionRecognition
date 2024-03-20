@@ -324,11 +324,9 @@ class GNN(torch.nn.Module):
             self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim[1] * self.num_heads if self.attention else 1,
                                             ratio=self.polling_rate)
             self.topkpooling3 = TopKPooling(self.keypoint_hidden_dim[2], ratio=self.polling_rate)
-            self.bn1 = nn.BatchNorm1d(
-                int(self.input_size / 2 * self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1)))
-            self.bn2 = nn.BatchNorm1d(
-                int(self.input_size / 2 * self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1)))
-            self.bn3 = nn.BatchNorm1d(int(self.input_size / 2 * self.keypoint_hidden_dim[2]))
+            self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1))
+            self.bn2 = nn.BatchNorm1d(self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1))
+            self.bn3 = nn.BatchNorm1d(self.keypoint_hidden_dim[2])
             if self.model == 'gnn_keypoint_lstm':
                 self.time_model = nn.LSTM(int(self.input_size / 2 * self.keypoint_hidden_dim[2]), hidden_size=256,
                                           num_layers=3, bidirectional=True, batch_first=True)
