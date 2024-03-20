@@ -451,7 +451,7 @@ class GNN(torch.nn.Module):
                                        dtype=torch.long).t().contiguous()
         print(x.shape)
         if self.model != 'gnn_time':
-            x_time = torch.zeros((x.shape[0], x.shape[1], self.keypoint_hidden_dim[2])).to(
+            x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.keypoint_hidden_dim[2]))).to(
                 dtype).to(device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
