@@ -449,8 +449,8 @@ class GNN(torch.nn.Module):
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
         if self.model != 'gnn_time':
-            x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.keypoint_hidden_dim[2]))).to(
-                dtype).to(device)
+            x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.out_channel))).to(dtype).to(
+                device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
                     x_t, edge_attr_t = x[i][ii], edge_attr[i][ii]
