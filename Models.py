@@ -324,20 +324,20 @@ class GNN(torch.nn.Module):
             self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim[1] * self.num_heads if self.attention else 1,
                                             ratio=self.polling_rate)
             self.topkpooling3 = TopKPooling(self.keypoint_hidden_dim[2], ratio=self.polling_rate)
-            print(self.input_size / 2 * self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1))
             self.bn1 = nn.BatchNorm1d(
-                self.input_size / 2 * self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1))
+                int(self.input_size / 2 * self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1)))
             self.bn2 = nn.BatchNorm1d(
-                self.input_size / 2 * self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1))
-            self.bn3 = nn.BatchNorm1d(self.input_size / 2 * self.keypoint_hidden_dim[2])
+                int(self.input_size / 2 * self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1)))
+            self.bn3 = nn.BatchNorm1d(int(self.input_size / 2 * self.keypoint_hidden_dim[2]))
             if self.model == 'gnn_keypoint_lstm':
-                self.time_model = nn.LSTM(69 * 64, hidden_size=256, num_layers=3,
-                                          bidirectional=True, batch_first=True)
+                self.time_model = nn.LSTM(int(self.input_size / 2 * self.keypoint_hidden_dim[2]), hidden_size=256,
+                                          num_layers=3, bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
-                    nn.Conv1d(69 * 64, 256, kernel_size=7, stride=3, padding=3),
+                    nn.Conv1d(int(self.input_size / 2 * self.keypoint_hidden_dim[2]), 256, kernel_size=7, stride=3,
+                              padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
                     nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
