@@ -231,7 +231,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         max_length=max_length)
         elif 'gnn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
-                      max_length=max_length, attention=True)
+                      max_length=max_length, attention=False)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
