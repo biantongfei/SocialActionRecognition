@@ -175,9 +175,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -220,7 +220,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                           empty_frame=empty_frame)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
-            len(trainset), len(valset), len(testset)))
+        len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
             net = DNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework)
         elif model in ['lstm', 'gru']:

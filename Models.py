@@ -311,19 +311,13 @@ class GNN(torch.nn.Module):
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
                 self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
-
                 self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim,
                                               heads=self.num_heads)
                 self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.out_channel, heads=1)
             else:
                 self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
                 self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
-                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
-            self.topkpooling1 = TopKPooling(self.keypoint_hidden_dim * self.num_heads if self.attention else 1,
-                                            ratio=self.polling_rate)
-            self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim * self.num_heads if self.attention else 1,
-                                            ratio=self.polling_rate)
-            self.topkpooling3 = TopKPooling(self.out_channel, ratio=self.polling_rate)
+                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channel)
             self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))
             self.bn2 = nn.BatchNorm1d(self.out_channel)
             if self.model == 'gnn_keypoint_lstm':
@@ -457,13 +451,16 @@ class GNN(torch.nn.Module):
                     x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii]).to(dtype).to(device)
                     # x_t = self.GCN1_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t).to(dtype).to(
                     #     device)
-                    x_t = nn.ReLU()(self.bn1(x_t))
+                    x_t = self.bn1(x_t)
+                    x_t = nn.ReLU()(x_t)
                     x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn1(x_t))
+                    x_t = self.bn1(x_t)
+                    x_t = nn.ReLU()(x_t)
                     x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn2(x_t))
+                    x_t = self.bn2(x_t)
+                    x_t = nn.ReLU()(x_t)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
                 on, _ = self.time_model(x_time)
