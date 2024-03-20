@@ -175,9 +175,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
     # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
+    # train_dict = {'mixed_large+coco': {}}
     # train_dict = {'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -231,7 +231,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                         max_length=max_length)
         elif 'gnn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
-                      max_length=max_length, attention=False)
+                      max_length=max_length, attention=True)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
