@@ -304,37 +304,36 @@ class GNN(torch.nn.Module):
         self.max_length = max_length
         self.attention = attention
         self.num_heads = 4
-        self.keypoint_hidden_dim = [8, 16, 16]
+        self.keypoint_hidden_dim = 16
+        self.out_channel = 4
         self.polling_rate = 0.8
         self.time_hidden_dim = 256
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
             if attention:
-                self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim[0], heads=self.num_heads)
+                self.GCN1_keypoints = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
 
-                self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim[0] * self.num_heads, self.keypoint_hidden_dim[1],
+                self.GCN2_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim,
                                               heads=self.num_heads)
-                self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim[1] * self.num_heads, self.keypoint_hidden_dim[2],
-                                              heads=1)
+                self.GCN3_keypoints = GATConv(self.keypoint_hidden_dim * self.num_heads, self.out_channel, heads=1)
             else:
-                self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim[0])
-                self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim[0], self.keypoint_hidden_dim[1])
-                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim[1], self.keypoint_hidden_dim[2])
-            self.topkpooling1 = TopKPooling(self.keypoint_hidden_dim[0] * self.num_heads if self.attention else 1,
+                self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
+                self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
+                self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
+            self.topkpooling1 = TopKPooling(self.keypoint_hidden_dim * self.num_heads if self.attention else 1,
                                             ratio=self.polling_rate)
-            self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim[1] * self.num_heads if self.attention else 1,
+            self.topkpooling2 = TopKPooling(self.keypoint_hidden_dim * self.num_heads if self.attention else 1,
                                             ratio=self.polling_rate)
-            self.topkpooling3 = TopKPooling(self.keypoint_hidden_dim[2], ratio=self.polling_rate)
-            self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim[0] * (self.num_heads if self.attention else 1))
-            self.bn2 = nn.BatchNorm1d(self.keypoint_hidden_dim[1] * (self.num_heads if self.attention else 1))
-            self.bn3 = nn.BatchNorm1d(self.keypoint_hidden_dim[2])
+            self.topkpooling3 = TopKPooling(self.out_channel, ratio=self.polling_rate)
+            self.bn1 = nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))
+            self.bn2 = nn.BatchNorm1d(self.out_channel)
             if self.model == 'gnn_keypoint_lstm':
-                self.time_model = nn.LSTM(int(self.input_size / 2 * self.keypoint_hidden_dim[2]), hidden_size=256,
-                                          num_layers=3, bidirectional=True, batch_first=True)
+                self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channel), hidden_size=256, num_layers=3,
+                                          bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
-                    nn.Conv1d(int(self.input_size / 2 * self.keypoint_hidden_dim[2]), 256, kernel_size=7, stride=3,
+                    nn.Conv1d(int(self.input_size / 2 * self.out_channel), 256, kernel_size=7, stride=3,
                               padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
@@ -461,10 +460,10 @@ class GNN(torch.nn.Module):
                     x_t = nn.ReLU()(self.bn1(x_t))
                     x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN2_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn2(x_t))
+                    x_t = nn.ReLU()(self.bn1(x_t))
                     x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii])
                     # x_t = self.GCN3_keypoints(x=x_t, edge_index=edge_index[i][ii], edge_attr=edge_attr_t)
-                    x_t = nn.ReLU()(self.bn3(x_t))
+                    x_t = nn.ReLU()(self.bn2(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
                 _, (hn, _) = self.time_model(x_time)
