@@ -466,7 +466,8 @@ class GNN(torch.nn.Module):
                     x_t = nn.ReLU()(self.bn2(x_t))
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gnn_keypoint_lstm':
-                _, (hn, _) = self.time_model(x_time)
+                on, (hn, _) = self.time_model(x_time)
+                print(on.shape, hn.shape, 'lstm')
                 x = torch.cat([hn[-2, :, :], hn[-1, :, :]], dim=-1)
                 print(x.shape)
                 if self.attention:
@@ -493,7 +494,7 @@ class GNN(torch.nn.Module):
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
-        print(x.shape)
+        print(x.shape, self.keypoints_fc)
         y = self.fc(x)
         if self.attention:
             y = self.fc_attention(y)
