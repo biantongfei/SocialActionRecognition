@@ -201,13 +201,12 @@ class RNN(nn.Module):
         else:
             on, (hn, _) = self.rnn(x)
         out_pad, out_length = rnn_utils.pad_packed_sequence(on, batch_first=True)
-        print(out_pad.shape)
         if self.bidirectional:
             out = torch.zeros(out_pad.data.shape[0], self.hidden_size * 2).to(device)
+            out_pad = out_pad.reshape(out_pad.shape[0], out_pad.shape[0], 2, -1)
             for i in range(out_pad.data.shape[0]):
                 index = out_length[i] - 1
-                out[i] = torch.cat((out_pad.data[i, index, :self.hidden_size], out_pad.data[i, 0, self.hidden_size:]),
-                                   dim=0)
+                out[i] = torch.cat((out_pad.data[i, -1, 0, :], out_pad.data[i, 0, 1, :]), dim=0)
         else:
             out = torch.zeros(out_pad.data.shape[0], self.hidden_size).to(device)
             for i in range(out_pad.data.shape[0]):
