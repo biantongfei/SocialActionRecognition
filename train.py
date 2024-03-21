@@ -17,7 +17,7 @@ sample_fps = 30
 video_len = 2
 empty_frame = 'same'
 # for model, empty_frame in zip(['gnn_keypoint_conv1d', 'gnn_keypoint_lstm'], ['same', 'zero']):
-for model, empty_frame in zip(['gnn_keypoint_lstm'], ['zero']):
+for model, empty_frame in zip(['lstm'], ['zero']):
     performance_model = []
     i = 0
     while i < 10:

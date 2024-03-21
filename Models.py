@@ -489,7 +489,6 @@ class GNN(torch.nn.Module):
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
-        print(x.shape)
         y = self.fc(x)
         if self.attention:
             y = self.fc_attention(y)
