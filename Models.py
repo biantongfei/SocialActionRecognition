@@ -463,7 +463,6 @@ class GNN(torch.nn.Module):
                 on, _ = self.time_model(x_time)
                 on = on.reshape(on.shape[0], on.shape[1], 2, -1)
                 x = (torch.cat([on[:, -1, 0, :], on[:, 0, 1, :]], dim=-1))
-                print(x.shape)
                 if self.attention:
                     attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
                     x = torch.sum(x * attention_weights, dim=1)
@@ -488,6 +487,7 @@ class GNN(torch.nn.Module):
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
+        print(x.shape)
         y = self.fc(x)
         if self.attention:
             y = self.fc_attention(y)
