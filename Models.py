@@ -467,6 +467,7 @@ class GNN(torch.nn.Module):
                 if self.attention:
                     attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
                     print(attention_weights.shape)
+                    print((x * attention_weights).shape)
                     x = torch.sum(x * attention_weights, dim=1)
                     print(x.shape)
             elif self.model == 'gnn_keypoint_conv1d':
