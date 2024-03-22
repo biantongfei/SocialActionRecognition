@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.nn import GATConv, GCNConv, SAGPooling
+from torch_geometric.nn import GATConv, GCNConv, SAGPooling,TopKPooling
 
 from Dataset import get_inputs_size
 
@@ -348,9 +348,9 @@ class GNN(torch.nn.Module):
                 self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
                 self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
                 self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
-            self.pool1 = SAGPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
-            self.pool2 = SAGPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
-            self.pool3 = SAGPooling(self.out_channels, ratio=0.9)
+            self.pool1 = TopKPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
+            self.pool2 = TopKPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
+            self.pool3 = TopKPooling(self.out_channels, ratio=0.9)
             if self.model == 'gnn_keypoint_lstm':
                 # self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                 #                           bidirectional=True, batch_first=True)
