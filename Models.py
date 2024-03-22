@@ -457,6 +457,7 @@ class GNN(torch.nn.Module):
                         nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1)).to(device)(
                             x_t))
                     x_t = self.pool1(x_t, new_edge_index)
+                    print(x_t.shape)
                     x_t = self.GCN2_keypoints(x=x_t, edge_index=new_edge_index)
                     # x_t = self.GCN2_keypoints(x=x_t, edge_index=new_edge_index, edge_attr=edge_attr_t)
                     x_t = nn.ReLU()(
