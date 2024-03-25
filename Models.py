@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.nn import GATConv, GCNConv, SAGPooling, TopKPooling
+from torch_geometric.nn import GATConv, GCNConv, SAGPooling, TopKPooling, ASAPooling
 
 from Dataset import get_inputs_size
 
