@@ -336,6 +336,7 @@ class GNN(torch.nn.Module):
         self.attention = attention
         self.num_heads = 4
         self.keypoint_hidden_dim = 16
+        self.pooling_rate = 0.8
         self.time_hidden_dim = 256
         self.out_channels = 4
         if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d']:
@@ -348,9 +349,11 @@ class GNN(torch.nn.Module):
                 self.GCN1_keypoints = GCNConv(2, self.keypoint_hidden_dim)
                 self.GCN2_keypoints = GCNConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim)
                 self.GCN3_keypoints = GCNConv(self.keypoint_hidden_dim, self.out_channels)
-            self.pool1 = SAGPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
-            self.pool2 = SAGPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1), ratio=0.9)
-            self.pool3 = SAGPooling(self.out_channels, ratio=0.9)
+            self.pool1 = TopKPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1),
+                                     ratio=self.pooling_rate)
+            self.pool2 = TopKPooling(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1),
+                                     ratio=self.pooling_rate)
+            self.pool3 = TopKPooling(self.out_channels, ratio=self.pooling_rate)
             if self.model == 'gnn_keypoint_lstm':
                 # self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                 #                           bidirectional=True, batch_first=True)
