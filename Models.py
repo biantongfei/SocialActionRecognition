@@ -357,13 +357,13 @@ class GNN(torch.nn.Module):
             if self.model == 'gnn_keypoint_lstm':
                 # self.time_model = nn.LSTM(int(self.input_size / 2 * self.out_channels), hidden_size=256, num_layers=3,
                 #                           bidirectional=True, batch_first=True)
-                self.time_model = nn.LSTM(98 * 4, hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+                self.time_model = nn.LSTM(69 * 4, hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             else:
                 self.time_model = nn.Sequential(
                     # nn.Conv1d(int(self.input_size / 2 * self.out_channels), 256, kernel_size=7, stride=3, padding=3),
-                    nn.Conv1d(98 * 4, 256, kernel_size=7, stride=3, padding=3),
+                    nn.Conv1d(69 * 4, 256, kernel_size=7, stride=3, padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
                     nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
@@ -449,7 +449,7 @@ class GNN(torch.nn.Module):
         if self.model != 'gnn_time':
             # x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.out_channels))).to(dtype).to(
             #     device)
-            x_time = torch.zeros((x.shape[0], x.shape[1], 98 * 4)).to(dtype).to(device)
+            x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
                     x_t, new_edge_index, edge_attr_t = x[i][ii], edge_index[i][ii], edge_attr[i][ii]
