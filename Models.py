@@ -22,22 +22,6 @@ else:
 dtype = torch.float
 
 
-class Conv1DAttention(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(Conv1DAttention, self).__init__()
-        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size=1)
-        self.softmax = nn.Softmax(dim=2)
-
-    def forward(self, x):
-        # Compute attention scores
-        scores = self.conv(x)
-        # Apply softmax to compute attention weights
-        weights = self.softmax(scores)
-        # Apply attention weights to input features
-        output = torch.mul(x, weights)
-        return output
-
-
 class FCAttention(nn.Module):
     def __init__(self, input_dim):
         super(FCAttention, self).__init__()
@@ -373,7 +357,6 @@ class GNN(torch.nn.Module):
                     nn.BatchNorm1d(64),
                     nn.ReLU(),
                 )
-                self.conv1d_attention = Conv1DAttention(64, 64)
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         if self.model in ['gnn_time', 'gnn2+1d']:
             if attention:
@@ -474,17 +457,15 @@ class GNN(torch.nn.Module):
             if self.model == 'gnn_keypoint_lstm':
                 on, _ = self.time_model(x_time)
                 on = on.reshape(on.shape[0], on.shape[1], 2, -1)
-                # if self.attention:
-                #     x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
-                #     # attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
-                #     # x = torch.sum(x * attention_weights, dim=1)
-                # else:
-                x = (torch.cat([on[:, -1, 0, :], on[:, 0, 1, :]], dim=-1))
+                if self.attention:
+                    x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
+                    # attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
+                    # x = torch.sum(x * attention_weights, dim=1)
+                else:
+                    x = (torch.cat([on[:, -1, 0, :], on[:, 0, 1, :]], dim=-1))
             elif self.model == 'gnn_keypoint_conv1d':
                 x = torch.transpose(x_time, 1, 2)
                 x = self.time_model(x)
-                # if self.attention:
-                #     x = self.conv1d_attention(x)
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x, time_edge_index)
@@ -502,8 +483,8 @@ class GNN(torch.nn.Module):
             x = self.GCN3_time(x, time_edge_index)
             x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * (self.num_heads if self.attention else 1))(x))
         y = self.fc(x)
-        # if self.attention:
-        #     y = self.fc_attention(y)
+        if self.attention:
+            y = self.fc_attention(y)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
                 y = self.intent_head(y)

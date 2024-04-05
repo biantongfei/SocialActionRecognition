@@ -271,13 +271,13 @@ class Dataset(Dataset):
                         frame_feature = np.array(frame['keypoints'])[:, :2]
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
                         if self.data_format == 'coordinates':
-                            frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
-                            frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
+                            frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                            frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                         elif self.data_format == 'manhattan':
                             frame_feature = self.feature_transform(frame_feature, frame_width, frame_height)
                         else:  # coordinates+manhattan
-                            frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
-                            frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
+                            frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                            frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                             frame_feature = np.append(frame_feature,
                                                       self.feature_transform(frame_feature, frame_width, frame_height),
                                                       axis=0)
