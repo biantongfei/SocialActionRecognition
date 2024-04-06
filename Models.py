@@ -381,7 +381,6 @@ class GNN(torch.nn.Module):
                     x_t = self.GCN_keypoints(x=x_t, edge_index=new_edge_index, edge_attr=edge_attr_t).to(dtype).to(
                         device)
                     # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    print(self.input_size, self.keypoint_hidden_dim, x_time.shape, x_t.shape)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gcn_lstm':
                 on, _ = self.time_model(x_time)
@@ -395,9 +394,6 @@ class GNN(torch.nn.Module):
                 x = x.flatten(1)
             else:
                 x = self.GCN1_time(x_t.reshape(1, -1)[0], time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads).to(device)(x))
-                x = self.GCN2_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads).to(device)(x))
                 x = x.flatten(1)
         else:
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
