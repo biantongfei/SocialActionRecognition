@@ -92,7 +92,7 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
-def get_inputs_size(is_coco, body_part):
+def get_inputs_size(is_coco, body_part, gcn=False):
     input_size = 0
     if body_part[0]:
         input_size += coco_body_point_num if is_coco else halpe_body_point_num
@@ -100,7 +100,8 @@ def get_inputs_size(is_coco, body_part):
         input_size += head_point_num
     if body_part[2]:
         input_size += hands_point_num
-    input_size += len(get_l_pair(is_coco, body_part))
+    if not gcn:
+        input_size += len(get_l_pair(is_coco, body_part))
     return 2 * input_size
 
 

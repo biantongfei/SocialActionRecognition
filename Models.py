@@ -286,14 +286,13 @@ class GNN(torch.nn.Module):
         super(GNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
-        self.input_size = get_inputs_size(is_coco, body_part)
+        self.input_size = get_inputs_size(is_coco, body_part, True)
         self.framework = framework
         self.model = model
         self.max_length = max_length
         self.num_heads = 4
         self.keypoint_hidden_dim = 16
         self.pooling_rate = 0.8
-        self.time_hidden_dim = 256
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
