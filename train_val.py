@@ -220,7 +220,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, gru=model == 'gru')
         elif model == 'conv1d':
             net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
-        elif 'gnn' in model:
+        elif 'gcn' in model:
             net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length,
                       attention=True)
         net.to(device)

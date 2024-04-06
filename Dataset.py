@@ -224,8 +224,7 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gnn2+1d'] else int(
-                    x.shape[0]))
+                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gcn'] else int(x.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
