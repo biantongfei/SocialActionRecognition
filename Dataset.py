@@ -194,7 +194,7 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = 0, [], []
         index = 0
         for file in self.files:
-            if self.model in ['gnn_keypoint_lstm', 'gnn_keypoint_conv1d', 'gnn2+1d']:
+            if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn', 'stgcn']:
                 x, edge_index, edge_attr, label = self.get_graph_data_from_file(file)
                 if type(x) == int:
                     continue

@@ -346,10 +346,17 @@ class GNN(torch.nn.Module):
                 )
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
             else:
-                pass
-                self.GCN1_time = GATConv(self.keypoint_hidden_dim, self.keypoint_hidden_dim, heads=self.num_heads)
+                self.GCN1_time = GATConv(self.keypoint_hidden_dim * self.input_size / 2, self.keypoint_hidden_dim * 2,
+                                         heads=self.num_heads)
+                self.GCN1_time = GATConv(self.keypoint_hidden_dim * 2 * self.num_heads, self.keypoint_hidden_dim,
+                                         heads=1)
+                self.fc_input_size = self.keypoint_hidden_dim * max_length
         else:
-            pass
+            self.ST_GCN1 = GATConv(2, self.keypoint_hidden_dim, heads=self.num_heads)
+            self.ST_GCN2 = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim,
+                                   heads=self.num_heads)
+            self.ST_GCN3 = GATConv(self.keypoint_hidden_dim * self.num_heads, self.keypoint_hidden_dim, heads=1)
+            self.fc_input_size = self.keypoint_hidden_dim * (self.input_size / 2) * max_length
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
             nn.BatchNorm1d(64),
@@ -391,10 +398,9 @@ class GNN(torch.nn.Module):
         x, edge_index, edge_attr = data[0], data[1], data[2]
         time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                        dtype=torch.long).t().contiguous()
-        if self.model != 'gnn_time':
+        if self.model != 'st-gcn':
             x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size / 2 * self.keypoint_hidden_dim))).to(
-                dtype).to(
-                device)
+                dtype).to(device)
             # x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
@@ -427,20 +433,13 @@ class GNN(torch.nn.Module):
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
-                x = self.GCN1_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
+                x = self.GCN1_time(x_t.reshape(1, -1)[0], time_edge_index)
+                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads).to(device)(x))
                 x = self.GCN2_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
-                x = self.GCN3_time(x, time_edge_index)
-                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
+                x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads).to(device)(x))
+                x = x.flatten(1)
         else:
-            x = self.keypoints_fc(x)
-            x = self.GCN1_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
-            x = self.GCN2_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
-            x = self.GCN3_time(x, time_edge_index)
-            x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads)(x))
+            pass
         y = self.fc(x)
         y = self.fc_attention(y)
         if self.framework in ['intent', 'attitude', 'action']:
