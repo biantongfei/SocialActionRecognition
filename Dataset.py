@@ -342,7 +342,7 @@ class Dataset(Dataset):
     def __len__(self):
         if self.model in ['avg', 'perframe']:
             return self.features.shape[0]
-        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gnn' in self.model:
+        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gcn' in self.model:
             return len(self.features)
 
 
