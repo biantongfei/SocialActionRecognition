@@ -18,24 +18,20 @@ def rnn_collate_fn(data):
 
 
 class JPLDataLoader(DataLoader):
-    def __init__(self, model, dataset, batch_size, max_length, shuffle=False, empty_frame=False):
+    def __init__(self, model, dataset, batch_size, max_length, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=True)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
             self.collate_fn = self.conv1d_collate_fn
         self.max_length = max_length
-        self.empty_frame = empty_frame
 
     def conv1d_collate_fn(self, data):
-        padding = 'same' if self.empty_frame == 'same' else 'zero'
         input, int_label, att_label, act_label = None, [], [], []
         for index, d in enumerate(data):
             x = d[0]
             while x.shape[0] < self.max_length:
-                x = torch.cat(
-                    (x, torch.zeros((1, x.shape[1])) if padding == 'zero' else x[-1].reshape((1, x.shape[1]))),
-                    dim=0)
+                x = torch.cat((x[-1].reshape((1, x.shape[1]))), dim=0)
             input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
                 (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
             int_label.append(d[1][0])

@@ -183,19 +183,27 @@ def label_video(video_name, coco, fps):
             elif len(answer) == 2:
                 # yes for a new person
                 if answer[0] == 'y':
-                    # 1 for ori class, 2 for not interested, 3 for interested
+                    # 1 for ori class, 2 for interested, 3 for not interested
                     if int(answer[1]) == 1:
-                        # action_class = int(labels[video_name.split('-')[0]])
-                        action_class = 8
+                        ahsdkakldjla
+                        action_class = int(labels[video_name.split('-')[0]])
+                        intention_class = 0
+                        attitude_class = 0 if action_class in ['0,1,2,3'] else 1
                     elif int(answer[1]) == 2:
-                        action_class = 7
+                        intention_class = 1
+                        attitude_class = 2
+                        action_class = 6
                     elif int(answer[1]) == 3:
-                        action_class = 8
+                        intention_class = 2
+                        attitude_class = 2
+                        action_class = 6
                     else:
                         print('answer again')
                         continue
-                    new_json['persons'][now_id] = {'action_class': action_class, 'frames': persons[person_id]}
-                    print('action_class: %s, frames_num: %s' % (action_class, len(persons[person_id])))
+                    new_json['persons'][now_id] = {'intention_class': intention_class, 'attitude_class': attitude_class,
+                                                   'action_class': action_class, 'frames': persons[person_id]}
+                    print('intention_class: %s, attitude_class: %s, action_class: %s, frames_num: %s' % (
+                        intention_class, attitude_class, action_class, len(persons[person_id])))
                     now_id += 1
                     break
 

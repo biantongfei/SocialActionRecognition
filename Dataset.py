@@ -27,16 +27,11 @@ def get_data_path(augment_method, is_coco):
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    elif augment_method == 'mixed_same':
+    elif augment_method == 'mixed':
         if is_coco:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/same/coco_wholebody/'
+            data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
         else:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/same/halpe136/'
-    elif augment_method == 'mixed_large':
-        if is_coco:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/large/coco_wholebody/'
-        else:
-            data_path = '../JPL_Augmented_Posefeatures/mixed/large/halpe136/'
+            data_path = '../JPL_Augmented_Posefeatures/mixed/halpe136/'
     return data_path
 
 
@@ -97,17 +92,15 @@ def get_body_part(feature, is_coco, body_part):
     return np.array(new_features)
 
 
-def get_inputs_size(is_coco, body_part, data_format):
+def get_inputs_size(is_coco, body_part):
     input_size = 0
-    if data_format in ['coordinates', 'coordinates+manhattan']:
-        if body_part[0]:
-            input_size += coco_body_point_num if is_coco else halpe_body_point_num
-        if body_part[1]:
-            input_size += head_point_num
-        if body_part[2]:
-            input_size += hands_point_num
-    if data_format in ['manhattan', 'coordinates+manhattan']:
-        input_size += len(get_l_pair(is_coco, body_part))
+    if body_part[0]:
+        input_size += coco_body_point_num if is_coco else halpe_body_point_num
+    if body_part[1]:
+        input_size += head_point_num
+    if body_part[2]:
+        input_size += hands_point_num
+    input_size += len(get_l_pair(is_coco, body_part))
     return 2 * input_size
 
 
@@ -187,19 +180,16 @@ def get_l_pair(is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, augment_method, is_coco, body_part, data_format, model, sample_fps, video_len=99999,
-                 empty_frame=False):
+    def __init__(self, data_files, augment_method, is_coco, body_part, model, sample_fps, video_len=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
         self.augment_method = augment_method
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
-        self.data_format = data_format
         self.model = model
         self.sample_fps = sample_fps
         self.video_len = video_len
-        self.empty_frame = empty_frame  # how to deal with empty frames: 'zero' for zero padding; 'same' for last frame padding
 
         self.features, self.labels, self.frame_number_list = 0, [], []
         index = 0
@@ -256,13 +246,9 @@ class Dataset(Dataset):
                 break
             else:
                 frame = feature_json['frames'][index]
-                if self.empty_frame and frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (
+                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (
                         video_fps / self.sample_fps):
-                    if self.empty_frame == 'zero':
-                        features.append(np.zeros((get_inputs_size(is_coco=self.is_coco, body_part=self.body_part,
-                                                                  data_format=self.data_format))))
-                    elif self.empty_frame == 'same':
-                        features.append(features[-1])
+                    features.append(features[-1])
                 else:
                     index += 1
                     if frame['frame_id'] - first_id > int(video_fps * self.video_len):
@@ -270,17 +256,11 @@ class Dataset(Dataset):
                     elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                         frame_feature = np.array(frame['keypoints'])[:, :2]
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        if self.data_format == 'coordinates':
-                            frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                            frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                        elif self.data_format == 'manhattan':
-                            frame_feature = self.feature_transform(frame_feature, frame_width, frame_height)
-                        else:  # coordinates+manhattan
-                            frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                            frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                            frame_feature = np.append(frame_feature,
-                                                      self.feature_transform(frame_feature, frame_width, frame_height),
-                                                      axis=0)
+                        frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                        frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                        frame_feature = np.append(frame_feature,
+                                                  self.feature_transform(frame_feature, frame_width, frame_height),
+                                                  axis=0)
                         frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                         features.append(frame_feature)
         if len(features) == 0:

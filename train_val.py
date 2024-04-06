@@ -162,21 +162,16 @@ def filter_others_from_result(y_true, y_pred, task):
     return y_true, y_pred
 
 
-def train(model, body_part, data_format, framework, sample_fps, video_len=99999, ori_videos=False, empty_frame=False):
+def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
-    #               'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}, 'mixed_same+coco': {},
-    #               'mixed_same+halpe': {}}
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    # train_dict = {'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    # train_dict = {'mixed_same+coco': {}, 'mixed_same+halpe': {}, 'mixed_large+coco': {}, 'mixed_large+halpe': {}}
-    train_dict = {'mixed_large+coco': {}}
-    # train_dict = {'mixed_large+halpe': {}}
+    # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
+    train_dict = {'mixed+coco': {}}
+    # train_dict = {'mixed+halpe': {}}
     # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
     trainging_process = {}
@@ -210,28 +205,24 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
                                                    ori_videos=ori_videos)
         trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):], augment_method=augment_method,
-                           is_coco=is_coco, body_part=body_part, data_format=data_format, model=model,
-                           sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
+                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps,
+                           video_len=video_len)
         valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)], augment_method=augment_method,
-                         is_coco=is_coco, body_part=body_part, data_format=data_format, model=model,
-                         sample_fps=sample_fps, video_len=video_len, empty_frame=empty_frame)
+                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
         testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                          data_format=data_format, model=model, sample_fps=sample_fps, video_len=video_len,
-                          empty_frame=empty_frame)
+                          model=model, sample_fps=sample_fps, video_len=video_len)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
         print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
-        len(trainset), len(valset), len(testset)))
+            len(trainset), len(valset), len(testset)))
         if model in ['avg', 'perframe']:
-            net = DNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework)
+            net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
         elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
-                      bidirectional=True, gru=model == 'gru')
+            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, gru=model == 'gru')
         elif model == 'conv1d':
-            net = Cnn1D(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework,
-                        max_length=max_length)
+            net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
         elif 'gnn' in model:
-            net = GNN(is_coco=is_coco, body_part=body_part, data_format=data_format, framework=framework, model=model,
-                      max_length=max_length, attention=True)
+            net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length,
+                      attention=True)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
@@ -252,10 +243,9 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
                 else:
                     continue
                 train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
-                                             batch_size=batch_size, max_length=max_length, shuffle=True,
-                                             empty_frame=empty_frame)
+                                             batch_size=batch_size, max_length=max_length, shuffle=True)
                 val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
-                                           max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
+                                           max_length=max_length, batch_size=batch_size)
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
                 for data in train_loader:
@@ -385,7 +375,7 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
         print('Testing')
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                        max_length=max_length, batch_size=batch_size, empty_frame=empty_frame)
+                                        max_length=max_length, batch_size=batch_size)
             int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
             process_time = 0
             for data in test_loader:
@@ -476,18 +466,15 @@ def train(model, body_part, data_format, framework, sample_fps, video_len=99999,
 
 
 if __name__ == '__main__':
-    # model = 'avg'
+    model = 'avg'
     # model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
-    model = 'gnn_keypoint_conv1d'
-    # model = 'gnn_keypoint_lstm'
-    # model = 'gnn_time'
-    # model = 'gnn2+1d'
+    # model = 'gcn_conv1d'
+    # model = 'gcn_lstm'
+    # model = 'gcn_gcn'
+    # model = 'stgcn'
     body_part = [True, True, True]
-    data_format = 'coordinates'
-    # data_format = 'manhattan'
-    # data_format = 'coordinates+manhattan'
 
     # framework = 'intent'
     # framework = 'attitude'
@@ -498,24 +485,23 @@ if __name__ == '__main__':
     ori_video = False
     sample_fps = 30
     video_len = 2
-    empty_frame = 'same'
     performance_model = []
     i = 0
     while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
-            p_m = train(model=model, body_part=body_part, data_format=data_format, framework=framework,
-                        sample_fps=sample_fps, ori_videos=ori_video, video_len=video_len, empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video, video_len=video_len)
         else:
-            p_m = train(model=model, body_part=body_part, data_format=data_format, framework=framework,
-                        sample_fps=sample_fps, ori_videos=ori_video, empty_frame=empty_frame)
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
     draw_save(model, performance_model, framework)
-    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
-        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len), str(empty_frame))
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
+    model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
     # send_email(result_str)
