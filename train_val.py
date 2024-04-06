@@ -221,8 +221,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         elif model == 'conv1d':
             net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
         elif 'gcn' in model:
-            net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length,
-                      attention=True)
+            net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
