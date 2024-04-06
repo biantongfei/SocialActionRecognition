@@ -298,7 +298,7 @@ class GNN(torch.nn.Module):
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
-            # self.pool1 = SAGPooling(self.keypoint_hidden_dim * self.num_heads, ratio=self.pooling_rate)
+            # self.pool = SAGPooling(self.keypoint_hidden_dim * self.num_heads, ratio=self.pooling_rate)
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(int(self.input_size / 2 * self.keypoint_hidden_dim), hidden_size=256,
                                           num_layers=3,
@@ -381,7 +381,8 @@ class GNN(torch.nn.Module):
                     x_t, new_edge_index, edge_attr_t = x[i][ii], edge_index[i][ii], edge_attr[i][ii]
                     x_t = self.GCN_keypoints(x=x_t, edge_index=new_edge_index, edge_attr=edge_attr_t).to(dtype).to(
                         device)
-                    # x_t, new_edge_index, _, _, _, _ = self.pool3(x_t, new_edge_index)
+                    # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
+                    print(x_time.shape, x_t.shape)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model == 'gcn_lstm':
                 on, _ = self.time_model(x_time)
@@ -400,7 +401,8 @@ class GNN(torch.nn.Module):
                 x = nn.ReLU()(nn.BatchNorm1d(self.keypoint_hidden_dim * self.num_heads).to(device)(x))
                 x = x.flatten(1)
         else:
-            pass
+            x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            x = x.flatten(1)
         y = self.fc(x)
         if self.framework in ['intent', 'attitude', 'action']:
             if self.framework == 'intent':
