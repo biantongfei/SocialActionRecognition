@@ -194,7 +194,9 @@ class Dataset(Dataset):
         self.features, self.labels, self.frame_number_list = 0, [], []
         index = 0
         for file in self.files:
-            if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn', 'stgcn']:
+            if self.model == 'stgcn':
+                pass
+            elif self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
                 x, edge_index, edge_attr, label = self.get_graph_data_from_file(file)
                 if type(x) == int:
                     continue
@@ -222,7 +224,7 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gnn_keypoint_conv1d', 'gnn_keypoint_lstm', 'gnn2+1d'] else int(
+                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gnn2+1d'] else int(
                     x.shape[0]))
         self.max_length = max(self.frame_number_list)
 
@@ -327,6 +329,9 @@ class Dataset(Dataset):
         if len(x_list) == 0:
             return 0
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
+
+    def get_stgraph_data_from_file(self, file):
+        pass
 
     def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)
