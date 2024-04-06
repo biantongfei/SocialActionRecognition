@@ -58,12 +58,12 @@ avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 32
 conv1d_batch_size = 32
-gnn_batch_size = 32
+gcn_batch_size = 32
 avg_train_epoch = 1
 perframe_train_epoch = 1
 rnn_train_epoch = 1
 conv1d_train_epoch = 1
-gnn_train_epoch = 1
+gcn_train_epoch = 1
 valset_rate = 0.2
 learning_rate = 1e-3
 if torch.cuda.is_available():
@@ -194,9 +194,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
         epoch_limit = conv1d_train_epoch
-    elif 'gnn' in model:
-        batch_size = gnn_batch_size
-        epoch_limit = gnn_train_epoch
+    elif 'gcn' in model:
+        batch_size = gcn_batch_size
+        epoch_limit = gcn_train_epoch
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -255,7 +255,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         (inputs, (int_labels, att_labels, act_labels)), data_length = data
                         inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
-                    elif 'gnn' in model:
+                    elif 'gcn' in model:
                         x, (int_labels, att_labels, act_labels) = data
                         inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
                             2].to(dtype).to(device))
@@ -294,7 +294,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         (inputs, (int_labels, att_labels, act_labels)), data_length = data
                         inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
-                    elif 'gnn' in model:
+                    elif 'gcn' in model:
                         x, (int_labels, att_labels, act_labels) = data
                         inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
                             2].to(dtype).to(device))
@@ -385,7 +385,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     (inputs, (int_labels, att_labels, act_labels)), data_length = data
                     inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                     inputs = inputs.to(dtype).to(device)
-                elif 'gnn' in model:
+                elif 'gcn' in model:
                     x, (int_labels, att_labels, act_labels) = data
                     inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
                         2].to(dtype).to(device))

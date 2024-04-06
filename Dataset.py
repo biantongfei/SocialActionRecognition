@@ -312,8 +312,8 @@ class Dataset(Dataset):
                     elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                         frame_feature = np.array(frame['keypoints'])[:, :2]
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
-                        frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
+                        frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                        frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                         x = torch.tensor(frame_feature)
                         edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height))
                         x_list.append(x)
@@ -329,54 +329,67 @@ class Dataset(Dataset):
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
 
     def get_stgraph_data_from_file(self, file):
-        pass
-        # edge_index = torch.tensor(np.array(get_l_pair(self.is_coco, self.body_part)), dtype=torch.long).t().contiguous()
-        #
-        # with open(self.data_path + file, 'r') as f:
-        #     feature_json = json.load(f)
-        #     f.close()
-        # frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-        # video_frame_num = len(feature_json['frames'])
-        # first_id = -1
-        # for frame in feature_json['frames']:
-        #     if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
-        #         first_id = frame['frame_id']
-        #         break
-        # if first_id == -1:
-        #     return 0, 0
-        # index = 0
-        # while len(x_list) < int(self.video_len * self.sample_fps):
-        #     if index == video_frame_num:
-        #         break
-        #     else:
-        #         frame = feature_json['frames'][index]
-        #         if frame['frame_id'] > first_id and frame['frame_id'] > len(x_list) * (video_fps / self.sample_fps):
-        #             x_list.append(x_list[-1])
-        #             edge_index_list.append(edge_index_list[-1])
-        #             edge_attr_list.append(edge_attr_list[-1])
-        #         else:
-        #             index += 1
-        #             if frame['frame_id'] - first_id > int(video_fps * self.video_len):
-        #                 break
-        #             elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
-        #                 frame_feature = np.array(frame['keypoints'])[:, :2]
-        #                 frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-        #                 frame_feature[:, 0] = (frame_feature[:, 0] / frame_width) - 0.5
-        #                 frame_feature[:, 1] = (frame_feature[:, 1] / frame_height) - 0.5
-        #                 x = torch.tensor(frame_feature)
-        #                 edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height))
-        #                 x_list.append(x)
-        #                 edge_index_list.append(edge_index)
-        #                 edge_attr_list.append(edge_attr)
-        # while len(x_list) < self.sample_fps * self.video_len:
-        #     x_list.append(x_list[-1])
-        #     edge_index_list.append(edge_index_list[-1])
-        #     edge_attr_list.append(edge_attr_list[-1])
-        # label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
-        # if len(x_list) == 0:
-        #     return 0
-        # return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
+        # pass
+        input_size = get_inputs_size(self.is_coco, self.body_part)
+        edge_index = torch.tensor(np.array(self.max_length * get_l_pair(self.is_coco, self.body_part)),
+                                  dtype=torch.long).t().contiguous()
+        x_list, edge_index_list, edge_attr_list = [], [], []
 
+        with open(self.data_path + file, 'r') as f:
+            feature_json = json.load(f)
+            f.close()
+        frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+        video_frame_num = len(feature_json['frames'])
+        first_id = -1
+        for frame in feature_json['frames']:
+            if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+                first_id = frame['frame_id']
+                break
+        if first_id == -1:
+            return 0, 0
+        index = 0
+        frame_num = 0
+        while frame_num < int(self.video_len * self.sample_fps):
+            if index == video_frame_num:
+                break
+            else:
+                frame = feature_json['frames'][index]
+                if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (video_fps / self.sample_fps):
+                    x_list += x_list[-int(input_size / 2):]
+                    edge_index_list += [[ii + (frame_num + 1) * input_size / 2 for ii in i] for i in
+                                        edge_index_list[-input_size:]]
+                    edge_attr_list += edge_attr_list[-int(input_size / 2):]
+                    frame_num += 1
+                else:
+                    index += 1
+                    if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                        break
+                    elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                        frame_feature = np.array(frame['keypoints'])[:, :2]
+                        frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
+                        frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                        frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                        x = torch.tensor(frame_feature)
+                        edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height))
+                        x_list.append(x)
+                        edge_index_list.append(edge_index)
+                        edge_attr_list.append(edge_attr)
+                        frame_num += 1
+        while frame_num < self.sample_fps * self.video_len:
+            x_list += x_list[-int(input_size / 2):]
+            edge_index_list += [[ii + (frame_num + 1) * input_size / 2 for ii in i] for i in
+                                edge_index_list[-input_size:]]
+            edge_attr_list += edge_attr_list[-int(input_size / 2):]
+            frame_num += 1
+        for index in range(len(x_list)):
+            if index + input_size / 2 < len(x_list) - 1:
+                edge_index_list.append([index, int(index + input_size / 2)])
+            else:
+                break
+        label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
+        if len(x_list) == 0:
+            return 0
+        return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
 
     def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)
