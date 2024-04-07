@@ -30,7 +30,7 @@ for model in ['gcn_conv1d', 'gcn_lstm']:
         performance_model.append(p_m)
         i += 1
     draw_save(model, performance_model, framework)
-    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s, empty_frame: %s' % (
-        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len), str(empty_frame))
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
+        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
     send_email(result_str)
