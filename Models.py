@@ -377,6 +377,7 @@ class GNN(torch.nn.Module):
             x_time = torch.zeros((x.shape[0], x.shape[1], int(self.input_size * self.keypoint_hidden_dim / 2))).to(
                 dtype).to(device)
             # x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
+            print(x.shape, 'x')
             for i in range(x.shape[0]):
                 for ii in range(x.shape[1]):
                     x_t, new_edge_index, edge_attr_t = x[i][ii], edge_index[i][ii], edge_attr[i][ii]
@@ -395,7 +396,8 @@ class GNN(torch.nn.Module):
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
-                x = self.GCN1_time(x_t.reshape(1, -1)[0], time_edge_index)
+                print(x_time.shape, 'x_time')
+                x = self.GCN_time(x_time, time_edge_index)
                 x = x.flatten(1)
         else:
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
