@@ -322,7 +322,8 @@ class GNN(torch.nn.Module):
                 )
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
             else:
-                self.GCN_time = GCN(in_channels=self.keypoint_hidden_dim, hidden_channels=self.keypoint_hidden_dim,
+                self.GCN_time = GCN(in_channels=self.keypoint_hidden_dim * self.input_size / 2,
+                                    hidden_channels=self.keypoint_hidden_dim,
                                     num_layers=2)
                 # self.GCN_time = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=2)
                 # self.GCN_time = GIN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=2)
