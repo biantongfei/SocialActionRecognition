@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.nn import GCN, GAT, GIN
+from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN
 
 from Dataset import get_inputs_size
 
@@ -297,6 +297,7 @@ class GNN(torch.nn.Module):
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
+            # self.GCN_keypoints = EdgeCNN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.pool = SAGPooling(self.keypoint_hidden_dim * self.num_heads, ratio=self.pooling_rate)
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(int(self.input_size / 2 * self.keypoint_hidden_dim), hidden_size=256,
@@ -330,6 +331,7 @@ class GNN(torch.nn.Module):
             self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GIN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = EdgeCNN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             self.fc_input_size = self.keypoint_hidden_dim * (self.input_size / 2) * max_length
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
