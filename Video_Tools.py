@@ -7,19 +7,24 @@ import xlrd
 
 
 def read_jpl_labels():
-    xlsx_path = "jpl_interaction_labels.xls"
-
-    # Open the Workbook
-    workbook = xlrd.open_workbook(xlsx_path)
+    xls_path = '../JPL_Augmented_Posefeatures/robot_interaction_labels.xls'
+    workbook = xlrd.open_workbook(xls_path)
 
     # Open the worksheet
     worksheet = workbook.sheet_by_index(0)
     labels = {}
+    count = 0
     for row in worksheet:
-        if row[0].value == "file_name":
-            continue
-        else:
-            labels[row[0].value] = row[2].value
+        i = 0
+        while i < 5 and row[i * 3 + 2].ctype == 2:
+            if '%stest%d' % (row[0].value, int(row[1].value)) not in labels.keys():
+                labels['%stest%d' % (row[0].value, int(row[1].value))] = [
+                    [int(row[2].value), int(row[3].value), int(row[4].value)]]
+            else:
+                labels['%stest%d' % (row[0].value, int(row[1].value))].append(
+                    [int(row[i * 3 + 2].value), int(row[i * 3 + 3].value), int(row[i * 3 + 4].value)])
+            i += 1
+            count += 1
     return labels
 
 
@@ -185,7 +190,6 @@ def label_video(video_name, coco, fps):
                 if answer[0] == 'y':
                     # 1 for ori class, 2 for interested, 3 for not interested
                     if int(answer[1]) == 1:
-                        ahsdkakldjla
                         action_class = int(labels[video_name.split('-')[0]])
                         intention_class = 0
                         attitude_class = 0 if action_class in ['0,1,2,3'] else 1
@@ -297,6 +301,37 @@ def refactor_jsons():
             continue
 
 
+def edit_videos():
+    video_path = '../JPL_Augmented_Posefeatures/more_video_ori/'
+    out_video_path = '../JPL_Augmented_Posefeatures/more_video_ori2/'
+    labels = read_jpl_labels()
+    print(labels)
+    videos = os.listdir(video_path)
+    for video in videos:
+        for index, label in enumerate(labels[video.split('.')[0]]):
+            if label[0] in [6, 8]:
+                print(video, index, label[0])
+                cap = cv2.VideoCapture(video_path + video)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+                frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                out = cv2.VideoWriter('%s_%d.avi' % (out_video_path + video.split('.')[0], index), fourcc, fps,
+                                      (frame_width, frame_height))
+                current_frame = 0
+                while cap.isOpened():
+                    ret, frame = cap.read()
+                    if ret:
+                        if label[1] <= current_frame <= label[2]:
+                            out.write(frame)
+                        current_frame += 1
+                    else:
+                        break
+                out.release()
+                cap.release()
+                cv2.destroyAllWindows()
+
+
 if __name__ == "__main__":
     # for i in range(178, 224):
     #     print(i)
@@ -304,8 +339,8 @@ if __name__ == "__main__":
     #     del_json_content('11_5', 2, i, False)
     # del_json_content('12_2', 1, 245, False)
     # select_user_from_jpl()
-    # video_augmentation('../JPL_Augmented_Posefeatures/more_video/', '../JPL_Augmented_Posefeatures/more_video_augment/')
-    label_person_id('c5-resize95-1.avi', True, 1)
+    video_augmentation('../JPL_Augmented_Posefeatures/more_video_ori2/', '../JPL_Augmented_Posefeatures/more_video/')
+    # label_person_id('c5-resize95-1.avi', True, 1)
     # refactor_jsons()
 
     # video_files = os.listdir('jpl_augmented/videos/')
@@ -329,3 +364,4 @@ if __name__ == "__main__":
     #         flag = True
     #     if flag:
     #         break
+    # edit_videos()
