@@ -294,8 +294,8 @@ class GNN(torch.nn.Module):
         self.keypoint_hidden_dim = 16
         self.pooling_rate = 0.8
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
-            self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
+            # self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = EdgeCNN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.pool = SAGPooling(self.keypoint_hidden_dim * self.num_heads, ratio=self.pooling_rate)
@@ -322,15 +322,19 @@ class GNN(torch.nn.Module):
                 )
                 self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
             else:
-                self.GCN_time = GCN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                # self.GCN_time = GCN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                #                     hidden_channels=self.keypoint_hidden_dim,
+                #                     num_layers=2)
+                self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
                                     hidden_channels=self.keypoint_hidden_dim,
                                     num_layers=2)
-                # self.GCN_time = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=2)
-                # self.GCN_time = GIN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=2)
+                # self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                #                     hidden_channels=self.keypoint_hidden_dim,
+                #                     num_layers=2)
                 self.fc_input_size = self.keypoint_hidden_dim * max_length
         else:
-            self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.ST_GCN1 = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GIN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = EdgeCNN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             self.fc_input_size = self.keypoint_hidden_dim * (self.input_size / 2) * max_length
