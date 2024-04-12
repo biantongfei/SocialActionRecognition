@@ -6,8 +6,8 @@ import numpy as np
 
 def summarize_features(feature_path):
     intention_class_list = ['interacting', 'interested', 'not_interested']
-    attitude_class_list = ['positive', 'negative', 'others']
-    action_class_list = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'others']
+    attitude_class_list = ['positive', 'negative', 'no_interacting']
+    action_class_list = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point', 'gaze', 'leave', 'no_response']
     intention_dict = {}
     attitude_dict = {}
     action_dict = {}
@@ -28,8 +28,8 @@ def summarize_features(feature_path):
             f.close()
         # if feature_json['action_class']==0:
         #     print(feature)
-        intention_dict[feature_json['attitude_class']]['count'] += 1
-        intention_dict[feature_json['attitude_class']]['total_frames'] += feature_json['detected_frames_number']
+        intention_dict[feature_json['intention_class']]['count'] += 1
+        intention_dict[feature_json['intention_class']]['total_frames'] += feature_json['detected_frames_number']
         attitude_dict[feature_json['attitude_class']]['count'] += 1
         attitude_dict[feature_json['attitude_class']]['total_frames'] += feature_json['detected_frames_number']
         action_dict[feature_json['action_class']]['count'] += 1
@@ -39,18 +39,21 @@ def summarize_features(feature_path):
         print('intention: %s: {count:%d, avg_frames:%s}' % (
             intention_class_list[c], intention_dict[c]['count'], '{:.2f}'.format(
                 intention_dict[c]['total_frames'] / intention_dict[c]['count'])))
+        # print('intention: %s: {count:%d}' % (intention_class_list[c], intention_dict[c]['count']))
     for c in attitude_dict.keys():
         print('attitude: %s: {count:%d, avg_frames:%s}' % (
             attitude_class_list[c], attitude_dict[c]['count'], '{:.2f}'.format(
                 attitude_dict[c]['total_frames'] / attitude_dict[c]['count'])))
+        # print('attitude: %s: {count:%d}' % (attitude_class_list[c], attitude_dict[c]['count']))
     for c in action_dict.keys():
         print('action: %s: {count:%d, avg_frames:%s}' % (action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
             action_dict[c]['total_frames'] / action_dict[c]['count'])))
+        # print('action: %s: {count:%d}' % (action_class_list[c], action_dict[c]['count']))
 
 
 def refactor_jsons():
-    video_path = '../JPL_Augmented_Posefeatures/more_video_augment/'
-    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
+    video_path = '../JPL_Augmented_Posefeatures/more_video/'
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/coco_wholebody/'
     jsons = os.listdir(json_path)
     jsons.sort()
     for file in jsons:
@@ -67,7 +70,8 @@ def refactor_jsons():
             if len(ori_json['persons'][person_id]['frames']) < 10 and len(
                     ori_json['persons'][person_id]['frames']) < frames_number / 10:
                 continue
-            new_json = {'video_name': video_name, 'frame_size': frame_size, 'frames_number': frames_number,
+            new_json = {'video_name': video_name, 'frame_size': frame_size, 'video_frames_number': frames_number,
+                        'detected_frames_number': len(ori_json['persons'][person_id]['frames']),
                         'person_id': int(person_id),
                         'intention_class': ori_json['persons'][person_id]['intention_class'],
                         'attitude_class': ori_json['persons'][person_id]['attitude_class'],
@@ -86,7 +90,7 @@ def refactor_jsons():
                 json.dump(new_json, outfile)
         os.system('rm -rf %s' % (json_path + file))
 
-    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/halpe136/'
     jsons = os.listdir(json_path)
     jsons.sort()
     for file in jsons:
@@ -105,7 +109,8 @@ def refactor_jsons():
                 print(video_name, person_id, len(ori_json['persons'][person_id]['frames']),
                       ori_json['persons'][person_id]['action_class'])
                 continue
-            new_json = {'video_name': video_name, 'frame_size': frame_size, 'frames_number': frames_number,
+            new_json = {'video_name': video_name, 'frame_size': frame_size, 'video_frames_number': frames_number,
+                        'detected_frames_number': len(ori_json['persons'][person_id]['frames']),
                         'person_id': int(person_id),
                         'intention_class': ori_json['persons'][person_id]['intention_class'],
                         'attitude_class': ori_json['persons'][person_id]['attitude_class'],
@@ -128,7 +133,9 @@ def refactor_jsons():
 def flip_feature(ori_json):
     width, height = ori_json['frame_size'][0], ori_json['frame_size'][1]
     new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
+                'video_frames_number': ori_json['video_frames_number'],
+                'detected_frames_number': ori_json['detected_frames_number'], 'person_id': ori_json['person_id'],
+                'intention_class': ori_json['intention_class'], 'attitude_class': ori_json['attitude_class'],
                 'action_class': ori_json['action_class'], 'frames': []}
     for frame in ori_json['frames']:
         keypoints = []
@@ -145,8 +152,8 @@ def gaussion_augment():
     sigma_str = ['10', '05', '01']
     augment_times = 3
 
-    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
-    out_path = '../JPL_Augmented_Posefeatures/more_video_features/gaussian/coco_wholebody/'
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/more_feature/gaussian/coco_wholebody/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
@@ -162,19 +169,22 @@ def gaussion_augment():
             for sigma_index, sigma in enumerate(sigma_list):
                 for i in range(augment_times):
                     new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                                'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
-                                'action_class': ori_json['action_class'], 'frames': []}
+                                'video_frames_number': ori_json['video_frames_number'],
+                                'detected_frames_number': ori_json['detected_frames_number'],
+                                'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
+                                'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
+                                'frames': []}
                     for frame in ori_json['frames']:
                         box_size = frame['box'][2:]
-                        keypoints = frame['keypoints']
-                        x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
-                        y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
-                        score_gaussion_noise = np.zeros((len(keypoints), 1))
-                        gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
-                        keypoints = (np.array(keypoints) + gaussion_noise).tolist()
-                        new_json['frames'].append(
-                            {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
-                             'box': frame['box']})
+                    keypoints = frame['keypoints']
+                    x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
+                    y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
+                    score_gaussion_noise = np.zeros((len(keypoints), 1))
+                    gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                    keypoints = (np.array(keypoints) + gaussion_noise).tolist()
+                    new_json['frames'].append(
+                        {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
+                         'box': frame['box']})
                     with open(out_path + '%s-noise%s-%d_p%s' % (
                             file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
@@ -185,12 +195,12 @@ def gaussion_augment():
                               "w") as outfile:
                         json.dump(new_json, outfile)
 
-    json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
-    out_path = '../JPL_Augmented_Posefeatures/more_video_features/gaussian/halpe136/'
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/halpe136/'
+    out_path = '../JPL_Augmented_Posefeatures/more_feature/gaussian/halpe136/'
     files = os.listdir(json_path)
     files.sort()
     for file in files:
-        if '-ori_' in file:
+        if'-ori_' in file:
             print(file, 'halpe')
             with open(json_path + file, "r") as f:
                 ori_json = json.load(f)
@@ -202,19 +212,22 @@ def gaussion_augment():
             for sigma_index, sigma in enumerate(sigma_list):
                 for i in range(augment_times):
                     new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                                'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
-                                'action_class': ori_json['action_class'], 'frames': []}
+                                'video_frames_number': ori_json['video_frames_number'],
+                                'detected_frames_number': ori_json['detected_frames_number'],
+                                'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
+                                'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
+                                'frames': []}
                     for frame in ori_json['frames']:
                         box_size = frame['box'][2:]
-                        keypoints = frame['keypoints']
-                        x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
-                        y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
-                        score_gaussion_noise = np.zeros((len(keypoints), 1))
-                        gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
-                        keypoints = (np.array(keypoints) + gaussion_noise).tolist()
-                        new_json['frames'].append(
-                            {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
-                             'box': frame['box']})
+                    keypoints = frame['keypoints']
+                    x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
+                    y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
+                    score_gaussion_noise = np.zeros((len(keypoints), 1))
+                    gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                    keypoints = (np.array(keypoints) + gaussion_noise).tolist()
+                    new_json['frames'].append(
+                        {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
+                         'box': frame['box']})
                     with open(out_path + '%s-noise%s-%d_p%s' % (
                             file.split('-')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
                               "w") as outfile:
@@ -231,8 +244,8 @@ def mixed_augment():
     sigma_str = ['10', '05']
     augment_times = 2
 
-    crop_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
-    out_path = '../JPL_Augmented_Posefeatures/more_video_features/mixed/coco_wholebody/'
+    crop_path = '../JPL_Augmented_Posefeatures/more_feature/crop/coco_wholebody/'
+    out_path = '../JPL_Augmented_Posefeatures/more_feature/mixed/coco_wholebody/'
     files = os.listdir(crop_path)
     files.sort()
     for file in files:
@@ -248,8 +261,48 @@ def mixed_augment():
         for sigma_index, sigma in enumerate(sigma_list):
             for i in range(augment_times):
                 new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                            'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
-                            'intention_class': ori_json['intention_class'],
+                                'video_frames_number': ori_json['video_frames_number'],
+                                'detected_frames_number': ori_json['detected_frames_number'],
+                                'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
+                                'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
+                                'frames': []}
+                for frame in ori_json['frames']:
+                    box_size = frame['box'][2:]
+                    keypoints = frame['keypoints']
+                    x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
+                    y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
+                    score_gaussion_noise = np.zeros((len(keypoints), 1))
+                    gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                    keypoints = (np.array(keypoints) + gaussion_noise).tolist()
+                    new_json['frames'].append(
+                        {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
+                         'box': frame['box']})
+                with open(out_path + '%s-noise%s-%d_p%s' % (
+                        file.split('_p')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
+                          "w") as outfile:
+                    json.dump(new_json, outfile)
+                    outfile.close()
+
+    crop_path = '../JPL_Augmented_Posefeatures/more_feature/crop/halpe136/'
+    out_path = '../JPL_Augmented_Posefeatures/more_feature/mixed/halpe136/'
+    files = os.listdir(crop_path)
+    files.sort()
+    for file in files:
+        if 'json' not in file:
+            continue
+        print(file, 'halpe')
+        with open(crop_path + file, "r") as f:
+            ori_json = json.load(f)
+            f.close()
+        with open(out_path + file, "w") as outfile:
+            json.dump(ori_json, outfile)
+            outfile.close()
+        for sigma_index, sigma in enumerate(sigma_list):
+            for i in range(augment_times):
+                new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
+                            'video_frames_number': ori_json['video_frames_number'],
+                            'detected_frames_number': ori_json['detected_frames_number'],
+                            'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
                             'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
                             'frames': []}
                 for frame in ori_json['frames']:
@@ -269,91 +322,52 @@ def mixed_augment():
                     json.dump(new_json, outfile)
                     outfile.close()
 
-        crop_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
-        out_path = '../JPL_Augmented_Posefeatures/more_video_features/mixed/halpe136/'
-        files = os.listdir(crop_path)
-        files.sort()
-        for file in files:
-            if 'json' not in file:
-                continue
-            print(file, 'halpe')
-            with open(crop_path + file, "r") as f:
-                ori_json = json.load(f)
-                f.close()
-            with open(out_path + file, "w") as outfile:
-                json.dump(ori_json, outfile)
-                outfile.close()
-            for sigma_index, sigma in enumerate(sigma_list):
-                for i in range(augment_times):
-                    new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                                'frames_number': ori_json['frames_number'], 'person_id': ori_json['person_id'],
-                                'intention_class': ori_json['intention_class'],
-                                'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
-                                'frames': []}
-                    for frame in ori_json['frames']:
-                        box_size = frame['box'][2:]
-                        keypoints = frame['keypoints']
-                        x_gaussion_noise = np.random.normal(0, box_size[0] * sigma, size=(len(keypoints), 1))
-                        y_gaussion_noise = np.random.normal(0, box_size[1] * sigma, size=(len(keypoints), 1))
-                        score_gaussion_noise = np.zeros((len(keypoints), 1))
-                        gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
-                        keypoints = (np.array(keypoints) + gaussion_noise).tolist()
-                        new_json['frames'].append(
-                            {'frame_id': frame['frame_id'], 'keypoints': keypoints, 'score': frame['score'],
-                             'box': frame['box']})
-                    with open(out_path + '%s-noise%s-%d_p%s' % (
-                            file.split('_p')[0], sigma_str[sigma_index], i, file.split('_p')[-1]),
-                              "w") as outfile:
-                        json.dump(new_json, outfile)
-                        outfile.close()
-
 
 def add_attitude_class():
-    augment_method = ['crop', 'gaussian', 'mixed']
-    format = ['coco_wholebody', 'halpe136']
-    for a in augment_method:
-        for fm in format:
-            json_path = '../JPL_Augmented_Posefeatures/%s/%s/' % (a, fm)
-            files = os.listdir(json_path)
-            for file in files:
-                if 'json' not in file:
-                    continue
-                print(file, a, fm)
-                with open(json_path + file) as f:
-                    old_json = json.load(f)
-                    f.close()
-                action_class = old_json['action_class']
-                if action_class in [0, 1, 2, 3]:
-                    attitude_class = 0
-                    intention_class = 0
-                elif action_class in [4, 8]:
-                    action_class = 6
-                    attitude_class = 2
-                    intention_class = 1
-                elif action_class in [5, 6]:
-                    action_class = action_class - 1
-                    attitude_class = 1
-                    intention_class = 0
-                else:
-                    action_class = 6
-                    attitude_class = 2
-                    intention_class = 2
-                new_json = {'video_name': old_json['video_name'], 'frame_size': old_json['frame_size'],
-                            'video_frames_number': old_json['frames_number'],
-                            'detected_frames_number': len(old_json['frames']), 'person_id': old_json['person_id'],
-                            'intention_class': intention_class, 'attitude_class': attitude_class,
-                            'action_class': action_class, 'frames': old_json['frames']}
-                with open(json_path + file, 'w') as f:
-                    json.dump(new_json, f)
-                    f.close()
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/coco_wholebody/'
+    files = os.listdir(json_path)
+    for file in files:
+        if 'json' not in file:
+            continue
+        with open(json_path + file, "r") as f:
+            old_json = json.load(f)
+            f.close()
+        if old_json['action_class'] in [4, 5]:
+            new_json = {'video_name': old_json['video_name'], 'frame_size': old_json['frame_size'],
+                        'video_frames_number': old_json['video_frames_number'],
+                        'detected_frames_number': old_json['detected_frames_number'],
+                        'person_id': old_json['person_id'], 'intention_class': 0,
+                        'attitude_class': 1, 'action_class': old_json['action_class'],
+                        'frames': old_json['frames']}
+            with open(json_path + file, 'w') as f:
+                json.dump(new_json, f)
+                f.close()
+    json_path = '../JPL_Augmented_Posefeatures/more_feature/crop/halpe136/'
+    files = os.listdir(json_path)
+    for file in files:
+        if 'json' not in file:
+            continue
+        with open(json_path + file, "r") as f:
+            old_json = json.load(f)
+            f.close()
+        if old_json['action_class'] in [4, 5]:
+            new_json = {'video_name': old_json['video_name'], 'frame_size': old_json['frame_size'],
+                        'video_frames_number': old_json['video_frames_number'],
+                        'detected_frames_number': old_json['detected_frames_number'],
+                        'person_id': old_json['person_id'], 'intention_class': 0,
+                        'attitude_class': 1, 'action_class': old_json['action_class'],
+                        'frames': old_json['frames']}
+            with open(json_path + file, 'w') as f:
+                json.dump(new_json, f)
+                f.close()
 
 
 if __name__ == '__main__':
+    # add_attitude_class()
     # refactor_jsons()
-    feature_path = '../JPL_Augmented_Posefeatures/crop/halpe136/'
-    summarize_features(feature_path)
+    # feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
+    # summarize_features(feature_path)
     # gaussion_augment()
-    # adjust_box()
     # files = os.listdir(feature_path)
     # files.sort()
     # pre_video = ''
@@ -364,5 +378,5 @@ if __name__ == '__main__':
     #         if feature_json['action_class'] == 0:
     #             print(file)
     #     pre_video = file.split('p')[0]
-    # mixed_augment()
+    mixed_augment()
     # add_attitude_class()

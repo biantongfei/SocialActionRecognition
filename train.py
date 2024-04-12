@@ -3,7 +3,7 @@ from train_val import train, draw_save, send_email
 # model = 'gnn_keypoint_conv1d'
 body_part = [True, True, True]
 
-# framework = 'intent'
+# framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
 framework = 'parallel'

@@ -64,7 +64,6 @@ perframe_train_epoch = 1
 rnn_train_epoch = 1
 conv1d_train_epoch = 1
 gcn_train_epoch = 1
-valset_rate = 0.2
 learning_rate = 1e-3
 if torch.cuda.is_available():
     print('Using CUDA for training')
@@ -76,13 +75,14 @@ else:
     print('Using CPU for training')
     device = torch.device('cpu')
 dtype = torch.float
-intent_class = ['interacting', 'interested', 'uninterested']
-attitude_classes = ['positive', 'negative', 'others']
-action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'point-converse', 'punch', 'throw', 'uninterested', 'interested']
+intention_class = ['interacting', 'interested', 'not_interested']
+attitude_classes = ['positive', 'negative', 'no_interacting']
+action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point-converse', 'gaze', 'leave',
+                  'no_response']
 
 
 def draw_save(model, performance_model, framework):
-    tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
+    tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     with open('plots/%s_performance.csv' % model, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         int_y_true = {}
@@ -95,15 +95,15 @@ def draw_save(model, performance_model, framework):
             data = [index + 1]
             keys = p_m.keys()
             for key in p_m.keys():
-                if 'intent' in tasks:
-                    data.append(p_m[key]['intent_accuracy'])
-                    data.append(p_m[key]['intent_f1'])
+                if 'intention' in tasks:
+                    data.append(p_m[key]['intention_accuracy'])
+                    data.append(p_m[key]['intention_f1'])
                     if key in int_y_true.keys():
-                        int_y_true[key] = torch.cat((int_y_true[key], p_m[key]['intent_y_true']), dim=0)
-                        int_y_pred[key] = torch.cat((int_y_pred[key], p_m[key]['intent_y_pred']), dim=0)
+                        int_y_true[key] = torch.cat((int_y_true[key], p_m[key]['intention_y_true']), dim=0)
+                        int_y_pred[key] = torch.cat((int_y_pred[key], p_m[key]['intention_y_pred']), dim=0)
                     else:
-                        int_y_true[key] = p_m[key]['intent_y_true']
-                        int_y_pred[key] = p_m[key]['intent_y_pred']
+                        int_y_true[key] = p_m[key]['intention_y_true']
+                        int_y_pred[key] = p_m[key]['intention_y_pred']
                 if 'attitude' in tasks:
                     data.append(p_m[key]['attitude_accuracy'])
                     data.append(p_m[key]['attitude_f1'])
@@ -125,8 +125,8 @@ def draw_save(model, performance_model, framework):
             spamwriter.writerow(data)
         csvfile.close()
     # for key in keys:
-    #     if 'intent' in tasks:
-    #         plot_confusion_matrix(int_y_true[key], int_y_pred[key], intent_class, sub_name="%s_intent" % key)
+    #     if 'intention' in tasks:
+    #         plot_confusion_matrix(int_y_true[key], int_y_pred[key], intention_class, sub_name="%s_intention" % key)
     #     if 'attitude' in tasks:
     #         plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
     #     if 'action' in tasks:
@@ -147,21 +147,6 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def filter_others_from_result(y_true, y_pred, task):
-    i = 0
-    while i < y_true.shape[0]:
-        if (task == 'attitude' and y_true[i] == 2) or (task == 'action' and y_true[i] in [4, 7, 8]):
-            if i == y_true.shape[0] - 1:
-                y_true = y_true[:i]
-                y_pred = y_pred[:i]
-            else:
-                y_true = torch.cat((y_true[:i], y_true[i + 1:]))
-                y_pred = torch.cat((y_pred[:i], y_pred[i + 1:]))
-        else:
-            i += 1
-    return y_true, y_pred
-
-
 def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=False):
     """
     :param
@@ -173,7 +158,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
     # train_dict = {'crop+coco': {}}
-    tasks = [framework] if framework in ['intent', 'attitude', 'action'] else ['intent', 'attitude', 'action']
+    tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
     for key in train_dict.keys():
@@ -202,13 +187,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         print('loading data for', hyperparameter_group)
         augment_method = hyperparameter_group.split('+')[0]
         is_coco = True if 'coco' in hyperparameter_group else False
-        tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
-                                                   ori_videos=ori_videos)
-        trainset = Dataset(data_files=tra_files[int(len(tra_files) * valset_rate):], augment_method=augment_method,
-                           is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps,
-                           video_len=video_len)
-        valset = Dataset(data_files=tra_files[:int(len(tra_files) * valset_rate)], augment_method=augment_method,
-                         is_coco=is_coco, body_part=body_part, model=model, sample_fps=sample_fps, video_len=video_len)
+        tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
+                                                              ori_videos=ori_videos)
+        trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                           model=model, sample_fps=sample_fps, video_len=video_len)
+        valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                         model=model, sample_fps=sample_fps, video_len=video_len)
         testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                           model=model, sample_fps=sample_fps, video_len=video_len)
         max_length = max(trainset.max_length, valset.max_length, testset.max_length)
@@ -228,7 +212,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                             'trainset': trainset,
                                             'valset': valset, 'testset': testset, 'net': net,
                                             'optimizer': optimizer,
-                                            'intent_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
+                                            'intention_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
                                             'unimproved_epoch': 0}
         print('Start Training!!!')
         epoch = 1
@@ -262,21 +246,17 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.train()
-                    if framework == 'intent':
+                    if framework == 'intention':
                         int_outputs = net(inputs)
                         total_loss = functional.cross_entropy(int_outputs, int_labels)
                     elif framework == 'attitude':
                         att_outputs = net(inputs)
-                        att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
                         total_loss = functional.cross_entropy(att_outputs, att_labels)
                     elif framework == 'action':
                         act_outputs = net(inputs)
-                        act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                         total_loss = functional.cross_entropy(act_outputs, act_labels)
                     else:
                         int_outputs, att_outputs, act_outputs = net(inputs)
-                        att_labels, att_outputs = filter_others_from_result(att_labels, att_outputs, 'attitude')
-                        act_labels, act_outputs = filter_others_from_result(act_labels, act_outputs, 'action')
                         loss_1 = functional.cross_entropy(int_outputs, int_labels)
                         loss_2 = functional.cross_entropy(att_outputs, att_labels)
                         loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -301,7 +281,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
                     net.eval()
-                    if framework == 'intent':
+                    if framework == 'intention':
                         int_outputs = net(inputs)
                     elif framework == 'attitude':
                         att_outputs = net(inputs)
@@ -309,7 +289,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         act_outputs = net(inputs)
                     else:
                         int_outputs, att_outputs, act_outputs = net(inputs)
-                    if 'intent' in tasks:
+                    if 'intention' in tasks:
                         int_pred = int_outputs.argmax(dim=1)
                         int_y_true += int_labels.tolist()
                         int_y_pred += int_pred.tolist()
@@ -323,7 +303,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         act_y_pred += act_pred.tolist()
 
                 result_str = '%s, epcoch: %d, ' % (hyperparameter_group, epoch)
-                if 'intent' in tasks:
+                if 'intention' in tasks:
                     int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
                     if model == 'perframe':
                         int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
@@ -331,8 +311,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                                                                'valset'].frame_number_list)
                     int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
                     int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-                    if int_f1 > train_dict[hyperparameter_group]['intent_best_f1']:
-                        train_dict[hyperparameter_group]['intent_best_f1'] = int_f1
+                    if int_f1 > train_dict[hyperparameter_group]['intention_best_f1']:
+                        train_dict[hyperparameter_group]['intention_best_f1'] = int_f1
                         train_dict[hyperparameter_group]['unimproved_epoch'] = -1
                     result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f%%" % (int_acc * 100), "%.4f" % int_f1)
                 if 'attitude' in tasks:
@@ -341,7 +321,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                            train_dict[hyperparameter_group][
                                                                                'valset'].frame_number_list)
-                    att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred, 'attitude')
                     att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
                     att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
                     if att_f1 > train_dict[hyperparameter_group]['attitude_best_f1']:
@@ -354,7 +333,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                            train_dict[hyperparameter_group][
                                                                                'valset'].frame_number_list)
-                    act_y_true, act_y_pred = filter_others_from_result(act_y_true, act_y_pred, 'action')
                     act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
                     act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
                     if act_f1 > train_dict[hyperparameter_group]['action_best_f1']:
@@ -374,7 +352,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         print('Testing')
         for hyperparameter_group in train_dict:
             test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                        max_length=max_length, batch_size=batch_size)
+                                        max_length=max_length, batch_size=batch_size, drop_last=False)
             int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
             process_time = 0
             for data in test_loader:
@@ -392,8 +370,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
                 net.eval()
                 start_time = time.time()
-                if framework in ['intent', 'attitude', 'action']:
-                    if framework == 'intent':
+                if framework in ['intention', 'attitude', 'action']:
+                    if framework == 'intention':
                         int_outputs = net(inputs)
                     elif framework == 'attitude':
                         att_outputs = net(inputs)
@@ -403,7 +381,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     int_outputs, att_outputs, act_outputs = net(inputs)
                 end_time = time.time()
                 process_time += end_time - start_time
-                if 'intent' in tasks:
+                if 'intention' in tasks:
                     int_pred = int_outputs.argmax(dim=1)
                     int_y_true += int_labels.tolist()
                     int_y_pred += int_pred.tolist()
@@ -416,7 +394,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     act_y_true += act_labels.tolist()
                     act_y_pred += act_pred.tolist()
             result_str = '%s, ' % hyperparameter_group
-            if 'intent' in tasks:
+            if 'intention' in tasks:
                 int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
                 if model == 'perframe':
                     int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
@@ -424,10 +402,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                                                            'testset'].frame_number_list)
                 int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
                 int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-                performance_model[hyperparameter_group]['intent_accuracy'] = int_acc
-                performance_model[hyperparameter_group]['intent_f1'] = int_f1
-                performance_model[hyperparameter_group]['intent_y_true'] = int_y_true
-                performance_model[hyperparameter_group]['intent_y_pred'] = int_y_pred
+                performance_model[hyperparameter_group]['intention_accuracy'] = int_acc
+                performance_model[hyperparameter_group]['intention_f1'] = int_f1
+                performance_model[hyperparameter_group]['intention_y_true'] = int_y_true
+                performance_model[hyperparameter_group]['intention_y_pred'] = int_y_pred
                 result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f" % (int_acc * 100), "%.4f" % int_f1)
             if 'attitude' in tasks:
                 att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
@@ -435,7 +413,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
                                                                        train_dict[hyperparameter_group][
                                                                            'testset'].frame_number_list)
-                att_y_true, att_y_pred = filter_others_from_result(att_y_true, att_y_pred, 'attitude')
                 att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
                 att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
                 performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
@@ -449,7 +426,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
                                                                        train_dict[hyperparameter_group][
                                                                            'testset'].frame_number_list)
-                act_y_true, act_y_pred = filter_others_from_result(act_y_true, act_y_pred, 'action')
                 act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
                 act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
                 performance_model[hyperparameter_group]['action_accuracy'] = act_acc
@@ -457,8 +433,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 performance_model[hyperparameter_group]['action_y_true'] = act_y_true
                 performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
                 result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
-            print(result_str + ', process_time_pre_frame: %.4f' % (
-                    process_time / (len(testset) // batch_size * batch_size) / (video_len * sample_fps)))
+            print(result_str + ', process_time_pre_frame: %.2f' % (
+                    process_time * 1000 / len(testset) / (video_len * sample_fps)))
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             # draw_training_process(trainging_process)
         return performance_model
@@ -475,7 +451,7 @@ if __name__ == '__main__':
     # model = 'stgcn'
     body_part = [True, True, True]
 
-    # framework = 'intent'
+    # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
     # framework = 'parallel'
@@ -501,6 +477,6 @@ if __name__ == '__main__':
         i += 1
     draw_save(model, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
-    model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
+        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
     # send_email(result_str)

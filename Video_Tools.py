@@ -115,8 +115,8 @@ def write_video(frames, video_name, out_path, fps, width, height, is_original=Tr
     cv2.destroyAllWindows()
 
 
-def label_person_id(now_video, coco, fps):
-    video_dir = '../JPL_Augmented_Posefeatures/more_video_augment/'
+def label_person_id(now_video, fps):
+    video_dir = '../JPL_Augmented_Posefeatures/more_video/'
     videos = os.listdir(video_dir)
     videos.sort()
     video_length = len(videos)
@@ -127,51 +127,58 @@ def label_person_id(now_video, coco, fps):
             break
 
     for video in videos:
+        print(video)
         if video == '.DS_Store':
             continue
-        if coco:
-            print('----------------------------------------------')
-            print(video, "{:.2f}%".format(100 * 2 * index / (2 * video_length)), 'coco')
-            label_video(video, coco=True, fps=fps)
         print('----------------------------------------------')
-        print(video, "{:.2f}%".format(100 * (2 * index + 1) / (2 * video_length)), 'halpe')
-        label_video(video, coco=False, fps=fps)
+        print(video, "{:.2f}%".format(100 * (2 * index + 1) / (2 * video_length)))
+        label_video(video, fps=fps)
         index += 1
-        coco = True
 
 
-def label_video(video_name, coco, fps):
-    if coco:
-        outpath = '../JPL_Augmented_Posefeatures/more_video_features/crop/coco_wholebody/'
-        ori_json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_coco_wholebody/' + \
-                        video_name.split('.')[0] + '.json'
-    else:
-        outpath = '../JPL_Augmented_Posefeatures/more_video_features/crop/halpe136/'
-        ori_json_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_halpe136/' + \
-                        video_name.split('.')[0] + '.json'
+def label_video(video_name, fps):
+    coco_outpath = '../JPL_Augmented_Posefeatures/more_feature/crop/coco_wholebody/'
+    coco_ori_json_path = '../JPL_Augmented_Posefeatures/more_feature/alphapose/coco_wholebody/' + video_name.split('.')[
+        0] + '.json'
+    halpe_outpath = '../JPL_Augmented_Posefeatures/more_feature/crop/halpe136/'
+    halpe_ori_json_path = '../JPL_Augmented_Posefeatures/more_feature/alphapose/halpe136/' + video_name.split('.')[
+        0] + '.json'
 
     # rebuild json structure
-    with open(ori_json_path, "r") as f:
-        ori_json = json.load(f)
-    persons = {}
-    for pose in ori_json:
-        if pose['idx'] in persons.keys():
-            persons[int(pose['idx'])].append(
+    with open(coco_ori_json_path, "r") as f:
+        coco_ori_json = json.load(f)
+        f.close()
+    with open(halpe_ori_json_path, "r") as f:
+        halpe_ori_json = json.load(f)
+        f.close()
+    coco_persons = {}
+    halpe_person = {}
+    for pose in coco_ori_json:
+        if pose['idx'] in coco_persons.keys():
+            coco_persons[int(pose['idx'])].append(
                 {'image_id': pose['image_id'], 'keypoints': pose['keypoints'], 'score': pose['score'],
                  'box': pose['box']})
         else:
-            persons[int(pose['idx'])] = [
+            coco_persons[int(pose['idx'])] = [
+                {'image_id': pose['image_id'], 'keypoints': pose['keypoints'], 'score': pose['score'],
+                 'box': pose['box']}]
+    for pose in halpe_ori_json:
+        if pose['idx'] in halpe_person.keys():
+            halpe_person[int(pose['idx'])].append(
+                {'image_id': pose['image_id'], 'keypoints': pose['keypoints'], 'score': pose['score'],
+                 'box': pose['box']})
+        else:
+            halpe_person[int(pose['idx'])] = [
                 {'image_id': pose['image_id'], 'keypoints': pose['keypoints'], 'score': pose['score'],
                  'box': pose['box']}]
 
     # label for person
-    # labels = read_jpl_labels()
-    labels = 8
-    new_json = {'video_name': video_name, 'persons': {}}
+    coco_new_json = {'video_name': video_name, 'persons': {}}
+    halpe_new_json = {'video_name': video_name, 'persons': {}}
     now_id = 1
-    for person_id in persons.keys():
+    for person_id in coco_persons.keys():
         boxes = {}
-        for frame in persons[person_id]:
+        for frame in coco_persons[person_id]:
             boxes[int(frame['image_id'].split('.')[0])] = frame['box']
         while True:
             play_video_box(video_name, boxes=boxes, fps=fps)
@@ -189,25 +196,35 @@ def label_video(video_name, coco, fps):
                 # yes for a new person
                 if answer[0] == 'y':
                     # 1 for ori class, 2 for interested, 3 for not interested
-                    if int(answer[1]) == 1:
-                        action_class = int(labels[video_name.split('-')[0]])
+                    if int(answer[1]) in [0, 1, 2, 3]:
+                        # action_class = int(labels[video_name.split('-')[0]])
+                        action_class = int(answer[1])
                         intention_class = 0
-                        attitude_class = 0 if action_class in ['0,1,2,3'] else 1
-                    elif int(answer[1]) == 2:
+                        attitude_class = 0
+                    elif int(answer[1]) in [4, 5]:
+                        action_class = int(answer[1])
+                        intention_class = 0
+                        attitude_class = 1
+                    elif int(answer[1]) in [6, 7]:
+                        action_class = int(answer[1])
+                        attitude_class = 2
                         intention_class = 1
+                    elif int(answer[1]) in [8, 9]:
+                        action_class = int(answer[1])
                         attitude_class = 2
-                        action_class = 6
-                    elif int(answer[1]) == 3:
                         intention_class = 2
-                        attitude_class = 2
-                        action_class = 6
                     else:
                         print('answer again')
                         continue
-                    new_json['persons'][now_id] = {'intention_class': intention_class, 'attitude_class': attitude_class,
-                                                   'action_class': action_class, 'frames': persons[person_id]}
+                    coco_new_json['persons'][now_id] = {'intention_class': intention_class,
+                                                        'attitude_class': attitude_class,
+                                                        'action_class': action_class, 'frames': coco_persons[person_id]}
+                    halpe_new_json['persons'][now_id] = {'intention_class': intention_class,
+                                                         'attitude_class': attitude_class,
+                                                         'action_class': action_class,
+                                                         'frames': halpe_person[person_id]}
                     print('intention_class: %s, attitude_class: %s, action_class: %s, frames_num: %s' % (
-                        intention_class, attitude_class, action_class, len(persons[person_id])))
+                        intention_class, attitude_class, action_class, len(coco_persons[person_id])))
                     now_id += 1
                     break
 
@@ -215,35 +232,44 @@ def label_video(video_name, coco, fps):
                 elif answer[0] == 'm':
                     index1 = 0  # index for existed one
                     index2 = 0  # index for new one
-                    frames = []
-                    while index1 < len(new_json['persons'][int(answer[1])]['frames']) or index2 < len(
-                            persons[person_id]):
+                    coco_frames = []
+                    halpe_frames = []
+                    while index1 < len(coco_new_json['persons'][int(answer[1])]['frames']) or index2 < len(
+                            coco_persons[person_id]):
                         # print(index1, new_json['persons'][int(answer[1])]['frames'][index1]['image_id'], index2,
                         #       persons[person_id][index2]['image_id'])
-                        if index1 >= len(new_json['persons'][int(answer[1])]['frames']):
-                            frames.append(persons[person_id][index2])
+                        if index1 >= len(coco_new_json['persons'][int(answer[1])]['frames']):
+                            coco_frames.append(coco_persons[person_id][index2])
+                            halpe_frames.append(halpe_person[person_id][index2])
                             index2 += 1
-                        elif index2 >= len(persons[person_id]):
-                            frames.append(new_json['persons'][int(answer[1])]['frames'][index1])
+                        elif index2 >= len(coco_persons[person_id]):
+                            coco_frames.append(coco_new_json['persons'][int(answer[1])]['frames'][index1])
+                            halpe_frames.append(halpe_new_json['persons'][int(answer[1])]['frames'][index1])
                             index1 += 1
-                        elif int(new_json['persons'][int(answer[1])]['frames'][index1]['image_id'].split('.')[0]) < int(
-                                persons[person_id][index2]['image_id'].split('.')[0]):
-                            frames.append(new_json['persons'][int(answer[1])]['frames'][index1])
+                        elif int(coco_new_json['persons'][int(answer[1])]['frames'][index1]['image_id'].split('.')[
+                                     0]) < int(coco_persons[person_id][index2]['image_id'].split('.')[0]):
+                            coco_frames.append(coco_new_json['persons'][int(answer[1])]['frames'][index1])
+                            halpe_frames.append(halpe_new_json['persons'][int(answer[1])]['frames'][index1])
                             index1 += 1
-                        elif int(new_json['persons'][int(answer[1])]['frames'][index1]['image_id'].split('.')[0]) > int(
-                                persons[person_id][index2]['image_id'].split('.')[0]):
-                            frames.append(persons[person_id][index2])
+                        elif int(coco_new_json['persons'][int(answer[1])]['frames'][index1]['image_id'].split('.')[
+                                     0]) > int(
+                                coco_persons[person_id][index2]['image_id'].split('.')[0]):
+                            coco_frames.append(coco_persons[person_id][index2])
+                            halpe_frames.append(halpe_person[person_id][index2])
                             index2 += 1
                         else:
-                            if new_json['persons'][int(answer[1])]['frames'][index1]['score'] > \
-                                    persons[person_id][index2]['score']:
-                                frames.append(new_json['persons'][int(answer[1])]['frames'][index1])
+                            if coco_new_json['persons'][int(answer[1])]['frames'][index1]['score'] > \
+                                    coco_persons[person_id][index2]['score']:
+                                coco_frames.append(coco_new_json['persons'][int(answer[1])]['frames'][index1])
+                                halpe_frames.append(halpe_new_json['persons'][int(answer[1])]['frames'][index1])
                             else:
-                                frames.append(persons[person_id][index2])
+                                coco_frames.append(coco_persons[person_id][index2])
+                                halpe_frames.append(halpe_person[person_id][index2])
                             index1 += 1
                             index2 += 1
-                    print(len(frames))
-                    new_json['persons'][int(answer[1])]['frames'] = frames
+                    print(len(coco_frames))
+                    coco_new_json['persons'][int(answer[1])]['frames'] = coco_frames
+                    halpe_new_json['persons'][int(answer[1])]['frames'] = halpe_frames
                     break
                 else:
                     print('answer again')
@@ -251,22 +277,24 @@ def label_video(video_name, coco, fps):
                 print('answer again')
 
     # write json
-    with open(outpath + video_name.split('.')[0] + '.json', "w") as outfile:
-        json.dump(new_json, outfile)
+    with open(coco_outpath + video_name.split('.')[0] + '.json', "w") as outfile:
+        json.dump(coco_new_json, outfile)
+    with open(halpe_outpath + video_name.split('.')[0] + '.json', "w") as outfile:
+        json.dump(halpe_new_json, outfile)
 
 
 def play_video_box(video_name, boxes, fps):
-    video_dir = '../JPL_Augmented_Posefeatures/more_video_augment/'
+    video_dir = '../JPL_Augmented_Posefeatures/more_video/'
     cap = cv2.VideoCapture(video_dir + video_name)
     success, frame = cap.read()
     index = 0
     while success:
         frame = cv2.resize(frame,
-                           (2 * int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), 2 * int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+                           (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
         if index in boxes.keys():
             bbox = boxes[index]
-            cv2.rectangle(frame, (2 * int(bbox[0]), 2 * int(bbox[1])),
-                          (2 * int(bbox[0] + bbox[2]), 2 * int(bbox[1] + bbox[3])), (0, 225, 0), 6)
+            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3])),
+                          (0, 225, 0), 6)
         cv2.imshow(video_name, frame)
         cv2.waitKey(fps)
         success, frame = cap.read()
@@ -276,7 +304,7 @@ def play_video_box(video_name, boxes, fps):
 
 
 def refactor_jsons():
-    coco_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_coco_wholebody/'
+    coco_path = '../JPL_Augmented_Posefeatures/more_feature/alphapose/coco_wholebody/'
     files = os.listdir(coco_path)
     for file in files:
         print(file)
@@ -288,7 +316,7 @@ def refactor_jsons():
         else:
             continue
 
-    halpe_path = '../JPL_Augmented_Posefeatures/more_video_features/crop/Alphapose_halpe136/'
+    halpe_path = '../JPL_Augmented_Posefeatures/more_feature/alphapose/halpe136/'
     files = os.listdir(halpe_path)
     for file in files:
         print(file)
@@ -309,7 +337,7 @@ def edit_videos():
     videos = os.listdir(video_path)
     for video in videos:
         for index, label in enumerate(labels[video.split('.')[0]]):
-            if label[0] in [6, 8]:
+            if label[0] not in [3, 4, 6]:
                 print(video, index, label[0])
                 cap = cv2.VideoCapture(video_path + video)
                 fps = cap.get(cv2.CAP_PROP_FPS)
@@ -339,8 +367,8 @@ if __name__ == "__main__":
     #     del_json_content('11_5', 2, i, False)
     # del_json_content('12_2', 1, 245, False)
     # select_user_from_jpl()
-    video_augmentation('../JPL_Augmented_Posefeatures/more_video_ori2/', '../JPL_Augmented_Posefeatures/more_video/')
-    # label_person_id('c5-resize95-1.avi', True, 1)
+    # video_augmentation('../JPL_Augmented_Posefeatures/more_video_ori2/', '../JPL_Augmented_Posefeatures/more_video/')
+    label_person_id('Wantest9_2-ori-flip.avi', 1)
     # refactor_jsons()
 
     # video_files = os.listdir('jpl_augmented/videos/')

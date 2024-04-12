@@ -10,7 +10,8 @@ coco_body_point_num = 23
 halpe_body_point_num = 26
 head_point_num = 68
 hands_point_num = 42
-testset_rate = 0.5
+valset_rate = 0.1
+testset_rate = 0.4
 coco_point_num = 133
 halpe_point_num = 136
 video_fps = 30
@@ -48,28 +49,42 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
                 else:
                     ori_videos_dict[feature_json['action_class']] = [file]
                 f.close()
+    validation_videos_dict = {}
     test_videos_dict = {}
     for action_class in ori_videos_dict.keys():
         random.shuffle(ori_videos_dict[action_class])
+        val_video_list = ori_videos_dict[action_class][int(len(ori_videos_dict[action_class]) * (1 - valset_rate)):]
         test_video_list = ori_videos_dict[action_class][:int(len(ori_videos_dict[action_class]) * testset_rate)]
         for test_video in test_video_list:
             if test_video.split('-')[0] in test_videos_dict.keys():
                 test_videos_dict[test_video.split('-')[0]].append(test_video.split('_p')[-1].split('.')[0])
             else:
                 test_videos_dict[test_video.split('-')[0]] = [test_video.split('_p')[-1].split('.')[0]]
+        for val_video in val_video_list:
+            if val_video.split('-')[0] in validation_videos_dict.keys():
+                validation_videos_dict[val_video.split('-')[0]].append(val_video.split('_p')[-1].split('.')[0])
+            else:
+                validation_videos_dict[val_video.split('-')[0]] = [val_video.split('_p')[-1].split('.')[0]]
     tra_files = []
+    val_files = []
     test_files = []
     for file in files:
         if 'json' not in file:
             continue
         elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
                 test_videos_dict[file.split('-')[0]]:
-            if ori_videos and '-ori_' not in file:
-                continue
-            tra_files.append(file)
+            if file.split('-')[0] not in validation_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
+                    validation_videos_dict[file.split('-')[0]]:
+                if ori_videos and '-ori_' not in file:
+                    continue
+                tra_files.append(file)
+            else:
+                if ori_videos and '-ori_' not in file:
+                    continue
+                val_files.append(file)
         elif '-ori_' in file:
             test_files.append(file)
-    return tra_files, test_files
+    return tra_files, val_files, test_files
 
 
 def get_body_part(feature, is_coco, body_part):
@@ -103,19 +118,6 @@ def get_inputs_size(is_coco, body_part, gcn=False):
     if not gcn:
         input_size += len(get_l_pair(is_coco, body_part))
     return 2 * input_size
-
-
-def get_labels(att_class, act_class):
-    if att_class in [0, 2]:
-        intent_class = 0
-        attitude_class = att_class if att_class == 0 else 1
-    elif att_class == 1:
-        intent_class = 1
-        attitude_class = 2
-    else:
-        intent_class = 2
-        attitude_class = 2
-    return intent_class, attitude_class, act_class
 
 
 def get_l_pair(is_coco, body_part):
@@ -268,7 +270,7 @@ class Dataset(Dataset):
         if len(features) == 0:
             return 0, None
         features = np.array(features)
-        label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
+        label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if self.model == 'avg':
             features = np.mean(features, axis=0)
             features = features.reshape(1, features.size)
@@ -324,7 +326,7 @@ class Dataset(Dataset):
             x_list.append(x_list[-1])
             edge_index_list.append(edge_index_list[-1])
             edge_attr_list.append(edge_attr_list[-1])
-        label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
+        label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
             return 0
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
@@ -387,7 +389,7 @@ class Dataset(Dataset):
                 edge_index_list.append([index, int(index + input_size / 2)])
             else:
                 break
-        label = get_labels(feature_json['attitude_class'], feature_json['action_class'])
+        label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
             return 0
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
@@ -413,15 +415,15 @@ class Dataset(Dataset):
 if __name__ == '__main__':
     augment_method = 'crop'
     is_coco = True
-    tra_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco, not_add_class=False)
-    print(len(tra_files))
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
-                      augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
-                      sample_fps=30)
-    features, labels = dataset.__getitem__(9)
-    print(features.shape, labels)
-    dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
-                      augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
-                      sample_fps=30)
-    features, labels = dataset.__getitem__(9)
-    print(features.shape, labels)
+    tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco)
+    print(len(tra_files), len(val_files), len(test_files))
+    # dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
+    #                   augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
+    #                   sample_fps=30)
+    # features, labels = dataset.__getitem__(9)
+    # print(features.shape, labels)
+    # dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
+    #                   augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
+    #                   sample_fps=30)
+    # features, labels = dataset.__getitem__(9)
+    # print(features.shape, labels)

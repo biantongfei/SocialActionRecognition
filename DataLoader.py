@@ -18,8 +18,9 @@ def rnn_collate_fn(data):
 
 
 class JPLDataLoader(DataLoader):
-    def __init__(self, model, dataset, batch_size, max_length, shuffle=False):
-        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=True)
+    def __init__(self, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
+        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                            drop_last=drop_last)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
