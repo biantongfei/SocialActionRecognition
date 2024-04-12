@@ -39,8 +39,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     # 按行进行归一化
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     str_cm = cm.astype(np.str_).tolist()
-    for row in str_cm:
-        print('\t'.join(row))
     # 占比1%以下的单元格，设为0，防止在最后的颜色中体现出来
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
@@ -48,7 +46,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                 cm[i, j] = 0
 
     fig, ax = plt.subplots()
-    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     # ax.figure.colorbar(im, ax=ax) # 侧边的颜色条带
 
     ax.set(xticks=np.arange(cm.shape[1]),
