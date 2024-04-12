@@ -334,9 +334,9 @@ class GNN(torch.nn.Module):
                 self.fc_input_size = self.keypoint_hidden_dim * max_length
         else:
             self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = GAT(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = GIN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = EdgeCNN(in_channels=-1, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = EdgeCNN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             self.fc_input_size = self.keypoint_hidden_dim * (self.input_size / 2) * max_length
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),

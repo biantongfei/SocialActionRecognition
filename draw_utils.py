@@ -34,28 +34,74 @@ def draw_training_process(training_process):
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
+    plt.rc('font', family='Times New Roman', size='8')  # 设置字体样式、大小
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
-    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('Confusion Matrix')
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
+    # 按行进行归一化
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    str_cm = cm.astype(np.str_).tolist()
+    for row in str_cm:
+        print('\t'.join(row))
+    # 占比1%以下的单元格，设为0，防止在最后的颜色中体现出来
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            if int(cm[i, j] * 100 + 0.5) == 0:
+                cm[i, j] = 0
 
-    # 添加数值标签
+    fig, ax = plt.subplots()
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    # ax.figure.colorbar(im, ax=ax) # 侧边的颜色条带
+
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           xticklabels=classes, yticklabels=classes,
+           title=None,
+           ylabel='Actual',
+           xlabel='Predicted')
+
+    # 通过绘制格网，模拟每个单元格的边框
+    ax.set_xticks(np.arange(cm.shape[1] + 1) - .5, minor=True)
+    ax.set_yticks(np.arange(cm.shape[0] + 1) - .5, minor=True)
+    ax.grid(which="minor", color="gray", linestyle='-', linewidth=0.2)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # 将x轴上的lables旋转45度
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+
+    # 标注百分比信息
+    fmt = 'd'
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            plt.text(j, i, format(cm[i, j], 'd'),
-                     ha="center", va="center",
-                     color="white" if cm[i, j] > thresh else "black")
+            if int(cm[i, j] * 100 + 0.5) > 0:
+                ax.text(j, i, format(int(cm[i, j] * 100 + 0.5), fmt) + '%',
+                        ha="center", va="center",
+                        color="white" if cm[i, j] > thresh else "black")
+    fig.tight_layout()
+    plt.savefig('plots/%s.jpg' % sub_name, dpi=300)
 
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.tight_layout()
-    plt.savefig('plots/cm_%s.png' % sub_name, format='png')
-    # plt.show()
-    plt.close()
+    # cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
+    # plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    # plt.title('Confusion Matrix')
+    # plt.colorbar()
+    # tick_marks = np.arange(len(classes))
+    # plt.xticks(tick_marks, classes, rotation=45)
+    # plt.yticks(tick_marks, classes)
+    #
+    # # 添加数值标签
+    # thresh = cm.max() / 2.
+    # for i in range(cm.shape[0]):
+    #     for j in range(cm.shape[1]):
+    #         plt.text(j, i, format(cm[i, j], 'd'),
+    #                  ha="center", va="center",
+    #                  color="white" if cm[i, j] > thresh else "black")
+    #
+    # plt.ylabel('True label')
+    # plt.xlabel('Predicted label')
+    # plt.tight_layout()
+    # plt.savefig('plots/cm_%s.png' % sub_name, format='png')
+    # # plt.show()
+    # plt.close()
 
 
 if __name__ == '__main__':

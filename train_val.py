@@ -124,13 +124,16 @@ def draw_save(model, performance_model, framework):
                         act_y_pred[key] = p_m[key]['action_y_pred']
             spamwriter.writerow(data)
         csvfile.close()
-    # for key in keys:
-    #     if 'intention' in tasks:
-    #         plot_confusion_matrix(int_y_true[key], int_y_pred[key], intention_class, sub_name="%s_intention" % key)
-    #     if 'attitude' in tasks:
-    #         plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes, sub_name="%s_attitude" % key)
-    #     if 'action' in tasks:
-    #         plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes, sub_name="%s_action" % key)
+    for key in keys:
+        if 'intention' in tasks:
+            plot_confusion_matrix(int_y_true[key], int_y_pred[key], intention_class,
+                                  sub_name="cm_%s_%s_intention" % (model, key))
+        if 'attitude' in tasks:
+            plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes,
+                                  sub_name="cm_%s_%s_attitude" % (model, key))
+        if 'action' in tasks:
+            plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes,
+                                  sub_name="%cm_%s_s_action" % (model, key))
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
