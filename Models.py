@@ -11,7 +11,7 @@ from Dataset import get_inputs_size
 box_feature_num = 4
 intent_class_num = 3
 attitude_class_num = 3
-action_class_num = 9
+action_class_num = 10
 fps = 30
 if torch.cuda.is_available():
     device = torch.device("cuda:0")
