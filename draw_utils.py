@@ -34,7 +34,7 @@ def draw_training_process(training_process):
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
-    plt.rc('font', family='Times', size='8')  # 设置字体样式、大小
+    plt.rc('font', size='8')  # 设置字体样式、大小
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
     # 按行进行归一化
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
