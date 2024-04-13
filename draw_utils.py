@@ -77,29 +77,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     fig.tight_layout()
     plt.savefig('plots/%s.jpg' % sub_name, dpi=300)
 
-    # cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
-    # plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    # plt.title('Confusion Matrix')
-    # plt.colorbar()
-    # tick_marks = np.arange(len(classes))
-    # plt.xticks(tick_marks, classes, rotation=45)
-    # plt.yticks(tick_marks, classes)
-    #
-    # # 添加数值标签
-    # thresh = cm.max() / 2.
-    # for i in range(cm.shape[0]):
-    #     for j in range(cm.shape[1]):
-    #         plt.text(j, i, format(cm[i, j], 'd'),
-    #                  ha="center", va="center",
-    #                  color="white" if cm[i, j] > thresh else "black")
-    #
-    # plt.ylabel('True label')
-    # plt.xlabel('Predicted label')
-    # plt.tight_layout()
-    # plt.savefig('plots/cm_%s.png' % sub_name, format='png')
-    # # plt.show()
-    # plt.close()
-
 
 if __name__ == '__main__':
     pass
