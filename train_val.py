@@ -59,21 +59,18 @@ perframe_batch_size = 2048
 rnn_batch_size = 32
 conv1d_batch_size = 32
 gcn_batch_size = 32
-avg_train_epoch = 1
-perframe_train_epoch = 1
-rnn_train_epoch = 1
-conv1d_train_epoch = 1
-gcn_train_epoch = 1
+epoch_limit = 1
 learning_rate = 1e-3
-if torch.cuda.is_available():
-    print('Using CUDA for training')
-    device = torch.device("cuda:0")
-elif torch.backends.mps.is_available():
-    print('Using MPS for training')
-    device = torch.device('mps')
-else:
-    print('Using CPU for training')
-    device = torch.device('cpu')
+# if torch.cuda.is_available():
+#     print('Using CUDA for training')
+#     device = torch.device("cuda:0")
+# elif torch.backends.mps.is_available():
+#     print('Using MPS for training')
+#     device = torch.device('mps')
+# else:
+#     print('Using CPU for training')
+#     device = torch.device('cpu')
+device = torch.device('cpu')
 dtype = torch.float
 intention_class = ['interacting', 'interested', 'not_interested']
 attitude_classes = ['positive', 'negative', 'no_interacting']
@@ -172,19 +169,14 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
     if model == 'avg':
         batch_size = avg_batch_size
-        epoch_limit = avg_train_epoch
     elif model == 'perframe':
         batch_size = perframe_batch_size
-        epoch_limit = perframe_train_epoch
     elif model in ['lstm', 'gru']:
         batch_size = rnn_batch_size
-        epoch_limit = rnn_train_epoch
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
-        epoch_limit = conv1d_train_epoch
     elif 'gcn' in model:
         batch_size = gcn_batch_size
-        epoch_limit = gcn_train_epoch
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
