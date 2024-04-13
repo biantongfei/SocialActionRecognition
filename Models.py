@@ -9,7 +9,7 @@ from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN
 from Dataset import get_inputs_size
 
 box_feature_num = 4
-intent_class_num = 3
+intention_class_num = 3
 attitude_class_num = 3
 action_class_num = 10
 fps = 30
@@ -40,11 +40,11 @@ class DNN(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(16),
         )
-        self.intent_head = nn.Sequential(nn.ReLU(),
-                                         nn.Linear(16, intent_class_num)
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                         nn.Linear(16, intention_class_num)
                                          )
 
-        if self.framework in ['parallel', 'intent', 'attitude', 'action']:
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.BatchNorm1d(16),
                                                nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
@@ -54,45 +54,45 @@ class DNN(nn.Module):
                                              nn.Linear(16, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intent_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + attitude_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, x):
         y = self.fc(x)
-        if self.framework in ['intent', 'attitude', 'action']:
-            if self.framework == 'intent':
-                y = self.intent_head(y)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
             elif self.framework == 'attitude':
                 y = self.attitude_head(y)
             elif self.framework == 'chain':
                 y = self.action_head(y)
             return y
         else:
-            y1 = self.intent_head(y)
+            y1 = self.intention_head(y)
             if self.framework == 'parallel':
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -129,11 +129,11 @@ class RNN(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(16),
         )
-        self.intent_head = nn.Sequential(nn.ReLU(),
-                                         nn.Linear(16, intent_class_num)
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                         nn.Linear(16, intention_class_num)
                                          )
 
-        if self.framework in ['parallel', 'intent', 'attitude', 'action']:
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
                                                )
@@ -142,25 +142,25 @@ class RNN(nn.Module):
                                              )
         elif self.framework == 'tree':
             self.attitude_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intent_class_num),
+                nn.BatchNorm1d(16 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intent_class_num, attitude_class_num)
+                nn.Linear(16 + intention_class_num, attitude_class_num)
             )
             self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intent_class_num),
+                nn.BatchNorm1d(16 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intent_class_num, action_class_num)
+                nn.Linear(16 + intention_class_num, action_class_num)
             )
         elif self.framework == 'chain':
             self.attitude_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intent_class_num),
+                nn.BatchNorm1d(16 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intent_class_num, attitude_class_num)
+                nn.Linear(16 + intention_class_num, attitude_class_num)
             )
             self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
+                nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
+                nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
             )
 
     def forward(self, x):
@@ -170,25 +170,25 @@ class RNN(nn.Module):
         attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
         x = torch.sum(x * attention_weights, dim=1)
         y = self.fc(x)
-        if self.framework in ['intent', 'attitude', 'action']:
-            if self.framework == 'intent':
-                y = self.intent_head(y)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
             elif self.framework == 'attitude':
                 y = self.attitude_head(y)
             elif self.framework == 'chain':
                 y = self.action_head(y)
             return y
         else:
-            y1 = self.intent_head(y)
+            y1 = self.intention_head(y)
             if self.framework == 'parallel':
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -222,11 +222,11 @@ class Cnn1D(nn.Module):
             nn.BatchNorm1d(16),
             # nn.Dropout(0.5),
         )
-        self.intent_head = nn.Sequential(nn.ReLU(),
-                                         nn.Linear(16, intent_class_num)
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                         nn.Linear(16, intention_class_num)
                                          )
 
-        if self.framework in ['parallel', 'intent', 'attitude', 'action']:
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
                                                )
@@ -234,22 +234,22 @@ class Cnn1D(nn.Module):
                                              nn.Linear(16, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intent_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, x):
@@ -257,25 +257,25 @@ class Cnn1D(nn.Module):
         x = self.cnn(x)
         x = x.flatten(1)
         y = self.fc(x)
-        if self.framework in ['intent', 'attitude', 'action']:
-            if self.framework == 'intent':
-                y = self.intent_head(y)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
             elif self.framework == 'attitude':
                 y = self.attitude_head(y)
             elif self.framework == 'chain':
                 y = self.action_head(y)
             return y
         else:
-            y1 = self.intent_head(y)
+            y1 = self.intention_head(y)
             if self.framework == 'parallel':
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -345,10 +345,10 @@ class GNN(torch.nn.Module):
             nn.Linear(64, 16),
             nn.BatchNorm1d(16),
         )
-        self.intent_head = nn.Sequential(nn.ReLU(),
-                                         nn.Linear(16, intent_class_num)
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                         nn.Linear(16, intention_class_num)
                                          )
-        if self.framework in ['parallel', 'intent', 'attitude', 'action']:
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
                                                )
@@ -356,22 +356,22 @@ class GNN(torch.nn.Module):
                                              nn.Linear(16, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intent_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intent_class_num, attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intent_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intent_class_num + attitude_class_num, action_class_num)
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, data):
@@ -406,25 +406,25 @@ class GNN(torch.nn.Module):
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
             x = x.flatten(1)
         y = self.fc(x)
-        if self.framework in ['intent', 'attitude', 'action']:
-            if self.framework == 'intent':
-                y = self.intent_head(y)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
             elif self.framework == 'attitude':
                 y = self.attitude_head(y)
             elif self.framework == 'chain':
                 y = self.action_head(y)
             return y
         else:
-            y1 = self.intent_head(y)
+            y1 = self.intention_head(y)
             if self.framework == 'parallel':
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intent_head(y)
+                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3

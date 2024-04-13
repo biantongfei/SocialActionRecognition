@@ -129,7 +129,7 @@ def draw_save(model, performance_model, framework):
                                   sub_name="cm_%s_%s_attitude" % (model, key))
         if 'action' in tasks:
             plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes,
-                                  sub_name="%cm_%s_s_action" % (model, key))
+                                  sub_name="cm_%s_%s_action" % (model, key))
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):

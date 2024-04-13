@@ -34,11 +34,10 @@ def draw_training_process(training_process):
 
 def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     y_true, y_pred = Tensor.cpu(y_true), Tensor.cpu(y_pred)
-    plt.rc('font', family='Times New Roman', size='8')  # 设置字体样式、大小
+    plt.rc('font', family='Times', size='8')  # 设置字体样式、大小
     cm = confusion_matrix(y_true, y_pred, labels=None, sample_weight=None)
     # 按行进行归一化
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    str_cm = cm.astype(np.str_).tolist()
     # 占比1%以下的单元格，设为0，防止在最后的颜色中体现出来
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
@@ -46,6 +45,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                 cm[i, j] = 0
 
     fig, ax = plt.subplots()
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     # ax.figure.colorbar(im, ax=ax) # 侧边的颜色条带
 
     ax.set(xticks=np.arange(cm.shape[1]),
