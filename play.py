@@ -1,6 +1,4 @@
-import time
+from math import ceil
 
-a = time.time()
-time.sleep(2)
-b = time.time()
-print(b - a)
+a = 0.1
+print(ceil(a))

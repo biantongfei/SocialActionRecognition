@@ -77,9 +77,9 @@ action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point-c
                   'no_response']
 
 
-def draw_save(model, performance_model, framework):
+def draw_save(name, performance_model, framework):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
-    with open('plots/%s_performance.csv' % model, 'w', newline='') as csvfile:
+    with open('plots/%s.csv' % name, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         int_y_true = {}
         int_y_pred = {}
@@ -123,13 +123,13 @@ def draw_save(model, performance_model, framework):
     for key in keys:
         if 'intention' in tasks:
             plot_confusion_matrix(int_y_true[key], int_y_pred[key], intention_class,
-                                  sub_name="cm_%s_%s_intention" % (model, key))
+                                  sub_name="cm_%s_intention" % name)
         if 'attitude' in tasks:
             plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes,
-                                  sub_name="cm_%s_%s_attitude" % (model, key))
+                                  sub_name="cm_%s_attitude" % name)
         if 'action' in tasks:
             plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes,
-                                  sub_name="cm_%s_%s_action" % (model, key))
+                                  sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
@@ -435,12 +435,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 
 if __name__ == '__main__':
-    model = 'avg'
+    # model = 'avg'
     # model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
-    # model = 'gcn_lstm'
+    model = 'gcn_lstm'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     body_part = [True, True, True]
@@ -448,15 +448,15 @@ if __name__ == '__main__':
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
-    # framework = 'parallel'
-    framework = 'tree'
+    framework = 'parallel'
+    # framework = 'tree'
     # framework = 'chain'
     ori_video = False
     sample_fps = 30
     video_len = 2
     performance_model = []
     i = 0
-    while i < 1:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
@@ -469,7 +469,7 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save('topkpooling', performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
