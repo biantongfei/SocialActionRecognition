@@ -7,7 +7,6 @@ from draw_utils import draw_training_process, plot_confusion_matrix
 import torch
 from DataLoader import JPLDataLoader
 from torch.nn import functional
-from torch import nn
 import torch.nn.utils.rnn as rnn_utils
 
 from sklearn.metrics import f1_score
