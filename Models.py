@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling
+from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling,SAGPooling,ASAPooling
 
 from Dataset import get_inputs_size
 
@@ -295,9 +295,9 @@ class GNN(torch.nn.Module):
         self.pooling_rate = 0.8 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
             # self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
+            self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
-            self.GCN_keypoints = EdgeCNN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
+            # self.GCN_keypoints = EdgeCNN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
@@ -324,12 +324,15 @@ class GNN(torch.nn.Module):
                 # self.GCN_time = GCN(
                 #     in_channels=math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
                 #     hidden_channels=self.keypoint_hidden_dim, num_layers=2)
-                # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
-                #                     hidden_channels=self.keypoint_hidden_dim,
-                #                     num_layers=2)
-                self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
                                     hidden_channels=self.keypoint_hidden_dim,
                                     num_layers=2)
+                # self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                #                     hidden_channels=self.keypoint_hidden_dim,
+                #                     num_layers=2)
+                # self.GCN_time = EdgeCNN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
+                #                     hidden_channels=self.keypoint_hidden_dim,
+                #                     num_layers=2)
                 self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
                 self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         else:
