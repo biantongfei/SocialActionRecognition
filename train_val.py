@@ -439,7 +439,7 @@ if __name__ == '__main__':
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
-    model = 'gcn_lstm'
+    model = 'gcn_gcn'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     body_part = [True, True, True]
