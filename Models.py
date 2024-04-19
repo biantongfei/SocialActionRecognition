@@ -408,17 +408,15 @@ class GNN(torch.nn.Module):
                 x = x.flatten(1)
             else:
                 print(x_time.shape)
-                x = torch.zeros(
-                    (x_time.shape[0], x_time.shape[1],
-                     math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim)).to(dtype).to(
-                    device)
+                x = torch.zeros((x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * math.ceil(
+                    self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim))).to(dtype).to(device)
                 for i in range(x_time.shape[0]):
-                    x_t, new_edge_index, edge_attr_t = x_time[i][ii], edge_index[i][ii], edge_attr[i][ii]
+                    x_t = x_time[i]
                     x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype).to(device)
                     # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                     if self.pooling:
-                        x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    x[i][ii] = x_t.reshape(1, -1)[0]
+                        x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
+                    x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
