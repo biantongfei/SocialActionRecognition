@@ -407,8 +407,6 @@ class GNN(torch.nn.Module):
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
-                print(x_time.shape)
-                print(math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))
                 x = torch.zeros(
                     (x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))).to(
                     dtype).to(device)
@@ -418,7 +416,6 @@ class GNN(torch.nn.Module):
                     # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                     if self.pooling:
                         x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
-                    print(x_t.shape)
                     x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
