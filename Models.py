@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling,SAGPooling,ASAPooling
+from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling, SAGPooling, ASAPooling
 
 from Dataset import get_inputs_size
 
@@ -295,7 +295,7 @@ class GNN(torch.nn.Module):
         self.pooling_rate = 0.8 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
             # self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            self.GCN_keypoints = GAT(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
+            self.GCN_keypoints = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             # self.GCN_keypoints = EdgeCNN(in_channels=2,hidden_channels=self.keypoint_hidden_dim,num_layers=3)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
@@ -407,7 +407,19 @@ class GNN(torch.nn.Module):
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
-                x = self.GCN_time(x_time, time_edge_index)
+                x = torch.zeros(
+                    (x_time.shape[0], x_time.shape[1],
+                     math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim)).to(dtype).to(
+                    device)
+                for i in range(x_time.shape[0]):
+                    for ii in range(x_time.shape[1]):
+                        x_t, new_edge_index, edge_attr_t = x_time[i][ii], edge_index[i][ii], edge_attr[i][ii]
+                        x_t = self.GCN_time(x=x_t, edge_index=new_edge_index, edge_attr=edge_attr_t).to(dtype).to(
+                            device)
+                        # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
+                        if self.pooling:
+                            x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
+                        x[i][ii] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
