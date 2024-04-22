@@ -291,7 +291,7 @@ class GNN(torch.nn.Module):
         self.model = model
         self.max_length = max_length
         self.keypoint_hidden_dim = 16
-        self.pooling = True
+        self.pooling = False
         self.pooling_rate = 0.8 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
