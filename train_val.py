@@ -13,6 +13,7 @@ from sklearn.metrics import f1_score
 import csv
 import smtplib
 from email.mime.text import MIMEText
+from tqdm import tqdm
 
 bless_str = ("                         _oo0oo_\n"
              "                        o8888888o\n"
@@ -221,11 +222,11 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                            max_length=max_length, batch_size=batch_size)
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
-                trained_data_num = 0
                 net.train()
+                progress_bar = tqdm(total=len(train_loader), desc='Progress')
+                print('Training')
                 for data in train_loader:
-                    trained_data_num += 1
-                    print('Training %.1f%%' % (trained_data_num * 100 / len(train_loader)))
+                    progress_bar.update(1)
                     if model in ['avg', 'perframe', 'conv1d']:
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
@@ -257,6 +258,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     optimizer.zero_grad()
                     total_loss.backward()
                     optimizer.step()
+                progress_bar.close()
                 print('Validating')
                 int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
                 net.eval()
