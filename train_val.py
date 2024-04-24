@@ -223,8 +223,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
                 net.train()
-                progress_bar = tqdm(total=len(train_loader), desc='Progress')
                 print('Training')
+                progress_bar = tqdm(total=len(train_loader), desc='Progress')
                 for data in train_loader:
                     progress_bar.update(1)
                     if model in ['avg', 'perframe', 'conv1d']:
