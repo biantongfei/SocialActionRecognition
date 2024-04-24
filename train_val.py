@@ -55,9 +55,9 @@ def send_email(body):
 
 avg_batch_size = 128
 perframe_batch_size = 2048
-rnn_batch_size = 32
-conv1d_batch_size = 32
-gcn_batch_size = 32
+rnn_batch_size = 128
+conv1d_batch_size = 128
+gcn_batch_size = 128
 epoch_limit = 1
 learning_rate = 1e-3
 if torch.cuda.is_available():
@@ -153,9 +153,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    train_dict = {'mixed+coco': {}}
+    # train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -201,10 +201,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
         net.to(device)
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-        train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco,
-                                            'trainset': trainset,
-                                            'valset': valset, 'testset': testset, 'net': net,
-                                            'optimizer': optimizer,
+        train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
+                                            'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
                                             'intention_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
                                             'unimproved_epoch': 0}
         print('Start Training!!!')
@@ -213,7 +211,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         while continue_train:
             continue_train = False
             for hyperparameter_group in train_dict.keys():
-                print('Training')
                 if train_dict[hyperparameter_group]['unimproved_epoch'] < epoch_limit:
                     continue_train = True
                 else:
@@ -224,7 +221,11 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                            max_length=max_length, batch_size=batch_size)
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
+                trained_data_num = 0
+                net.train()
                 for data in train_loader:
+                    trained_data_num += 1
+                    print('Training %.1f%%' % (trained_data_num * 100 / len(train_loader)))
                     if model in ['avg', 'perframe', 'conv1d']:
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
@@ -238,7 +239,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                             2].to(dtype).to(device))
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
-                    net.train()
                     if framework == 'intention':
                         int_outputs = net(inputs)
                         total_loss = functional.cross_entropy(int_outputs, int_labels)
@@ -259,6 +259,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     optimizer.step()
                 print('Validating')
                 int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
+                net.eval()
                 for data in val_loader:
                     if model in ['avg', 'perframe', 'conv1d']:
                         inputs, (int_labels, att_labels, act_labels) = data
@@ -273,7 +274,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                             2].to(dtype).to(device))
                     int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                         device)
-                    net.eval()
                     if framework == 'intention':
                         int_outputs = net(inputs)
                     elif framework == 'attitude':
@@ -455,7 +455,7 @@ if __name__ == '__main__':
     video_len = 2
     performance_model = []
     i = 0
-    while i < 6:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
