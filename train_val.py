@@ -455,7 +455,7 @@ if __name__ == '__main__':
     video_len = 2
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 6:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
