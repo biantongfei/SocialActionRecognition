@@ -281,7 +281,6 @@ class Dataset(Dataset):
 
     def get_graph_data_from_file(self, file):
         edge_index = torch.tensor(np.array(get_l_pair(self.is_coco, self.body_part)), dtype=torch.long).t().contiguous()
-
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
@@ -331,7 +330,6 @@ class Dataset(Dataset):
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
 
     def get_stgraph_data_from_file(self, file):
-        # pass
         input_size = get_inputs_size(self.is_coco, self.body_part)
         edge_index = torch.tensor(np.array(self.max_length * get_l_pair(self.is_coco, self.body_part)),
                                   dtype=torch.long).t().contiguous()
