@@ -247,11 +247,10 @@ class Dataset(Dataset):
         index = 0
         while len(features) < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
-                break
+                features.append(features[-1])
             else:
                 frame = feature_json['frames'][index]
-                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (
-                        video_fps / self.sample_fps):
+                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
                     features.append(features[-1])
                 else:
                     index += 1
@@ -301,7 +300,9 @@ class Dataset(Dataset):
         index = 0
         while len(x_list) < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
-                break
+                x_list.append(x_list[-1])
+                edge_index_list.append(edge_index_list[-1])
+                edge_attr_list.append(edge_attr_list[-1])
             else:
                 frame = feature_json['frames'][index]
                 if frame['frame_id'] > first_id and frame['frame_id'] > len(x_list) * (video_fps / self.sample_fps):
@@ -354,7 +355,10 @@ class Dataset(Dataset):
         frame_num = 0
         while frame_num < int(self.video_len * self.sample_fps):
             if index == video_frame_num:
-                break
+                x_list += x_list[-int(input_size / 2):]
+                edge_index_list += [[ii + (frame_num + 1) * input_size / 2 for ii in i] for i in
+                                    edge_index_list[-input_size:]]
+                edge_attr_list += edge_attr_list[-int(input_size / 2):]
             else:
                 frame = feature_json['frames'][index]
                 if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (video_fps / self.sample_fps):

@@ -217,9 +217,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 else:
                     continue
                 train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
-                                             batch_size=batch_size, max_length=max_length, shuffle=True)
+                                             batch_size=batch_size, max_length=max_length, drop_last=False,
+                                             shuffle=True)
                 val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
-                                           max_length=max_length, batch_size=batch_size)
+                                           max_length=max_length, drop_last=False, batch_size=batch_size)
                 net = train_dict[hyperparameter_group]['net']
                 optimizer = train_dict[hyperparameter_group]['optimizer']
                 net.train()
