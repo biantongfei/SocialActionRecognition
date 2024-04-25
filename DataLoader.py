@@ -32,7 +32,7 @@ class JPLDataLoader(DataLoader):
         for index, d in enumerate(data):
             x = d[0]
             while x.shape[0] < self.max_length:
-                x = torch.cat((x[-1].reshape((1, x.shape[1]))), dim=0)
+                x = torch.cat((x, x[-1].reshape((1, x.shape[1]))), dim=0)
             input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
                 (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
             int_label.append(d[1][0])
