@@ -12,7 +12,7 @@ framework = 'parallel'
 ori_video = False
 sample_fps = 30
 video_len = 2
-for model in ['conv1d', 'lstm', 'gru']:
+for model in ['lstm', 'gru']:
     performance_model = []
     i = 0
     while i < 10:

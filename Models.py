@@ -115,7 +115,7 @@ class RNN(nn.Module):
                                batch_first=True)
             # self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3,
             #                    bidirectional=bidirectional, dropout=0.5, batch_first=True)
-        self.lstm_attention = nn.Linear(self.fc_input_size, 1)
+        self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)
         # Readout layer
         self.fc = nn.Sequential(
             nn.BatchNorm1d(self.hidden_size * 2),
