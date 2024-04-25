@@ -302,14 +302,12 @@ class GNN(torch.nn.Module):
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
                                           hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-                # self.time_model = nn.LSTM(69 * 4, hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             elif self.model == 'gcn_conv1d':
                 self.time_model = nn.Sequential(
                     nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim, 256,
                               kernel_size=7, stride=3, padding=3),
-                    # nn.Conv1d(69 * 4, 256, kernel_size=7, stride=3, padding=3),
                     nn.BatchNorm1d(256),
                     nn.ReLU(),
                     nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
