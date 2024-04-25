@@ -343,7 +343,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
         print('Testing')
         for hyperparameter_group in train_dict:
