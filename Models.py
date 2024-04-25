@@ -165,7 +165,6 @@ class RNN(nn.Module):
 
     def forward(self, x):
         on, _ = self.rnn(x)
-        on = rnn_utils.pad_sequence(on, batch_first=True)
         on = on.reshape(on.shape[0], on.shape[1], 2, -1)
         x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
         attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))

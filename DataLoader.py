@@ -21,9 +21,9 @@ class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                             drop_last=drop_last)
-        if model in ['lstm', 'gru']:
-            self.collate_fn = rnn_collate_fn
-        elif model == 'conv1d':
+        # if model in ['lstm', 'gru']:
+        #     self.collate_fn = rnn_collate_fn
+        if model == 'conv1d':
             self.collate_fn = self.conv1d_collate_fn
         self.max_length = max_length
 
