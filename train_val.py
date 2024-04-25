@@ -232,9 +232,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
                     elif model in ['lstm', 'gru']:
-                        # (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                        inputs, (int_labels, att_labels, act_labels) = data
-                        # inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                        (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                        inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
                     elif 'gcn' in model:
                         x, (int_labels, att_labels, act_labels) = data
@@ -269,9 +268,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                         inputs, (int_labels, att_labels, act_labels) = data
                         inputs = inputs.to(dtype).to(device)
                     elif model in ['lstm', 'gru']:
-                        # (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                        inputs, (int_labels, att_labels, act_labels) = data
-                        # inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                        (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                        inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                         inputs = inputs.to(dtype).to(device)
                     elif 'gcn' in model:
                         x, (int_labels, att_labels, act_labels) = data
@@ -358,9 +356,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     inputs, (int_labels, att_labels, act_labels) = data
                     inputs = inputs.to(dtype).to(device)
                 elif model in ['lstm', 'gru']:
-                    # (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                    inputs, (int_labels, att_labels, act_labels) = data
-                    # inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                    (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                    inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                     inputs = inputs.to(dtype).to(device)
                 elif 'gcn' in model:
                     x, (int_labels, att_labels, act_labels) = data
