@@ -16,7 +16,7 @@ for model in ['conv1d', 'lstm', 'gru']:
 # for model in ['gcn_conv1d', 'gcn_lstm', 'gcn_gcn']:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
