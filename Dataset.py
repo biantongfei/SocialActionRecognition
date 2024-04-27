@@ -198,7 +198,13 @@ class Dataset(Dataset):
         index = 0
         for file in self.files:
             if self.model == 'stgcn':
-                pass
+                x, edge_index, edge_attr, label = self.get_stgraph_data_from_file(file)
+                if type(x) == int:
+                    continue
+                elif type(self.features) == int:
+                    self.features = [(x, edge_index, edge_attr)]
+                else:
+                    self.features.append((x, edge_index, edge_attr))
             elif self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
                 x, edge_index, edge_attr, label = self.get_graph_data_from_file(file)
                 if type(x) == int:
@@ -331,7 +337,7 @@ class Dataset(Dataset):
 
     def get_stgraph_data_from_file(self, file):
         input_size = get_inputs_size(self.is_coco, self.body_part)
-        edge_index = torch.tensor(np.array(self.max_length * get_l_pair(self.is_coco, self.body_part)),
+        edge_index = torch.tensor(np.array(self.sample_fps * self.video_len * get_l_pair(self.is_coco, self.body_part)),
                                   dtype=torch.long).t().contiguous()
         x_list, edge_index_list, edge_attr_list = [], [], []
 

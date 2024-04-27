@@ -293,7 +293,7 @@ class GNN(torch.nn.Module):
         self.max_length = max_length
         self.keypoint_hidden_dim = 16
         self.pooling = False
-        self.pooling_rate = 0.6 if self.pooling else 1
+        self.pooling_rate = 0.5 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
@@ -303,6 +303,11 @@ class GNN(torch.nn.Module):
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
                                           hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+                self.fc_input_size = 256 * 2
+                self.lstm_attention = nn.Linear(self.fc_input_size, 1)
+            elif self.model == 'gcn_gru':
+                self.time_model = nn.GRU(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
+                                         hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
                 self.fc_input_size = 256 * 2
                 self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             elif self.model == 'gcn_conv1d':

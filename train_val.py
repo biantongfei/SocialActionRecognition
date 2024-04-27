@@ -154,9 +154,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    train_dict = {'mixed+coco': {}}
+    # train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -343,7 +343,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
         print('Testing')
         for hyperparameter_group in train_dict:
@@ -442,9 +442,9 @@ if __name__ == '__main__':
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
-    model = 'gcn_lstm'
+    # model = 'gcn_lstm'
     # model = 'gcn_gcn'
-    # model = 'stgcn'
+    model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
@@ -458,7 +458,7 @@ if __name__ == '__main__':
     video_len = 2
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
