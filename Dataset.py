@@ -205,7 +205,7 @@ class Dataset(Dataset):
                     self.features = [(x, edge_index, edge_attr)]
                 else:
                     self.features.append((x, edge_index, edge_attr))
-            elif self.model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
+            elif self.model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
                 x, edge_index, edge_attr, label = self.get_graph_data_from_file(file)
                 if type(x) == int:
                     continue
@@ -233,7 +233,8 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gcn'] else int(x.shape[0]))
+                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn'] else int(
+                    x.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
