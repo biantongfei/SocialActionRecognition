@@ -400,7 +400,7 @@ class GNN(torch.nn.Module):
                     if self.pooling:
                         x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
-            if self.model == 'gcn_lstm':
+            if self.model in ['gcn_lstm', 'gcn_gru']:
                 on, _ = self.time_model(x_time)
                 on = on.reshape(on.shape[0], on.shape[1], 2, -1)
                 x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
