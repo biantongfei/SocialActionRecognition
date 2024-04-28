@@ -345,7 +345,7 @@ class GNN(torch.nn.Module):
             # self.ST_GCN1 = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = EdgeCNN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = self.keypoint_hidden_dim * (self.input_size / 2) * max_length
+            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * (self.input_size / 2) * max_length)
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
             nn.BatchNorm1d(64),

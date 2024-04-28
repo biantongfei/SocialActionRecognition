@@ -233,8 +233,8 @@ class Dataset(Dataset):
             else:
                 self.labels.append(label)
             self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn'] else int(
-                    x.shape[0]))
+                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
+                                                       'stgcn'] else int(x.shape[0]))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -337,11 +337,8 @@ class Dataset(Dataset):
         return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
 
     def get_stgraph_data_from_file(self, file):
-        input_size = get_inputs_size(self.is_coco, self.body_part)
-        edge_index = torch.tensor(np.array(self.sample_fps * self.video_len * get_l_pair(self.is_coco, self.body_part)),
-                                  dtype=torch.long).t().contiguous()
+        input_size = get_inputs_size(self.is_coco, self.body_part, gcn=True)
         x_list, edge_index_list, edge_attr_list = [], [], []
-
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
@@ -353,7 +350,7 @@ class Dataset(Dataset):
                 first_id = frame['frame_id']
                 break
         if first_id == -1:
-            return 0, 0
+            return 0, 0, 0
         index = 0
         frame_num = 0
         while frame_num < int(self.video_len * self.sample_fps):
@@ -362,10 +359,12 @@ class Dataset(Dataset):
             else:
                 frame = feature_json['frames'][index]
                 if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (video_fps / self.sample_fps):
-                    x_list += x_list[-int(input_size / 2):]
-                    edge_index_list += [[ii + (frame_num + 1) * input_size / 2 for ii in i] for i in
-                                        edge_index_list[-input_size:]]
-                    edge_attr_list += edge_attr_list[-int(input_size / 2):]
+                    edge_index = [
+                        [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
+                        in get_l_pair(self.is_coco, self.body_part)]
+                    x_list += x
+                    edge_index_list += edge_index
+                    edge_attr_list += edge_attr
                     frame_num += 1
                 else:
                     index += 1
@@ -376,23 +375,25 @@ class Dataset(Dataset):
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
                         frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                         frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                        x = torch.tensor(frame_feature)
-                        edge_attr = torch.tensor(self.feature_transform(frame_feature, frame_width, frame_height))
-                        x_list.append(x)
-                        edge_index_list.append(edge_index)
-                        edge_attr_list.append(edge_attr)
+                        x = frame_feature.tolist()
+                        edge_index = [
+                            [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
+                            in get_l_pair(self.is_coco, self.body_part)]
+                        edge_attr = self.feature_transform(frame_feature, frame_width, frame_height).tolist()
+                        x_list += x
+                        edge_index_list += edge_index
+                        edge_attr_list += edge_attr
                         frame_num += 1
-        while frame_num < self.sample_fps * self.video_len:
-            x_list += x_list[-int(input_size / 2):]
-            edge_index_list += [[ii + (frame_num + 1) * input_size / 2 for ii in i] for i in
-                                edge_index_list[-input_size:]]
-            edge_attr_list += edge_attr_list[-int(input_size / 2):]
+        while frame_num < self.video_len * self.sample_fps:
+            edge_index = [
+                [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
+                in get_l_pair(self.is_coco, self.body_part)]
+            x_list += x
+            edge_index_list += edge_index
+            edge_attr_list += edge_attr
             frame_num += 1
-        for index in range(len(x_list)):
-            if index + input_size / 2 < len(x_list) - 1:
-                edge_index_list.append([index, int(index + input_size / 2)])
-            else:
-                break
+        for index in range(frame_num - 1):
+            edge_index_list.append([index, int(index + input_size / 2)])
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
             return 0
