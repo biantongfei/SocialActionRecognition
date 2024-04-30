@@ -29,7 +29,7 @@ for model in ['gcn_gru']:
             continue
         performance_model.append(p_m)
         i += 1
-    draw_save('gat', performance_model, framework)
+    draw_save('topk', performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
