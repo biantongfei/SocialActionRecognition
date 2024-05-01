@@ -298,7 +298,7 @@ class GNN(torch.nn.Module):
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_keypoints = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
+            self.pool = SAGPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             if self.model == 'gcn_lstm':
                 self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
                                           hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
