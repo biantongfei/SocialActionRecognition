@@ -18,15 +18,15 @@ for model in ['gcn_gru']:
     i = 0
     while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
-        try:
-            if video_len:
-                p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                            ori_videos=ori_video, video_len=video_len)
-            else:
-                p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                            ori_videos=ori_video)
-        except ValueError:
-            continue
+        # try:
+        if video_len:
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video, video_len=video_len)
+        else:
+            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+                        ori_videos=ori_video)
+        # except ValueError:
+        #     continue
         performance_model.append(p_m)
         i += 1
     draw_save('asap', performance_model, framework)
