@@ -395,7 +395,7 @@ class GNN(torch.nn.Module):
                     # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                     if self.pooling:
                         # x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
-                        x_t, _, _, _, _= self.pool(x_t, new_edge_index)
+                        x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model in ['gcn_lstm', 'gcn_gru']:
                 on, _ = self.time_model(x_time)

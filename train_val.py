@@ -14,6 +14,7 @@ import csv
 import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
+from thop import profile
 
 bless_str = ("                         _oo0oo_\n"
              "                        o8888888o\n"
@@ -154,9 +155,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    train_dict = {'mixed+coco': {}}
+    # train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -343,7 +344,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
         print('Testing')
         for hyperparameter_group in train_dict:
@@ -429,8 +430,21 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 performance_model[hyperparameter_group]['action_y_true'] = act_y_true
                 performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
                 result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
-            print(result_str + 'process_time_pre_frame: %.2f' % (
-                    process_time * 1000 / len(testset) / (video_len * sample_fps)))
+            print(inputs.shape)
+            if model == 'avg':
+                rand_input = torch.randn(1, inputs.shape[-1]).to(device)
+            elif model == 'perframe':
+                rand_input = torch.randn(video_len * sample_fps, inputs.shape[-1])
+            elif model in ['conv1d', 'lstm', 'gru']:
+                rand_input = torch.randn(1, video_len * sample_fps, inputs.shape[-1])
+            else:
+                rand_input = (torch.randn(1, ))
+            macs, params = profile(net, inputs=(rand_input,), verbose=False)
+            model_size = params * 4.0 / 1024 / 1024
+            GFlops = macs * 2.0 / pow(10, 9)
+            print(
+                result_str + 'model_size: %.2f MB, Computational complexity: %.2f GFLOPs, process_time_pre_frame: %.2f' % (
+                    (model_size, GFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             # draw_training_process(trainging_process)
         return performance_model
@@ -438,13 +452,13 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 if __name__ == '__main__':
     # model = 'avg'
-    # model = 'perframe'
+    model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
-    model = 'stgcn'
+    # model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
@@ -475,4 +489,4 @@ if __name__ == '__main__':
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
-    send_email(result_str)
+    # send_email(result_str)
