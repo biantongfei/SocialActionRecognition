@@ -380,8 +380,6 @@ class GNN(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, edge_attr = data[0], data[1], data[2]
-        time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
-                                       dtype=torch.int64).t().contiguous().to(device)
         if self.model != 'stgcn':
             x_time = torch.zeros(
                 (x.shape[0], x.shape[1],
@@ -408,6 +406,8 @@ class GNN(torch.nn.Module):
                 x = self.time_model(x)
                 x = x.flatten(1)
             else:
+                time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
+                                               dtype=torch.int64).t().contiguous().to(device)
                 x = torch.zeros(
                     (x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))).to(
                     dtype).to(device)

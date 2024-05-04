@@ -117,6 +117,7 @@ def get_inputs_size(is_coco, body_part, gcn=False):
         input_size += hands_point_num
     if not gcn:
         input_size += len(get_l_pair(is_coco, body_part))
+        print(len(get_l_pair(is_coco, body_part)))
     return 2 * input_size
 
 
@@ -392,6 +393,7 @@ class Dataset(Dataset):
             edge_index_list += edge_index
             edge_attr_list += edge_attr
             frame_num += 1
+        print(len(edge_index_list))
         for index in range(frame_num - 1):
             edge_index_list.append([index, int(index + input_size / 2)])
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
