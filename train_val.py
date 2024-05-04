@@ -60,6 +60,7 @@ perframe_batch_size = 2048
 rnn_batch_size = 128
 conv1d_batch_size = 128
 gcn_batch_size = 128
+stgcn_batch_size = 64
 epoch_limit = 1
 learning_rate = 1e-3
 if torch.cuda.is_available():
@@ -175,8 +176,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         batch_size = rnn_batch_size
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
-    elif 'gcn' in model:
+    elif 'gcn_' in model:
         batch_size = gcn_batch_size
+    elif model == 'stgcn':
+        batch_size = stgcn_batch_size
 
     for hyperparameter_group in train_dict.keys():
         print('loading data for', hyperparameter_group)
@@ -365,7 +368,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                     inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
                         2].to(dtype).to(device))
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
-                if index==0:
+                if index == 0:
                     macs, params = profile(net, inputs=(inputs,), verbose=False)
                     model_size = params * 4.0 / 1024 / 1024
                     MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size
