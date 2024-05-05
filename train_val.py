@@ -158,9 +158,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    train_dict = {'mixed+coco': {}}
+    # train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -453,10 +453,10 @@ if __name__ == '__main__':
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gru'
-    model = 'gcn_conv1d'
+    # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
-    # model = 'stgcn'
+    model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
@@ -483,7 +483,7 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save('topk', performance_model, framework)
+    draw_save('stgcn', performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)

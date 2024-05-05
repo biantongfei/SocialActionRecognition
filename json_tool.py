@@ -2,6 +2,7 @@ import json
 import os
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def summarize_features(feature_path):
@@ -200,7 +201,7 @@ def gaussion_augment():
     files = os.listdir(json_path)
     files.sort()
     for file in files:
-        if'-ori_' in file:
+        if '-ori_' in file:
             print(file, 'halpe')
             with open(json_path + file, "r") as f:
                 ori_json = json.load(f)
@@ -261,11 +262,11 @@ def mixed_augment():
         for sigma_index, sigma in enumerate(sigma_list):
             for i in range(augment_times):
                 new_json = {'video_name': ori_json['video_name'], 'frame_size': ori_json['frame_size'],
-                                'video_frames_number': ori_json['video_frames_number'],
-                                'detected_frames_number': ori_json['detected_frames_number'],
-                                'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
-                                'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
-                                'frames': []}
+                            'video_frames_number': ori_json['video_frames_number'],
+                            'detected_frames_number': ori_json['detected_frames_number'],
+                            'person_id': ori_json['person_id'], 'intention_class': ori_json['intention_class'],
+                            'attitude_class': ori_json['attitude_class'], 'action_class': ori_json['action_class'],
+                            'frames': []}
                 for frame in ori_json['frames']:
                     box_size = frame['box'][2:]
                     keypoints = frame['keypoints']
@@ -362,6 +363,56 @@ def add_attitude_class():
                 f.close()
 
 
+def draw_keypoints():
+    frame_width, frame_height = 640, 480
+    pair = [
+        (0, 1), (0, 2), (1, 3), (2, 4),  # Head
+        (5, 18), (6, 18), (5, 7), (7, 9), (6, 8), (8, 10),  # Body
+        (17, 18), (18, 19), (19, 11), (19, 12),
+        (11, 13), (12, 14), (13, 15), (14, 16),
+        (20, 24), (21, 25), (23, 25), (22, 24), (15, 24), (16, 25),  # Foot
+    ]
+    with open('alphapose-results.json', 'r') as f:
+        json_file = json.load(f)
+        f.close()
+    for id, person in enumerate(json_file):
+        # img = np.full((frame_height, frame_width, 3), 255, np.uint8)
+        # for index in range(len(person['keypoints'])):
+        #     if index % 3 == 0:
+        #         cv2.circle(img, (int(person['keypoints'][index]), int(person['keypoints'][index + 1])), 3,
+        #                    p_color[int(index / 3)], -1)
+        # for i, p in enumerate(pair):
+        #     start_xy = (int(person['keypoints'][p[0] * 3]), int(person['keypoints'][p[0] * 3 + 1]))
+        #     end_xy = (int(person['keypoints'][p[1] * 3]), int(person['keypoints'][p[1] * 3 + 1]))
+        #     cv2.line(img, start_xy, end_xy, line_color[i], 2)
+        # cv2.namedWindow("image")
+        # cv2.imshow('image', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        plt.figure()
+        x, y = [], []
+        for index in range(len(person['keypoints'])):
+            if index % 3 == 0:
+                x.append(person['keypoints'][index])
+                y.append(frame_height - person['keypoints'][index + 1])
+        plt.scatter(x, y, color='black')
+        for p in pair:
+            plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
+                     (frame_height - person['keypoints'][p[0] * 3 + 1],
+                      frame_height - person['keypoints'][p[1] * 3 + 1]),
+                     color='black')
+        plt.xlim((0, 640))
+        plt.ylim((0, 480))
+        plt.tight_layout()
+        frame = plt.gca()
+        frame.axes.get_xaxis().set_visible(False)
+        frame.axes.get_yaxis().set_visible(False)
+        plt.axis('off')
+        # plt.show()
+        plt.savefig('%d.png' % id)
+        # break
+
+
 if __name__ == '__main__':
     # add_attitude_class()
     # refactor_jsons()
@@ -378,5 +429,6 @@ if __name__ == '__main__':
     #         if feature_json['action_class'] == 0:
     #             print(file)
     #     pre_video = file.split('p')[0]
-    mixed_augment()
+    # mixed_augment()
     # add_attitude_class()
+    draw_keypoints()
