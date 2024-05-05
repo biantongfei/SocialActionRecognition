@@ -398,7 +398,7 @@ class Dataset(Dataset):
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
             return 0
-        return np.array(x_list), np.array(edge_index_list), np.array(edge_attr_list), label
+        return np.array(x_list), np.array(edge_index_list).transpose(), np.array(edge_attr_list), label
 
     def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)

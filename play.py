@@ -1,5 +1,5 @@
-import torch
+import numpy as np
 
-x = torch.randn(2, 3)
-y = torch.randn(3, 3)
-print(torch.cat((x, y), 0))
+x = np.array([[1, 1], [2, 2]])
+print(x)
+print(x.transpose())
