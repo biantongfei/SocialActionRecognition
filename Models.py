@@ -420,6 +420,7 @@ class GNN(torch.nn.Module):
                     x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
+            print(x.shape,edge_index.shape,edge_attr.shape)
             x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
             x = x.flatten(1)
         y = self.fc(x)
