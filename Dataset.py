@@ -399,9 +399,8 @@ class Dataset(Dataset):
             for ee in e:
                 if ee > 7979:
                     print(ee)
-        print(1111111111)
-        for index in range(len(x_list) - int(input_size / 2)):
-            edge_index_list.append([index, int(index + input_size / 2)])
+        # for index in range(len(x_list) - int(input_size / 2)):
+        #     edge_index_list.append([index, int(index + input_size / 2)])
 
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
