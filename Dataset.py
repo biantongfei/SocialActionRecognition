@@ -387,9 +387,8 @@ class Dataset(Dataset):
                         edge_attr_list += edge_attr
                         frame_num += 1
         while frame_num < self.video_len * self.sample_fps:
-            edge_index = [
-                [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
-                in get_l_pair(self.is_coco, self.body_part)]
+            edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i in
+                          l_pair]
             x_list += x
             edge_index_list += edge_index
             edge_attr_list += edge_attr
