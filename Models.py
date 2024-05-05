@@ -19,7 +19,6 @@ elif torch.backends.mps.is_available():
     device = torch.device('mps')
 else:
     device = torch.device('cpu')
-device = torch.device('cpu')
 dtype = torch.float
 
 
@@ -425,8 +424,6 @@ class GNN(torch.nn.Module):
                 (x.shape[0], int(self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(dtype).to(
                 device)
             for i in range(x.shape[0]):
-                print(x[i].shape, edge_index[i].shape, edge_attr[i].shape)
-                print(edge_index[i])
                 x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
                 x_b = x_b.reshape(1, -1)[0]
                 x_batch[i] = x_b
