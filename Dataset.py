@@ -239,7 +239,6 @@ class Dataset(Dataset):
                     x.shape[0] * 2 / get_inputs_size(self.is_coco, self.body_part, True)) if model == 'stgcn' else int(
                     x.shape[0]))
         self.max_length = max(self.frame_number_list)
-        print(self.max_length)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:

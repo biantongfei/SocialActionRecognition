@@ -425,10 +425,8 @@ class GNN(torch.nn.Module):
                 device)
             print(x_batch.shape)
             for i in range(x.shape[0]):
-                print(x[i].shape, edge_index[i].shape, edge_attr[i].shape)
                 x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
                 x_b = x_b.reshape(1, -1)[0]
-                print(x_b.shape)
                 x_batch[i] = x_b
             x = x_batch.flatten(1)
         y = self.fc(x)
