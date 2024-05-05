@@ -236,7 +236,7 @@ class Dataset(Dataset):
             self.frame_number_list.append(
                 int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
                                                        'stgcn'] else int(
-                    x.shape[0] / get_inputs_size(self.is_coco, self.body_part, True) / 2) if model == 'stgcn' else int(
+                    x.shape[0] * 2 / get_inputs_size(self.is_coco, self.body_part, True)) if model == 'stgcn' else int(
                     x.shape[0]))
         self.max_length = max(self.frame_number_list)
         print(self.max_length)
