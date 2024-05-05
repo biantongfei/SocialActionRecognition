@@ -74,6 +74,7 @@ elif torch.backends.mps.is_available():
 else:
     print('Using CPU for training')
     device = torch.device('cpu')
+device = torch.device('cpu')
 dtype = torch.float
 intention_class = ['interacting', 'interested', 'not_interested']
 attitude_classes = ['positive', 'negative', 'no_interacting']
