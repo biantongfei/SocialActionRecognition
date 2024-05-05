@@ -396,6 +396,7 @@ class Dataset(Dataset):
             edge_attr_list += edge_attr
             frame_num += 1
         for index in range(len(x_list) - int(input_size / 2)):
+            print(index)
             edge_index_list.append([index, int(index + input_size / 2)])
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
