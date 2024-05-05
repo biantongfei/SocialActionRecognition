@@ -15,6 +15,7 @@ import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
 from thop import profile
+import os
 
 bless_str = ("                         _oo0oo_\n"
              "                        o8888888o\n"
@@ -66,6 +67,7 @@ learning_rate = 1e-3
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
+    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 elif torch.backends.mps.is_available():
     print('Using MPS for training')
     device = torch.device('mps')
