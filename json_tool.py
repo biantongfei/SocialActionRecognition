@@ -389,28 +389,28 @@ def draw_keypoints():
         # cv2.imshow('image', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        plt.figure()
-        x, y = [], []
-        for index in range(len(person['keypoints'])):
-            if index % 3 == 0:
-                x.append(person['keypoints'][index])
-                y.append(frame_height - person['keypoints'][index + 1])
-        plt.scatter(x, y, color='black')
-        for p in pair:
-            plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
-                     (frame_height - person['keypoints'][p[0] * 3 + 1],
-                      frame_height - person['keypoints'][p[1] * 3 + 1]),
-                     color='black')
-        plt.xlim((0, 640))
-        plt.ylim((0, 480))
-        plt.tight_layout()
-        frame = plt.gca()
-        frame.axes.get_xaxis().set_visible(False)
-        frame.axes.get_yaxis().set_visible(False)
-        plt.axis('off')
-        # plt.show()
-        plt.savefig('%d.png' % id)
-        # break
+        if id == 1:
+            plt.figure()
+            x, y = [], []
+            for index in range(len(person['keypoints'])):
+                if index % 3 == 0:
+                    x.append(person['keypoints'][index])
+                    y.append(frame_height - person['keypoints'][index + 1])
+            plt.scatter(x, y, marker='.', color='black')
+            for p in pair:
+                plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
+                         (frame_height - person['keypoints'][p[0] * 3 + 1],
+                          frame_height - person['keypoints'][p[1] * 3 + 1]),
+                         color='black')
+            plt.xlim((180, 420))
+            plt.ylim((120, 300))
+            plt.tight_layout()
+            frame = plt.gca()
+            frame.axes.get_xaxis().set_visible(False)
+            frame.axes.get_yaxis().set_visible(False)
+            plt.axis('off')
+            plt.show()
+            plt.savefig('%d.png' % id)
 
 
 if __name__ == '__main__':
