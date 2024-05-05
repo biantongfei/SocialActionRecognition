@@ -420,13 +420,8 @@ class GNN(torch.nn.Module):
                     x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
-            x_batch = torch.zeros((x.shape[0], self.fc_input_size))
-            print(x.shape, edge_index.shape, edge_attr.shape)
-            for i in range(x.shape[0]):
-                x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i])
-                x_b = x_b.flatten(1)
-                x_batch[i] = x_b
-            x = x_b
+            x = self.ST_GCN1(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            x = x.flatten(1)
         y = self.fc(x)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
