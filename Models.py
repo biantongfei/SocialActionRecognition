@@ -420,7 +420,10 @@ class GNN(torch.nn.Module):
                     x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
-            x_batch = torch.zeros((x.shape[0], self.fc_input_size)).to(dtype).to(device)
+            x_batch = torch.zeros(
+                (x.shape[0], int(self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(dtype).to(
+                device)
+            print(x_batch.shape)
             for i in range(x.shape[0]):
                 print(x[i].shape, edge_index[i].shape, edge_attr[i].shape)
                 x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
