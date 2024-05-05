@@ -347,6 +347,7 @@ class Dataset(Dataset):
             f.close()
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
+        l_pair = get_l_pair(self.is_coco, self.body_part)
         first_id = -1
         for frame in feature_json['frames']:
             if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
@@ -362,9 +363,8 @@ class Dataset(Dataset):
             else:
                 frame = feature_json['frames'][index]
                 if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (video_fps / self.sample_fps):
-                    edge_index = [
-                        [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
-                        in get_l_pair(self.is_coco, self.body_part)]
+                    edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i
+                                  in l_pair]
                     x_list += x
                     edge_index_list += edge_index
                     edge_attr_list += edge_attr
@@ -379,9 +379,8 @@ class Dataset(Dataset):
                         frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                         frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                         x = frame_feature.tolist()
-                        edge_index = [
-                            [i[0] + int(frame_num * input_size / 2), i[1] + int(len(x_list) * input_size / 2)] for i
-                            in get_l_pair(self.is_coco, self.body_part)]
+                        edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)]
+                                      for i in l_pair]
                         edge_attr = self.feature_transform(frame_feature, frame_width, frame_height).tolist()
                         x_list += x
                         edge_index_list += edge_index
