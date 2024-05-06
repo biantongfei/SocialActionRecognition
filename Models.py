@@ -424,7 +424,7 @@ class GNN(torch.nn.Module):
                                    int(self.pooling_rate * self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(
                 dtype).to(device)
             for i in range(x.shape[0]):
-                x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
+                x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i]).to(dtype).to(device)
                 if self.pooling:
                     x_b, _, _, _, _, _ = self.pool(x_b, edge_index[i])
                 x_b = x_b.reshape(1, -1)[0]
