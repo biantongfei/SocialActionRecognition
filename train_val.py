@@ -158,9 +158,9 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     """
     # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
     # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    # train_dict = {'mixed+coco': {}}
+    train_dict = {'mixed+coco': {}}
     # train_dict = {'mixed+halpe': {}}
-    train_dict = {'crop+coco': {}}
+    # train_dict = {'crop+coco': {}}
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     trainging_process = {}
     performance_model = {}
@@ -455,8 +455,8 @@ if __name__ == '__main__':
     # model = 'gru'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
-    model = 'gcn_gcn'
-    # model = 'stgcn'
+    # model = 'gcn_gcn'
+    model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'

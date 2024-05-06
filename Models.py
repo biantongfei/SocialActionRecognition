@@ -292,7 +292,7 @@ class GNN(torch.nn.Module):
         self.model = model
         self.max_length = max_length
         self.keypoint_hidden_dim = 16
-        self.pooling = False
+        self.pooling = True
         self.pooling_rate = 0.5 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
@@ -339,7 +339,7 @@ class GNN(torch.nn.Module):
             self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
+            self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * (self.input_size / 2) * max_length)
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
@@ -420,9 +420,9 @@ class GNN(torch.nn.Module):
                     x[i] = x_t.reshape(1, -1)[0]
                 x = x.flatten(1)
         else:
-            x_batch = torch.zeros(
-                (x.shape[0], int(self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(dtype).to(
-                device)
+            x_batch = torch.zeros((x.shape[0],
+                                   int(self.pooling_rate * self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(
+                dtype).to(device)
             for i in range(x.shape[0]):
                 x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
                 x_b = x_b.reshape(1, -1)[0]
