@@ -365,13 +365,30 @@ def add_attitude_class():
 
 def draw_keypoints():
     frame_width, frame_height = 640, 480
-    pair = [
-        (0, 1), (0, 2), (1, 3), (2, 4),  # Head
-        (5, 18), (6, 18), (5, 7), (7, 9), (6, 8), (8, 10),  # Body
-        (17, 18), (18, 19), (19, 11), (19, 12),
-        (11, 13), (12, 14), (13, 15), (14, 16),
-        (20, 24), (21, 25), (23, 25), (22, 24), (15, 24), (16, 25),  # Foot
-    ]
+    pair = [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
+            [5, 18], [6, 18], [5, 7], [7, 9], [6, 8], [8, 10],  # Body
+            [17, 18], [18, 19], [19, 11], [19, 12],
+            [11, 13], [12, 14], [13, 15], [14, 16],
+            [20, 24], [21, 25], [23, 25], [22, 24], [15, 24], [16, 25],  # Foot
+            [26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32], [32, 33], [33, 34], [34, 35],
+            [35, 36], [36, 37], [37, 38],  # Face
+            [38, 39], [39, 40], [40, 41], [41, 42], [43, 44], [44, 45], [45, 46], [46, 47], [48, 49],
+            [49, 50], [50, 51], [51, 52],  # Face
+            [53, 54], [54, 55], [55, 56], [57, 58], [58, 59], [59, 60], [60, 61], [62, 63], [63, 64],
+            [64, 65], [65, 66], [66, 67],  # Face
+            [68, 69], [69, 70], [70, 71], [71, 72], [72, 73], [74, 75], [75, 76], [76, 77], [77, 78],
+            [78, 79], [79, 80], [80, 81],  # Face
+            [81, 82], [82, 83], [83, 84], [84, 85], [85, 86], [86, 87], [87, 88], [88, 89], [89, 90],
+            [90, 91], [91, 92], [92, 93],  # Face
+            [94, 95], [95, 96], [96, 97], [97, 98], [94, 99], [99, 100], [100, 101], [101, 102], [94, 103],
+            [103, 104], [104, 105],  # LeftHand
+            [105, 106], [94, 107], [107, 108], [108, 109], [109, 110], [94, 111], [111, 112], [112, 113],
+            [113, 114],  # LeftHand
+            [115, 116], [116, 117], [117, 118], [118, 119], [115, 120], [120, 121], [121, 122], [122, 123],
+            [115, 124], [124, 125],  # RightHand
+            [125, 126], [126, 127], [115, 128], [128, 129], [129, 130], [130, 131], [115, 132], [132, 133],
+            [133, 134], [134, 135]  # RightHand
+            ]
     with open('alphapose-results.json', 'r') as f:
         json_file = json.load(f)
         f.close()
@@ -390,27 +407,38 @@ def draw_keypoints():
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         # if id == 1:
-            plt.figure()
-            x, y = [], []
-            for index in range(len(person['keypoints'])):
-                if index % 3 == 0:
+        plt.figure()
+        x, y, x_headhand, y_headhand = [], [], [], []
+        for index in range(len(person['keypoints'])):
+            if index % 3 == 0:
+                if index < 26:
                     x.append(person['keypoints'][index])
                     y.append(frame_height - person['keypoints'][index + 1])
-            plt.scatter(x, y, marker='.', color='black')
-            for p in pair:
+                else:
+                    x_headhand.append(person['keypoints'][index])
+                    y_headhand.append(frame_height - person['keypoints'][index + 1])
+        plt.scatter(x, y, marker='.', color='black')
+        plt.scatter(x_headhand, y_headhand, marker='.', color='deepskyblue')
+        for index, p in enumerate(pair):
+            if index < 24:
                 plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
                          (frame_height - person['keypoints'][p[0] * 3 + 1],
-                          frame_height - person['keypoints'][p[1] * 3 + 1]),
+                          frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
                          color='black')
-            plt.xlim((180, 420))
-            plt.ylim((120, 300))
-            plt.tight_layout()
-            frame = plt.gca()
-            frame.axes.get_xaxis().set_visible(False)
-            frame.axes.get_yaxis().set_visible(False)
-            plt.axis('off')
-            plt.show()
-            # plt.savefig('%d.png' % id)
+            else:
+                plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
+                         (frame_height - person['keypoints'][p[0] * 3 + 1],
+                          frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=1,
+                         color='deepskyblue')
+        plt.xlim((180, 420))
+        plt.ylim((120, 300))
+        plt.tight_layout()
+        frame = plt.gca()
+        frame.axes.get_xaxis().set_visible(False)
+        frame.axes.get_yaxis().set_visible(False)
+        plt.axis('off')
+        plt.show()
+        # plt.savefig('%d.png' % id)
 
 
 if __name__ == '__main__':
