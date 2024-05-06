@@ -389,7 +389,7 @@ def draw_keypoints():
         # cv2.imshow('image', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        if id == 1:
+        # if id == 1:
             plt.figure()
             x, y = [], []
             for index in range(len(person['keypoints'])):
@@ -410,7 +410,7 @@ def draw_keypoints():
             frame.axes.get_yaxis().set_visible(False)
             plt.axis('off')
             plt.show()
-            plt.savefig('%d.png' % id)
+            # plt.savefig('%d.png' % id)
 
 
 if __name__ == '__main__':

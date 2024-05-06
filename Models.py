@@ -292,7 +292,7 @@ class GNN(torch.nn.Module):
         self.model = model
         self.max_length = max_length
         self.keypoint_hidden_dim = 16
-        self.pooling = True
+        self.pooling = False
         self.pooling_rate = 0.5 if self.pooling else 1
         if self.model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
             self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
@@ -336,8 +336,8 @@ class GNN(torch.nn.Module):
                 self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
                 self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         else:
-            self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.ST_GCN1 = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.ST_GCN1 = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * (self.input_size / 2) * max_length)
@@ -392,8 +392,8 @@ class GNN(torch.nn.Module):
                     x_t = self.GCN_keypoints(x=x_t, edge_index=new_edge_index).to(dtype).to(device)
                     # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                     if self.pooling:
-                        # x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
-                        x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+                        x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
+                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_time[i][ii] = x_t.reshape(1, -1)[0]
             if self.model in ['gcn_lstm', 'gcn_gru']:
                 on, _ = self.time_model(x_time)
@@ -425,6 +425,8 @@ class GNN(torch.nn.Module):
                 dtype).to(device)
             for i in range(x.shape[0]):
                 x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i], edge_attr=edge_attr[i]).to(dtype).to(device)
+                if self.pooling:
+                    x_b, _, _, _, _, _ = self.pool(x_b, edge_index[i])
                 x_b = x_b.reshape(1, -1)[0]
                 x_batch[i] = x_b
             x = x_batch.flatten(1)
