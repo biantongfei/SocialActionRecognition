@@ -13,7 +13,7 @@ ori_video = False
 sample_fps = 30
 video_len = 2
 # for model in ['lstm', 'gru']:
-for model in ['stgcn']:
+for model in ['gcn_gru']:
     performance_model = []
     i = 0
     while i < 10:
