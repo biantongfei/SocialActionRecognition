@@ -4,9 +4,11 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
+import torch.nn.functional as F
 from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling, SAGPooling, ASAPooling
 
 from Dataset import get_inputs_size
+from graph import Graph, ConvTemporalGraphical
 
 box_feature_num = 4
 intention_class_num = 3
@@ -287,60 +289,65 @@ class GNN(torch.nn.Module):
         super(GNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
-        self.input_size = get_inputs_size(is_coco, body_part, True)
+        self.body_part = body_part
+        self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         self.model = model
         self.max_length = max_length
         self.keypoint_hidden_dim = 8
         self.pooling = False
         self.pooling_rate = 0.5 if self.pooling else 1
-        if self.model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
-            self.GCN_keypoints = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_keypoints = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_keypoints = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            self.pool = ASAPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            if self.model == 'gcn_lstm':
-                self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
-                                          hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-                self.fc_input_size = 256 * 2
-                self.lstm_attention = nn.Linear(self.fc_input_size, 1)
-            elif self.model == 'gcn_gru':
-                self.time_model = nn.GRU(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
-                                         hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-                self.fc_input_size = 256 * 2
-                self.lstm_attention = nn.Linear(self.fc_input_size, 1)
-            elif self.model == 'gcn_conv1d':
-                self.time_model = nn.Sequential(
-                    nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim, 256,
-                              kernel_size=7, stride=3, padding=3),
-                    nn.BatchNorm1d(256),
-                    nn.ReLU(),
-                    nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
-                    nn.BatchNorm1d(128),
-                    nn.ReLU(),
-                    nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
-                    nn.BatchNorm1d(64),
-                    nn.ReLU(),
-                )
-                self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
-            else:
-                self.GCN_time = GCN(
-                    in_channels=math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim,
-                    hidden_channels=self.keypoint_hidden_dim, num_layers=2)
-                # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
-                #                     hidden_channels=self.keypoint_hidden_dim,
-                #                     num_layers=2)
-                # self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 2),
-                #                     hidden_channels=self.keypoint_hidden_dim,
-                #                     num_layers=2)
-                self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-                self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
+        if body_part[0]:
+            self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_body = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+        if body_part[1]:
+            self.GCN_face = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_face = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_face = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+        if body_part[2]:
+            self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+        print(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim)
+        self.gcn_attention = self.attn = nn.MultiheadAttention(
+            math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1)
+        if self.model == 'gcn_lstm':
+            self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                                      hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+            self.fc_input_size = 256 * 2
+            self.lstm_attention = nn.Linear(self.fc_input_size, 1)
+        elif self.model == 'gcn_gru':
+            self.time_model = nn.GRU(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                                     hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+            self.fc_input_size = 256 * 2
+            self.lstm_attention = nn.Linear(self.fc_input_size, 1)
+        elif self.model == 'gcn_conv1d':
+            self.time_model = nn.Sequential(
+                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 256,
+                          kernel_size=7, stride=3, padding=3),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+            )
+            self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         else:
-            # self.ST_GCN1 = GCN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.ST_GCN1 = GAT(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            self.ST_GCN1 = GIN(in_channels=2, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_time = GCN(
+                in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                hidden_channels=self.keypoint_hidden_dim, num_layers=2)
+            # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
+            #                     hidden_channels=self.keypoint_hidden_dim,
+            #                     num_layers=2)
+            # self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
+            #                     hidden_channels=self.keypoint_hidden_dim,
+            #                     num_layers=2)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * (self.input_size / 2) * max_length)
+            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
             nn.BatchNorm1d(64),
@@ -378,58 +385,59 @@ class GNN(torch.nn.Module):
                                              )
 
     def forward(self, data):
-        x, edge_index, edge_attr = data[0], data[1], data[2]
-        if self.model != 'stgcn':
-            x_time = torch.zeros(
-                (x.shape[0], x.shape[1],
-                 math.ceil(self.pooling_rate * self.input_size / 2) * self.keypoint_hidden_dim)).to(dtype).to(device)
-            # x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
-            for i in range(x.shape[0]):
-                for ii in range(x.shape[1]):
-                    x_t, new_edge_index, edge_attr_t = x[i][ii], edge_index[i][ii], edge_attr[i][ii]
-                    # x_t = self.GCN_keypoints(x=x_t, edge_index=new_edge_index, edge_attr=edge_attr_t).to(dtype).to(
-                    #     device)
-                    x_t = self.GCN_keypoints(x=x_t, edge_index=new_edge_index).to(dtype).to(device)
-                    # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
+        x, edge_index = data[0], data[1],
+        x_time = torch.zeros((x[0].shape[0], x[0].shape[1],
+                              math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim)).to(
+            dtype).to(device)
+        # x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
+        for i in range(x[0].shape[0]):
+            for ii in range(x[0].shape[1]):
+                x_list = []
+                if self.body_part[0]:
+                    x_body = self.GCN_body(x=x[0][i][ii], edge_index=edge_index[0][i][ii]).to(dtype).to(device)
                     if self.pooling:
-                        x_t, _, _, _, _, _ = self.pool(x_t, new_edge_index)
+                        x_body, _, _, _, _, _ = self.pool(x_body, edge_index[0][i][ii])
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    x_time[i][ii] = x_t.reshape(1, -1)[0]
-            if self.model in ['gcn_lstm', 'gcn_gru']:
-                on, _ = self.time_model(x_time)
-                on = on.reshape(on.shape[0], on.shape[1], 2, -1)
-                x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
-                attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
-                x = torch.sum(x * attention_weights, dim=1)
-            elif self.model == 'gcn_conv1d':
-                x = torch.transpose(x_time, 1, 2)
-                x = self.time_model(x)
-                x = x.flatten(1)
-            else:
-                time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
-                                               dtype=torch.int64).t().contiguous().to(device)
-                x = torch.zeros(
-                    (x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))).to(
-                    dtype).to(device)
-                for i in range(x_time.shape[0]):
-                    x_t = x_time[i]
-                    x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype).to(device)
-                    # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
+                    x_list.append(x_body)
+                if self.body_part[1]:
+                    x_face = self.GCN_face(x=x[1][i][ii], edge_index=edge_index[1][i][ii]).to(dtype).to(device)
                     if self.pooling:
-                        x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
-                    x[i] = x_t.reshape(1, -1)[0]
-                x = x.flatten(1)
+                        x_face, _, _, _, _, _ = self.pool(x_face, edge_index[1][i][ii])
+                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+                    x_list.append(x_face)
+                if self.body_part[2]:
+                    x_hand = self.GCN_hand(x=x[2][i][ii], edge_index=edge_index[2][i][ii]).to(dtype).to(device)
+                    if self.pooling:
+                        x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index[2][i][ii])
+                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+                    x_list.append(x_hand)
+                x_t = torch.cat(x_list, dim=0).reshape(1, -1)
+                x_t, _ = self.gcn_attention(x_t, x_t, x_t)
+                x_time[i][ii] = x_t[0]
+        if self.model in ['gcn_lstm', 'gcn_gru']:
+            on, _ = self.time_model(x_time)
+            on = on.reshape(on.shape[0], on.shape[1], 2, -1)
+            x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
+            attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
+            x = torch.sum(x * attention_weights, dim=1)
+        elif self.model == 'gcn_conv1d':
+            x = torch.transpose(x_time, 1, 2)
+            x = self.time_model(x)
+            x = x.flatten(1)
         else:
-            x_batch = torch.zeros((x.shape[0],
-                                   int(self.pooling_rate * self.max_length * self.keypoint_hidden_dim * self.input_size / 2))).to(
+            time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
+                                           dtype=torch.int64).t().contiguous().to(device)
+            x = torch.zeros(
+                (x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))).to(
                 dtype).to(device)
-            for i in range(x.shape[0]):
-                x_b = self.ST_GCN1(x=x[i], edge_index=edge_index[i]).to(dtype).to(device)
+            for i in range(x_time.shape[0]):
+                x_t = x_time[i]
+                x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype).to(device)
+                # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 if self.pooling:
-                    x_b, _, _, _, _, _ = self.pool(x_b, edge_index[i])
-                x_b = x_b.reshape(1, -1)[0]
-                x_batch[i] = x_b
-            x = x_batch.flatten(1)
+                    x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
+                x[i] = x_t.reshape(1, -1)[0]
+            x = x.flatten(1)
         y = self.fc(x)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
@@ -453,3 +461,216 @@ class GNN(torch.nn.Module):
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
+
+
+def zero(x):
+    return 0
+
+
+def iden(x):
+    return x
+
+
+class ST_GCN_18(nn.Module):
+    r"""Spatial temporal graph convolutional networks.
+
+    Args:
+        in_channels (int): Number of channels in the input data
+        num_class (int): Number of classes for the classification task
+        graph_cfg (dict): The arguments for building the graph
+        edge_importance_weighting (bool): If ``True``, adds a learnable
+            importance weighting to the edges of the graph
+        **kwargs (optional): Other parameters for graph convolution units
+
+    Shape:
+        - Input: :math:`(N, in_channels, T_{in}, V_{in}, M_{in})`
+        - Output: :math:`(N, num_class)` where
+            :math:`N` is a batch size,
+            :math:`T_{in}` is a length of input sequence,
+            :math:`V_{in}` is the number of graph nodes,
+            :math:`M_{in}` is the number of instance in a frame.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 num_class,
+                 graph_cfg,
+                 is_coco,
+                 body_part,
+                 edge_importance_weighting=True,
+                 data_bn=True,
+                 **kwargs):
+        super().__init__()
+
+        # load graph
+        self.graph = Graph(is_coco=is_coco, body_part=body_part, **graph_cfg)
+        A = torch.tensor(self.graph.A,
+                         dtype=torch.float32,
+                         requires_grad=False)
+        self.register_buffer('A', A)
+
+        # build networks
+        spatial_kernel_size = A.size(0)
+        temporal_kernel_size = 9
+        kernel_size = (temporal_kernel_size, spatial_kernel_size)
+        self.data_bn = nn.BatchNorm1d(in_channels *
+                                      A.size(1)) if data_bn else iden
+        kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
+        self.st_gcn_networks = nn.ModuleList((
+            st_gcn_block(in_channels,
+                         64,
+                         kernel_size,
+                         1,
+                         residual=False,
+                         **kwargs0),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+            st_gcn_block(64, 128, kernel_size, 2, **kwargs),
+            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
+            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
+            st_gcn_block(128, 256, kernel_size, 2, **kwargs),
+            st_gcn_block(256, 256, kernel_size, 1, **kwargs),
+            st_gcn_block(256, 256, kernel_size, 1, **kwargs),
+        ))
+
+        # initialize parameters for edge importance weighting
+        if edge_importance_weighting:
+            self.edge_importance = nn.ParameterList([
+                nn.Parameter(torch.ones(self.A.size()))
+                for i in self.st_gcn_networks
+            ])
+        else:
+            self.edge_importance = [1] * len(self.st_gcn_networks)
+
+        # fcn for prediction
+        self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
+
+    def forward(self, x):
+        # data normalization
+        N, C, T, V, M = x.size()
+        x = x.permute(0, 4, 3, 1, 2).contiguous()
+        x = x.view(N * M, V * C, T)
+        x = self.data_bn(x)
+        x = x.view(N, M, V, C, T)
+        x = x.permute(0, 1, 3, 4, 2).contiguous()
+        x = x.view(N * M, C, T, V)
+
+        # forward
+        for gcn, importance in zip(self.st_gcn_networks, self.edge_importance):
+            x, _ = gcn(x, self.A * importance)
+
+        # global pooling
+        x = F.avg_pool2d(x, x.size()[2:])
+        x = x.view(N, M, -1, 1, 1).mean(dim=1)
+
+        # prediction
+        x = self.fcn(x)
+        x = x.view(x.size(0), -1)
+
+        return x
+
+    def extract_feature(self, x):
+
+        # data normalization
+        N, C, T, V, M = x.size()
+        x = x.permute(0, 4, 3, 1, 2).contiguous()
+        x = x.view(N * M, V * C, T)
+        x = self.data_bn(x)
+        x = x.view(N, M, V, C, T)
+        x = x.permute(0, 1, 3, 4, 2).contiguous()
+        x = x.view(N * M, C, T, V)
+
+        # forwad
+        for gcn, importance in zip(self.st_gcn_networks, self.edge_importance):
+            x, _ = gcn(x, self.A * importance)
+
+        _, c, t, v = x.size()
+        feature = x.view(N, M, c, t, v).permute(0, 2, 3, 4, 1)
+
+        # prediction
+        x = self.fcn(x)
+        output = x.view(N, M, -1, t, v).permute(0, 2, 3, 4, 1)
+
+        return output, feature
+
+
+class st_gcn_block(nn.Module):
+    r"""Applies a spatial temporal graph convolution over an input graph sequence.
+
+    Args:
+        in_channels (int): Number of channels in the input sequence data
+        out_channels (int): Number of channels produced by the convolution
+        kernel_size (tuple): Size of the temporal convolving kernel and graph convolving kernel
+        stride (int, optional): Stride of the temporal convolution. Default: 1
+        dropout (int, optional): Dropout rate of the final output. Default: 0
+        residual (bool, optional): If ``True``, applies a residual mechanism. Default: ``True``
+
+    Shape:
+        - Input[0]: Input graph sequence in :math:`(N, in_channels, T_{in}, V)` format
+        - Input[1]: Input graph adjacency matrix in :math:`(K, V, V)` format
+        - Output[0]: Outpu graph sequence in :math:`(N, out_channels, T_{out}, V)` format
+        - Output[1]: Graph adjacency matrix for output data in :math:`(K, V, V)` format
+
+        where
+            :math:`N` is a batch size,
+            :math:`K` is the spatial kernel size, as :math:`K == kernel_size[1]`,
+            :math:`T_{in}/T_{out}` is a length of input/output sequence,
+            :math:`V` is the number of graph nodes.
+
+    """
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 dropout=0,
+                 residual=True):
+        super().__init__()
+
+        assert len(kernel_size) == 2
+        assert kernel_size[0] % 2 == 1
+        padding = ((kernel_size[0] - 1) // 2, 0)
+
+        self.gcn = ConvTemporalGraphical(in_channels, out_channels,
+                                         kernel_size[1])
+
+        self.tcn = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(
+                out_channels,
+                out_channels,
+                (kernel_size[0], 1),
+                (stride, 1),
+                padding,
+            ),
+            nn.BatchNorm2d(out_channels),
+            nn.Dropout(dropout, inplace=True),
+        )
+
+        if not residual:
+            self.residual = zero
+
+        elif (in_channels == out_channels) and (stride == 1):
+            self.residual = iden
+
+        else:
+            self.residual = nn.Sequential(
+                nn.Conv2d(in_channels,
+                          out_channels,
+                          kernel_size=1,
+                          stride=(stride, 1)),
+                nn.BatchNorm2d(out_channels),
+            )
+
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x, A):
+
+        res = self.residual(x)
+        x, A = self.gcn(x, A)
+        x = self.tcn(x) + res
+
+        return self.relu(x), A

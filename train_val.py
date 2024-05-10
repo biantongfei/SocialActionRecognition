@@ -1,13 +1,12 @@
-import time
-
 from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN
 from draw_utils import draw_training_process, plot_confusion_matrix
+from DataLoader import JPLDataLoader
 
 import torch
-from DataLoader import JPLDataLoader
 from torch.nn import functional
 import torch.nn.utils.rnn as rnn_utils
+from torch.optim.lr_scheduler import StepLR
 
 from sklearn.metrics import f1_score
 import csv
@@ -16,6 +15,7 @@ from email.mime.text import MIMEText
 from tqdm import tqdm
 from thop import profile
 import os
+import time
 
 bless_str = ("                         _oo0oo_\n"
              "                        o8888888o\n"
@@ -62,8 +62,7 @@ rnn_batch_size = 128
 conv1d_batch_size = 128
 gcn_batch_size = 128
 stgcn_batch_size = 128
-epoch_limit = 1
-learning_rate = 1e-3
+learning_rate = 1e-2
 if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
@@ -85,55 +84,43 @@ def draw_save(name, performance_model, framework):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     with open('plots/%s.csv' % name, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
-        int_y_true = {}
-        int_y_pred = {}
-        att_y_true = {}
-        att_y_pred = {}
-        act_y_true = {}
-        act_y_pred = {}
         for index, p_m in enumerate(performance_model):
             data = [index + 1]
-            keys = p_m.keys()
-            for key in p_m.keys():
-                if 'intention' in tasks:
-                    data.append(p_m[key]['intention_accuracy'])
-                    data.append(p_m[key]['intention_f1'])
-                    if key in int_y_true.keys():
-                        int_y_true[key] = torch.cat((int_y_true[key], p_m[key]['intention_y_true']), dim=0)
-                        int_y_pred[key] = torch.cat((int_y_pred[key], p_m[key]['intention_y_pred']), dim=0)
-                    else:
-                        int_y_true[key] = p_m[key]['intention_y_true']
-                        int_y_pred[key] = p_m[key]['intention_y_pred']
-                if 'attitude' in tasks:
-                    data.append(p_m[key]['attitude_accuracy'])
-                    data.append(p_m[key]['attitude_f1'])
-                    if key in att_y_true.keys():
-                        att_y_true[key] = torch.cat((att_y_true[key], p_m[key]['attitude_y_true']), dim=0)
-                        att_y_pred[key] = torch.cat((att_y_pred[key], p_m[key]['attitude_y_pred']), dim=0)
-                    else:
-                        att_y_true[key] = p_m[key]['attitude_y_true']
-                        att_y_pred[key] = p_m[key]['attitude_y_pred']
-                if 'action' in tasks:
-                    data.append(p_m[key]['action_accuracy'])
-                    data.append(p_m[key]['action_f1'])
-                    if key in act_y_true.keys():
-                        act_y_true[key] = torch.cat((act_y_true[key], p_m[key]['action_y_true']), dim=0)
-                        act_y_pred[key] = torch.cat((act_y_pred[key], p_m[key]['action_y_pred']), dim=0)
-                    else:
-                        act_y_true[key] = p_m[key]['action_y_true']
-                        act_y_pred[key] = p_m[key]['action_y_pred']
+            if 'intention' in tasks:
+                data.append(p_m['intention_accuracy'])
+                data.append(p_m['intention_f1'])
+                if index == 0:
+                    int_y_true = p_m['intention_y_true']
+                    int_y_pred = p_m['intention_y_pred']
+                else:
+                    int_y_true = torch.cat((int_y_true, p_m['intention_y_true']), dim=0)
+                    int_y_pred = torch.cat((int_y_pred, p_m['intention_y_pred']), dim=0)
+            if 'attitude' in tasks:
+                data.append(p_m['attitude_accuracy'])
+                data.append(p_m['attitude_f1'])
+                if index == 0:
+                    att_y_true = p_m['attitude_y_true']
+                    att_y_pred = p_m['attitude_y_pred']
+                else:
+                    att_y_true = torch.cat((att_y_true, p_m['attitude_y_true']), dim=0)
+                    att_y_pred = torch.cat((att_y_pred, p_m['attitude_y_pred']), dim=0)
+            if 'action' in tasks:
+                data.append(p_m['action_accuracy'])
+                data.append(p_m['action_f1'])
+                if index == 0:
+                    act_y_true = p_m['action_y_true']
+                    act_y_pred = p_m['action_y_pred']
+                else:
+                    act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
+                    act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
             spamwriter.writerow(data)
         csvfile.close()
-    for key in keys:
-        if 'intention' in tasks:
-            plot_confusion_matrix(int_y_true[key], int_y_pred[key], intention_class,
-                                  sub_name="cm_%s_intention" % name)
-        if 'attitude' in tasks:
-            plot_confusion_matrix(att_y_true[key], att_y_pred[key], attitude_classes,
-                                  sub_name="cm_%s_attitude" % name)
-        if 'action' in tasks:
-            plot_confusion_matrix(act_y_true[key], act_y_pred[key], action_classes,
-                                  sub_name="cm_%s_action" % name)
+    if 'intention' in tasks:
+        plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
+    if 'attitude' in tasks:
+        plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    if 'action' in tasks:
+        plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, frame_num_list):
@@ -156,19 +143,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # train_dict = {'crop+coco': {}, 'crop+halpe': {}, 'noise+coco': {}, 'noise+halpe': {}}
-    # train_dict = {'mixed+coco': {}, 'mixed+halpe': {}}
-    train_dict = {'mixed+coco': {}}
-    # train_dict = {'mixed+halpe': {}}
-    # train_dict = {'crop+coco': {}}
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
+    # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
-    trainging_process = {}
-    performance_model = {}
-    for key in train_dict.keys():
-        for t in tasks:
-            trainging_process[key] = {'%s_accuracy' % t: [], '%s_f1' % t: []}
-            performance_model[key] = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_y_true' % t: None,
-                                      '%s_y_pred' % t: None}
+    for t in tasks:
+        performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_y_true' % t: None, '%s_y_pred' % t: None}
 
     if model == 'avg':
         batch_size = avg_batch_size
@@ -183,268 +163,250 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
 
-    for hyperparameter_group in train_dict.keys():
-        print('loading data for', hyperparameter_group)
-        augment_method = hyperparameter_group.split('+')[0]
-        is_coco = True if 'coco' in hyperparameter_group else False
-        tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
-                                                              ori_videos=ori_videos)
-        trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                           model=model, sample_fps=sample_fps, video_len=video_len)
-        valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                         model=model, sample_fps=sample_fps, video_len=video_len)
-        testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                          model=model, sample_fps=sample_fps, video_len=video_len)
-        max_length = max(trainset.max_length, valset.max_length, testset.max_length)
-        print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
-            len(trainset), len(valset), len(testset)))
-        if model in ['avg', 'perframe']:
-            net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
-        elif model in ['lstm', 'gru']:
-            net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, gru=model == 'gru')
-        elif model == 'conv1d':
-            net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
-        elif 'gcn' in model:
-            net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
-        net.to(device)
-        optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-        train_dict[hyperparameter_group] = {'augment_method': augment_method, 'is_coco': is_coco, 'trainset': trainset,
-                                            'valset': valset, 'testset': testset, 'net': net, 'optimizer': optimizer,
-                                            'intention_best_f1': -1, 'attitude_best_f1': -1, 'action_best_f1': -1,
-                                            'unimproved_epoch': 0}
-        print('Start Training!!!')
-        epoch = 1
-        continue_train = True
-        while continue_train:
-            continue_train = False
-            for hyperparameter_group in train_dict.keys():
-                if train_dict[hyperparameter_group]['unimproved_epoch'] < epoch_limit:
-                    continue_train = True
-                else:
-                    continue
-                train_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['trainset'],
-                                             batch_size=batch_size, max_length=max_length, drop_last=False,
-                                             shuffle=True)
-                val_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['valset'],
-                                           max_length=max_length, drop_last=False, batch_size=batch_size)
-                net = train_dict[hyperparameter_group]['net']
-                optimizer = train_dict[hyperparameter_group]['optimizer']
-                net.train()
-                print('Training')
-                progress_bar = tqdm(total=len(train_loader), desc='Progress')
-                for data in train_loader:
-                    progress_bar.update(1)
-                    if model in ['avg', 'perframe', 'conv1d']:
-                        inputs, (int_labels, att_labels, act_labels) = data
-                        inputs = inputs.to(dtype).to(device)
-                    elif model in ['lstm', 'gru']:
-                        (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                        inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                        inputs = inputs.to(dtype).to(device)
-                    elif 'gcn' in model:
-                        x, (int_labels, att_labels, act_labels) = data
-                        inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                            2].to(dtype).to(device))
-                    int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
-                        device)
-                    if framework == 'intention':
-                        int_outputs = net(inputs)
-                        total_loss = functional.cross_entropy(int_outputs, int_labels)
-                    elif framework == 'attitude':
-                        att_outputs = net(inputs)
-                        total_loss = functional.cross_entropy(att_outputs, att_labels)
-                    elif framework == 'action':
-                        act_outputs = net(inputs)
-                        total_loss = functional.cross_entropy(act_outputs, act_labels)
-                    else:
-                        int_outputs, att_outputs, act_outputs = net(inputs)
-                        loss_1 = functional.cross_entropy(int_outputs, int_labels)
-                        loss_2 = functional.cross_entropy(att_outputs, att_labels)
-                        loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                        total_loss = loss_1 + loss_2 + loss_3
-                    optimizer.zero_grad()
-                    total_loss.backward()
-                    optimizer.step()
-                progress_bar.close()
-                print('Validating')
-                int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
-                net.eval()
-                for data in val_loader:
-                    if model in ['avg', 'perframe', 'conv1d']:
-                        inputs, (int_labels, att_labels, act_labels) = data
-                        inputs = inputs.to(dtype).to(device)
-                    elif model in ['lstm', 'gru']:
-                        (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                        inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                        inputs = inputs.to(dtype).to(device)
-                    elif 'gcn' in model:
-                        x, (int_labels, att_labels, act_labels) = data
-                        inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                            2].to(dtype).to(device))
-                    int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
-                        device)
-                    if framework == 'intention':
-                        int_outputs = net(inputs)
-                    elif framework == 'attitude':
-                        att_outputs = net(inputs)
-                    elif framework == 'action':
-                        act_outputs = net(inputs)
-                    else:
-                        int_outputs, att_outputs, act_outputs = net(inputs)
-                    if 'intention' in tasks:
-                        int_pred = int_outputs.argmax(dim=1)
-                        int_y_true += int_labels.tolist()
-                        int_y_pred += int_pred.tolist()
-                    if 'attitude' in tasks:
-                        att_pred = att_outputs.argmax(dim=1)
-                        att_y_true += att_labels.tolist()
-                        att_y_pred += att_pred.tolist()
-                    if 'action' in tasks:
-                        act_pred = act_outputs.argmax(dim=1)
-                        act_y_true += act_labels.tolist()
-                        act_y_pred += act_pred.tolist()
-
-                result_str = '%s, epcoch: %d, ' % (hyperparameter_group, epoch)
-                if 'intention' in tasks:
-                    int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
-                    if model == 'perframe':
-                        int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
-                                                                           train_dict[hyperparameter_group][
-                                                                               'valset'].frame_number_list)
-                    int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
-                    int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-                    if int_f1 > train_dict[hyperparameter_group]['intention_best_f1']:
-                        train_dict[hyperparameter_group]['intention_best_f1'] = int_f1
-                        train_dict[hyperparameter_group]['unimproved_epoch'] = -1
-                    result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f%%" % (int_acc * 100), "%.4f" % int_f1)
-                if 'attitude' in tasks:
-                    att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
-                    if model == 'perframe':
-                        att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
-                                                                           train_dict[hyperparameter_group][
-                                                                               'valset'].frame_number_list)
-                    att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
-                    att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-                    if att_f1 > train_dict[hyperparameter_group]['attitude_best_f1']:
-                        train_dict[hyperparameter_group]['attitude_best_f1'] = att_f1
-                        train_dict[hyperparameter_group]['unimproved_epoch'] = -1
-                    result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f%%" % (att_acc * 100), "%.4f" % att_f1)
-                if 'action' in tasks:
-                    act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
-                    if model == 'perframe':
-                        act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
-                                                                           train_dict[hyperparameter_group][
-                                                                               'valset'].frame_number_list)
-                    act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
-                    act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-                    if act_f1 > train_dict[hyperparameter_group]['action_best_f1']:
-                        train_dict[hyperparameter_group]['action_best_f1'] = act_f1
-                        train_dict[hyperparameter_group]['unimproved_epoch'] = -1
-                    result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
-                if train_dict[hyperparameter_group]['unimproved_epoch'] == -1:
-                    train_dict[hyperparameter_group]['unimproved_epoch'] = 0
-                else:
-                    train_dict[hyperparameter_group]['unimproved_epoch'] += 1
-                print(result_str + "loss: %.4f, unimproved_epoch: %d" % (
-                    total_loss, train_dict[hyperparameter_group]['unimproved_epoch']))
+    print('loading data for %s' % dataset)
+    augment_method = dataset.split('+')[0]
+    is_coco = True if 'coco' in dataset else False
+    tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
+                                                          ori_videos=ori_videos)
+    trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                       model=model, sample_fps=sample_fps, video_len=video_len)
+    valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                     model=model, sample_fps=sample_fps, video_len=video_len)
+    testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                      model=model, sample_fps=sample_fps, video_len=video_len)
+    max_length = max(trainset.max_length, valset.max_length, testset.max_length)
+    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
+    if model in ['avg', 'perframe']:
+        net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
+    elif model in ['lstm', 'gru']:
+        net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, gru=model == 'gru')
+    elif model == 'conv1d':
+        net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
+    elif 'gcn_' in model:
+        net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
+    net.to(device)
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    scheduler = StepLR(optimizer, step_size=1, gamma=0.5)
+    intention_best_f1 = -1
+    attitude_best_f1 = -1
+    action_best_f1 = -1
+    last_train_loss = 99999
+    last_validation_loss = 99999
+    print('Start Training!!!')
+    epoch = 1
+    while True:
+        train_loader = JPLDataLoader(model=model, dataset=trainset, batch_size=batch_size, max_length=max_length,
+                                     drop_last=False, shuffle=True)
+        val_loader = JPLDataLoader(model=model, dataset=valset, max_length=max_length, drop_last=False,
+                                   batch_size=batch_size)
+        net.train()
+        print('Training')
+        progress_bar = tqdm(total=len(train_loader), desc='Progress')
+        train_loss = 0
+        for data in train_loader:
+            progress_bar.update(1)
+            if model in ['avg', 'perframe', 'conv1d']:
+                inputs, (int_labels, att_labels, act_labels) = data
+                inputs = inputs.to(dtype).to(device)
+            elif model in ['lstm', 'gru']:
+                (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                inputs = inputs.to(dtype).to(device)
+            elif 'gcn_' in model:
+                x, (int_labels, att_labels, act_labels) = data
+                inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device)
+                                                                                    for i in range(len(x[1]))]
+            int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
+                device)
+            if framework == 'intention':
+                int_outputs = net(inputs)
+                total_loss = functional.cross_entropy(int_outputs, int_labels)
+            elif framework == 'attitude':
+                att_outputs = net(inputs)
+                total_loss = functional.cross_entropy(att_outputs, att_labels)
+            elif framework == 'action':
+                act_outputs = net(inputs)
+                total_loss = functional.cross_entropy(act_outputs, act_labels)
+            else:
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                total_loss = loss_1 + loss_2 + loss_3
+            optimizer.zero_grad()
+            total_loss.backward()
+            train_loss += total_loss * int(int_labels.shape[0])
+            optimizer.step()
+        scheduler.step()
+        progress_bar.close()
+        print('Validating')
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
+        validation_loss = 0
+        net.eval()
+        for data in val_loader:
+            if model in ['avg', 'perframe', 'conv1d']:
+                inputs, (int_labels, att_labels, act_labels) = data
+                inputs = inputs.to(dtype).to(device)
+            elif model in ['lstm', 'gru']:
+                (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                inputs = inputs.to(dtype).to(device)
+            elif 'gcn_' in model:
+                x, (int_labels, att_labels, act_labels) = data
+                inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device)
+                                                                                    for i in range(len(x[1]))]
+            int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
+                device)
+            if framework == 'intention':
+                int_outputs = net(inputs)
+                loss = functional.cross_entropy(int_outputs, int_labels)
+            elif framework == 'attitude':
+                att_outputs = net(inputs)
+                loss = functional.cross_entropy(att_outputs, att_labels)
+            elif framework == 'action':
+                act_outputs = net(inputs)
+                loss = functional.cross_entropy(act_outputs, act_labels)
+            else:
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                loss = loss_1 + loss_2 + loss_3
+            validation_loss += loss * int(int_labels.shape[0])
+            if 'intention' in tasks:
+                int_pred = int_outputs.argmax(dim=1)
+                int_y_true += int_labels.tolist()
+                int_y_pred += int_pred.tolist()
+            if 'attitude' in tasks:
+                att_pred = att_outputs.argmax(dim=1)
+                att_y_true += att_labels.tolist()
+                att_y_pred += att_pred.tolist()
+            if 'action' in tasks:
+                act_pred = act_outputs.argmax(dim=1)
+                act_y_true += act_labels.tolist()
+                act_y_pred += act_pred.tolist()
+        result_str = '%s, epoch: %d, ' % (dataset, epoch)
+        if 'intention' in tasks:
+            int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+            if model == 'perframe':
+                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, valset.frame_number_list)
+            int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+            int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+            # intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
+            result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f%%" % (int_acc * 100), "%.4f" % int_f1)
+        if 'attitude' in tasks:
+            att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+            if model == 'perframe':
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, valset.frame_number_list)
+            att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+            att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+            # attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
+            result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f%%" % (att_acc * 100), "%.4f" % att_f1)
+        if 'action' in tasks:
+            act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+            if model == 'perframe':
+                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, valset.frame_number_list)
+            act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+            act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+            # action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
+            result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
+        train_loss, validation_loss = train_loss / len(trainset), validation_loss / len(valset)
+        print(result_str + "train_loss: %.4f, validation_loss: %.4f" % (train_loss, validation_loss))
+        if train_loss < last_train_loss and validation_loss > last_validation_loss:
+            break
+        else:
+            last_train_loss, last_validation_loss = train_loss, validation_loss
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
-        print('Testing')
-        for hyperparameter_group in train_dict:
-            test_loader = JPLDataLoader(model=model, dataset=train_dict[hyperparameter_group]['testset'],
-                                        max_length=max_length, batch_size=batch_size, drop_last=False)
-            int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
-            process_time = 0
-            for index, data in enumerate(test_loader):
-                if model in ['avg', 'perframe', 'conv1d']:
-                    inputs, (int_labels, att_labels, act_labels) = data
-                    inputs = inputs.to(dtype).to(device)
-                elif model in ['lstm', 'gru']:
-                    (inputs, (int_labels, att_labels, act_labels)), data_length = data
-                    inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
-                    inputs = inputs.to(dtype).to(device)
-                elif 'gcn' in model:
-                    x, (int_labels, att_labels, act_labels) = data
-                    inputs = (x[0].to(dtype).to(device), x[1].to(torch.int64).to(device), x[
-                        2].to(dtype).to(device))
-                int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
-                if index == 0:
-                    macs, params = profile(net, inputs=(inputs,), verbose=False)
-                    model_size = params * 4.0 / 1024 / 1024
-                    MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size
-                net.eval()
-                start_time = time.time()
-                if framework in ['intention', 'attitude', 'action']:
-                    if framework == 'intention':
-                        int_outputs = net(inputs)
-                    elif framework == 'attitude':
-                        att_outputs = net(inputs)
-                    else:
-                        act_outputs = net(inputs)
-                else:
-                    int_outputs, att_outputs, act_outputs = net(inputs)
-                end_time = time.time()
-                process_time += end_time - start_time
-                if 'intention' in tasks:
-                    int_pred = int_outputs.argmax(dim=1)
-                    int_y_true += int_labels.tolist()
-                    int_y_pred += int_pred.tolist()
-                if 'attitude' in tasks:
-                    att_pred = att_outputs.argmax(dim=1)
-                    att_y_true += att_labels.tolist()
-                    att_y_pred += att_pred.tolist()
-                if 'action' in tasks:
-                    act_pred = act_outputs.argmax(dim=1)
-                    act_y_true += act_labels.tolist()
-                    act_y_pred += act_pred.tolist()
-            result_str = '%s, ' % hyperparameter_group
-            if 'intention' in tasks:
-                int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
-                if model == 'perframe':
-                    int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred,
-                                                                       train_dict[hyperparameter_group][
-                                                                           'testset'].frame_number_list)
-                int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
-                int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-                performance_model[hyperparameter_group]['intention_accuracy'] = int_acc
-                performance_model[hyperparameter_group]['intention_f1'] = int_f1
-                performance_model[hyperparameter_group]['intention_y_true'] = int_y_true
-                performance_model[hyperparameter_group]['intention_y_pred'] = int_y_pred
-                result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f" % (int_acc * 100), "%.4f" % int_f1)
-            if 'attitude' in tasks:
-                att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
-                if model == 'perframe':
-                    att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,
-                                                                       train_dict[hyperparameter_group][
-                                                                           'testset'].frame_number_list)
-                att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
-                att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-                performance_model[hyperparameter_group]['attitude_accuracy'] = att_acc
-                performance_model[hyperparameter_group]['attitude_f1'] = att_f1
-                performance_model[hyperparameter_group]['attitude_y_true'] = att_y_true
-                performance_model[hyperparameter_group]['attitude_y_pred'] = att_y_pred
-                result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f" % (att_acc * 100), "%.4f" % att_f1)
-            if 'action' in tasks:
-                act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
-                if model == 'perframe':
-                    act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred,
-                                                                       train_dict[hyperparameter_group][
-                                                                           'testset'].frame_number_list)
-                act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
-                act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-                performance_model[hyperparameter_group]['action_accuracy'] = act_acc
-                performance_model[hyperparameter_group]['action_f1'] = act_f1
-                performance_model[hyperparameter_group]['action_y_true'] = act_y_true
-                performance_model[hyperparameter_group]['action_y_pred'] = act_y_pred
-                result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
-            print(
-                result_str + 'model_size: %.2f MB, Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
-                    (model_size, MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-            # draw_training_process(trainging_process)
-        return performance_model
+    print('Testing')
+    test_loader = JPLDataLoader(model=model, dataset=testset, max_length=max_length, batch_size=batch_size,
+                                drop_last=False)
+    int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
+    process_time = 0
+    start_time = time.time()
+    net.eval()
+    for index, data in enumerate(test_loader):
+        if model in ['avg', 'perframe', 'conv1d']:
+            inputs, (int_labels, att_labels, act_labels) = data
+            inputs = inputs.to(dtype).to(device)
+        elif model in ['lstm', 'gru']:
+            (inputs, (int_labels, att_labels, act_labels)), data_length = data
+            inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+            inputs = inputs.to(dtype).to(device)
+        elif 'gcn_' in model:
+            x, (int_labels, att_labels, act_labels) = data
+            inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device) for i
+                                                                                in range(len(x[1]))]
+        int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
+        if index == 0:
+            macs, params = profile(net, inputs=(inputs,), verbose=False)
+            model_size = params * 4.0 / 1024 / 1024
+            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size
+        if framework in ['intention', 'attitude', 'action']:
+            if framework == 'intention':
+                int_outputs = net(inputs)
+            elif framework == 'attitude':
+                att_outputs = net(inputs)
+            else:
+                act_outputs = net(inputs)
+        else:
+            int_outputs, att_outputs, act_outputs = net(inputs)
+        if 'intention' in tasks:
+            int_pred = int_outputs.argmax(dim=1)
+            int_y_true += int_labels.tolist()
+            int_y_pred += int_pred.tolist()
+        if 'attitude' in tasks:
+            att_pred = att_outputs.argmax(dim=1)
+            att_y_true += att_labels.tolist()
+            att_y_pred += att_pred.tolist()
+        if 'action' in tasks:
+            act_pred = act_outputs.argmax(dim=1)
+            act_y_true += act_labels.tolist()
+            act_y_pred += act_pred.tolist()
+    end_time = time.time()
+    process_time += end_time - start_time
+    result_str = ''
+    if 'intention' in tasks:
+        int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+        if model == 'perframe':
+            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, testset.frame_number_list)
+        int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+        int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+        performance_model['intention_accuracy'] = int_acc
+        performance_model['intention_f1'] = int_f1
+        performance_model['intention_y_true'] = int_y_true
+        performance_model['intention_y_pred'] = int_y_pred
+        result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f" % (int_acc * 100), "%.4f" % int_f1)
+    if 'attitude' in tasks:
+        att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+        if model == 'perframe':
+            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, testset.frame_number_list)
+        att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+        att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+        performance_model['attitude_accuracy'] = att_acc
+        performance_model['attitude_f1'] = att_f1
+        performance_model['attitude_y_true'] = att_y_true
+        performance_model['attitude_y_pred'] = att_y_pred
+        result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f" % (att_acc * 100), "%.4f" % att_f1)
+    if 'action' in tasks:
+        act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+        if model == 'perframe':
+            act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, testset.frame_number_list)
+        act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+        act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+        performance_model['action_accuracy'] = act_acc
+        performance_model['action_f1'] = act_f1
+        performance_model['action_y_true'] = act_y_true
+        performance_model['action_y_pred'] = act_y_pred
+        result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
+    print(
+        result_str + 'model_size: %.2f MB, Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
+            (model_size, MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    # draw_training_process(trainging_process)
+    return performance_model
 
 
 if __name__ == '__main__':
@@ -453,10 +415,10 @@ if __name__ == '__main__':
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gru'
-    # model = 'gcn_conv1d'
+    model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
-    model = 'stgcn'
+    # model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
