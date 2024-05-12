@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from Dataset import get_l_pair, get_inputs_size
+
+from Dataset import get_l_pair, get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num
 
 
 class Graph():
@@ -26,17 +27,31 @@ class Graph():
 
     """
 
-    def __init__(self, is_coco, body_part, strategy='spatial', max_hop=1, dilation=1):
+    def __init__(self, is_coco, body, strategy='spatial', max_hop=1, dilation=1):
+        self.body = body
         self.max_hop = max_hop
         self.dilation = dilation
 
         # self.get_edge(layout)
-        self.nodes = get_inputs_size(is_coco, body_part)
-        self.edge = [(i, i) for i in range(self.num_node)] + get_inputs_size(is_coco, body_part)
-        self.center = 0
-
+        body_part = [False, False, False]
+        body_part[body] = True
+        self.num_node = get_inputs_size(is_coco, body_part)
+        self.center = 0 if body == 0 else self.center = 27
+        previous_nodes = 0
+        if body != 0:
+            previous_nodes += coco_body_point_num if is_coco else halpe_body_point_num
+            previous_nodes += head_point_num if body == 2 else 0
+        self.edge = [[i, i] for i in range(self.num_node)] + [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
+                                                              get_l_pair(is_coco, body_part)]
+        if body == 2:
+            self.num_node += 1
+            self.edge += [[0, 42], [21, 42]]
+            self.center = 42
         self.hop_dis = get_hop_distance(self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
+        if body == 2:
+            self.num_node -= 1
+            self.edge = self.edge[:-2]
 
     def __str__(self):
         return self.A
@@ -104,8 +119,7 @@ class Graph():
         elif strategy == 'distance':
             A = np.zeros((len(valid_hop), self.num_node, self.num_node))
             for i, hop in enumerate(valid_hop):
-                A[i][self.hop_dis == hop] = normalize_adjacency[self.hop_dis ==
-                                                                hop]
+                A[i][self.hop_dis == hop] = normalize_adjacency[self.hop_dis == hop]
             self.A = A
         elif strategy == 'spatial':
             A = []
@@ -114,16 +128,16 @@ class Graph():
                 a_close = np.zeros((self.num_node, self.num_node))
                 a_further = np.zeros((self.num_node, self.num_node))
                 for i in range(self.num_node):
-                    for j in range(self.num_node):
-                        if self.hop_dis[j, i] == hop:
-                            if self.hop_dis[j, self.center] == self.hop_dis[
-                                i, self.center]:
-                                a_root[j, i] = normalize_adjacency[j, i]
-                            elif self.hop_dis[j, self.center] > self.hop_dis[
-                                i, self.center]:
-                                a_close[j, i] = normalize_adjacency[j, i]
-                            else:
-                                a_further[j, i] = normalize_adjacency[j, i]
+                    if self.body != 2 or i != self.center:
+                        for j in range(self.num_node):
+                            if self.body != 2 or j != self.center:
+                                if self.hop_dis[j, i] == hop:
+                                    if self.hop_dis[j, self.center] == self.hop_dis[i, self.center]:
+                                        a_root[j, i] = normalize_adjacency[j, i]
+                                    elif self.hop_dis[j, self.center] > self.hop_dis[i, self.center]:
+                                        a_close[j, i] = normalize_adjacency[j, i]
+                                    else:
+                                        a_further[j, i] = normalize_adjacency[j, i]
                 if hop == 0:
                     A.append(a_root)
                 else:

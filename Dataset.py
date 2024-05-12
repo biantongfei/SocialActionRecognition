@@ -299,9 +299,14 @@ class Dataset(Dataset):
             if body:
                 x_l, e_l = [], []
                 index = 0
-                body_part = [False, False, False]
-                body_part[index_body] = True
-                edge_index = torch.tensor(np.array(get_l_pair(self.is_coco, body_part)),
+                b_p = [False, False, False]
+                b_p[index_body] = True
+                l_pair = get_l_pair(self.is_coco, b_p)
+                previous_nodes = 0
+                if index_body != 0:
+                    previous_nodes += coco_body_point_num if is_coco else halpe_body_point_num
+                    previous_nodes += head_point_num if index == 2 else 0
+                edge_index = torch.tensor(np.array(l_pair) - np.full((len(l_pair), 2), previous_nodes),
                                           dtype=torch.long).t().contiguous()
                 while len(x_l) < int(self.video_len * self.sample_fps):
                     if index == video_frame_num:
@@ -318,7 +323,7 @@ class Dataset(Dataset):
                                 break
                             elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
                                 frame_feature = np.array(frame['keypoints'])
-                                frame_feature = get_body_part(frame_feature, self.is_coco, body_part)
+                                frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                                 x = torch.tensor(frame_feature)
@@ -335,7 +340,7 @@ class Dataset(Dataset):
         return [np.array(x) for x in x_list], [np.array(edge_index) for edge_index in edge_index_list], label
 
     def get_stgraph_data_from_file(self, file):
-        input_size = get_inputs_size(self.is_coco, self.body_part, gcn=True)
+        input_size = get_inputs_size(self.is_coco, self.body_part)
         x_list, edge_index_list, edge_attr_list = [], [], []
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)

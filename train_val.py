@@ -285,7 +285,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 act_pred = act_outputs.argmax(dim=1)
                 act_y_true += act_labels.tolist()
                 act_y_pred += act_pred.tolist()
-        result_str = '%s, epoch: %d, ' % (dataset, epoch)
+        result_str = '%s, epoch: %d, ' % (model, epoch)
         if 'intention' in tasks:
             int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
             if model == 'perframe':
@@ -310,7 +310,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         train_loss, validation_loss = train_loss / len(trainset), validation_loss / len(valset)
         print(result_str + "train_loss: %.4f, validation_loss: %.4f" % (train_loss, validation_loss))
         # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
-        if epoch == 10:
+        if epoch == 15:
             break
         else:
             last_train_loss, last_validation_loss = train_loss, validation_loss

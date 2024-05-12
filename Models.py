@@ -90,11 +90,9 @@ class DNN(nn.Module):
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -187,11 +185,9 @@ class RNN(nn.Module):
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -274,17 +270,15 @@ class Cnn1D(nn.Module):
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
 
 
-class GNN(torch.nn.Module):
+class GNN(nn.Module):
     def __init__(self, is_coco, body_part, framework, model, max_length):
         super(GNN, self).__init__()
         super().__init__()
@@ -309,7 +303,6 @@ class GNN(torch.nn.Module):
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-        print(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim)
         self.gcn_attention = self.attn = nn.MultiheadAttention(
             math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1)
         if self.model == 'gcn_lstm':
@@ -385,7 +378,7 @@ class GNN(torch.nn.Module):
                                              )
 
     def forward(self, data):
-        x, edge_index = data[0], data[1],
+        x, edge_index = data[0], data[1]
         x_time = torch.zeros((x[0].shape[0], x[0].shape[1],
                               math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim)).to(
             dtype).to(device)
@@ -453,11 +446,9 @@ class GNN(torch.nn.Module):
                 y2 = self.attitude_head(y)
                 y3 = self.action_head(y)
             elif self.framework == 'tree':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1), dim=1))
             elif self.framework == 'chain':
-                y1 = self.intention_head(y)
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
@@ -493,28 +484,23 @@ class ST_GCN_18(nn.Module):
 
     def __init__(self,
                  in_channels,
-                 num_class,
-                 graph_cfg,
                  is_coco,
-                 body_part,
+                 body,
                  edge_importance_weighting=True,
                  data_bn=True,
                  **kwargs):
         super().__init__()
 
         # load graph
-        self.graph = Graph(is_coco=is_coco, body_part=body_part, **graph_cfg)
-        A = torch.tensor(self.graph.A,
-                         dtype=torch.float32,
-                         requires_grad=False)
+        self.graph = Graph(is_coco=is_coco, body=body)
+        A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.register_buffer('A', A)
 
         # build networks
         spatial_kernel_size = A.size(0)
         temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
-        self.data_bn = nn.BatchNorm1d(in_channels *
-                                      A.size(1)) if data_bn else iden
+        self.data_bn = nn.BatchNorm1d(in_channels * A.size(1)) if data_bn else iden
         kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
         self.st_gcn_networks = nn.ModuleList((
             st_gcn_block(in_channels,
@@ -543,9 +529,6 @@ class ST_GCN_18(nn.Module):
         else:
             self.edge_importance = [1] * len(self.st_gcn_networks)
 
-        # fcn for prediction
-        self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
-
     def forward(self, x):
         # data normalization
         N, C, T, V, M = x.size()
@@ -563,10 +546,6 @@ class ST_GCN_18(nn.Module):
         # global pooling
         x = F.avg_pool2d(x, x.size()[2:])
         x = x.view(N, M, -1, 1, 1).mean(dim=1)
-
-        # prediction
-        x = self.fcn(x)
-        x = x.view(x.size(0), -1)
 
         return x
 
@@ -633,8 +612,7 @@ class st_gcn_block(nn.Module):
         assert kernel_size[0] % 2 == 1
         padding = ((kernel_size[0] - 1) // 2, 0)
 
-        self.gcn = ConvTemporalGraphical(in_channels, out_channels,
-                                         kernel_size[1])
+        self.gcn = ConvTemporalGraphical(in_channels, out_channels, kernel_size[1])
 
         self.tcn = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -674,3 +652,86 @@ class st_gcn_block(nn.Module):
         x = self.tcn(x) + res
 
         return self.relu(x), A
+
+
+class STGCN(nn.Module):
+    def __init__(self, is_coco, body_part, framework, max_length):
+        super(STGCN, self).__init__()
+        super().__init__()
+        self.is_coco = is_coco
+        self.input_size = get_inputs_size(is_coco, body_part)
+        self.framework = framework
+        graph_cfg = ()
+        if body_part[0]:
+            self.stgcn_body = ST_GCN_18(3, is_coco, 0)
+        if body_part[1]:
+            self.stgcn_face = ST_GCN_18(3, is_coco, 1)
+        if body_part[2]:
+            self.stgcn_hand = ST_GCN_18(3, is_coco, 2)
+        self.gcn_attention = self.attn = nn.MultiheadAttention(int(self.input_size / 3) * self.keypoint_hidden_dim,
+                                                               num_heads=1)
+        # fcn for prediction
+        self.fcn = nn.Conv2d(256, 16, kernel_size=1)
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
+            self.attitude_head = nn.Sequential(nn.ReLU(),
+                                               nn.Linear(16, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(16, action_class_num)
+                                             )
+        elif self.framework == 'tree':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intention_class_num, action_class_num)
+                                             )
+        elif self.framework == 'chain':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             )
+
+    def forward(self, x):
+        y1 = torch.zeros((len(x[0]), intention_class_num)).to(dtype).to(device)
+        y2 = torch.zeros((len(x[0]), attitude_class_num)).to(dtype).to(device)
+        y3 = torch.zeros((len(x[0]), action_class_num)).to(dtype).to(device)
+        y_list = []
+        if self.body_part[0]:
+            y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype).to(device)).to(dtype).to(device)
+            y_list.append(y_body)
+        if self.body_part[1]:
+            y_face = self.stgcn_body(x=torch.Tensor(x[1]).to(dtype).to(device)).to(dtype).to(device)
+            y_list.append(y_face)
+        if self.body_part[2]:
+            y_hand = self.stgcn_body(x=torch.Tensor(x[2]).to(dtype).to(device)).to(dtype).to(device)
+            y_list.append(y_hand)
+        y = torch.cat(y_list, dim=0).reshape(1, -1)
+        y, _ = self.gcn_attention(y, y, y)
+        y = self.fcn(y).view(y.size(0), -1)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
+            elif self.framework == 'attitude':
+                y = self.attitude_head(y)
+            elif self.framework == 'chain':
+                y = self.action_head(y)
+            return y
+        else:
+            y1 = self.intention_head(y)
+            if self.framework == 'parallel':
+                y2 = self.attitude_head(y)
+                y3 = self.action_head(y)
+            elif self.framework == 'tree':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1), dim=1))
+            elif self.framework == 'chain':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
+            return y1, y2, y3
