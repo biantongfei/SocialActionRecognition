@@ -36,7 +36,7 @@ class Graph():
         body_part = [False, False, False]
         body_part[body] = True
         self.num_node = get_inputs_size(is_coco, body_part)
-        self.center = 0 if body == 0 else self.center = 27
+        self.center = 0 if body == 0 else 27
         previous_nodes = 0
         if body != 0:
             previous_nodes += coco_body_point_num if is_coco else halpe_body_point_num
