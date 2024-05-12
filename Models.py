@@ -699,9 +699,6 @@ class STGCN(nn.Module):
                                              )
 
     def forward(self, x):
-        y1 = torch.zeros((len(x[0]), intention_class_num)).to(dtype).to(device)
-        y2 = torch.zeros((len(x[0]), attitude_class_num)).to(dtype).to(device)
-        y3 = torch.zeros((len(x[0]), action_class_num)).to(dtype).to(device)
         y_list = []
         if self.body_part[0]:
             y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype).to(device)).to(dtype).to(device)

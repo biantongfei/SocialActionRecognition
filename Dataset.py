@@ -341,7 +341,7 @@ class Dataset(Dataset):
 
     def get_stgraph_data_from_file(self, file):
         input_size = get_inputs_size(self.is_coco, self.body_part)
-        x_list, edge_index_list, edge_attr_list = [], [], []
+        x_list = []
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
@@ -366,8 +366,6 @@ class Dataset(Dataset):
                     edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i
                                   in l_pair]
                     x_list += x
-                    edge_index_list += edge_index
-                    edge_attr_list += edge_attr
                     frame_num += 1
                 else:
                     index += 1
@@ -383,22 +381,16 @@ class Dataset(Dataset):
                                       for i in l_pair]
                         edge_attr = self.feature_transform(frame_feature, frame_width, frame_height).tolist()
                         x_list += x
-                        edge_index_list += edge_index
-                        edge_attr_list += edge_attr
                         frame_num += 1
         while frame_num < self.video_len * self.sample_fps:
             edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i in
                           l_pair]
             x_list += x
-            edge_index_list += edge_index
-            edge_attr_list += edge_attr
             frame_num += 1
-        for index in range(len(x_list) - int(input_size / 2)):
-            edge_index_list.append([index, int(index + input_size / 2)])
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         if len(x_list) == 0:
             return 0
-        return np.array(x_list), np.array(edge_index_list).transpose(), np.array(edge_attr_list), label
+        return np.array(x_list), label
 
     def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)

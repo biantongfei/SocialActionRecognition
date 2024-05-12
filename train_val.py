@@ -310,7 +310,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         train_loss, validation_loss = train_loss / len(trainset), validation_loss / len(valset)
         print(result_str + "train_loss: %.4f, validation_loss: %.4f" % (train_loss, validation_loss))
         # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
-        if epoch == 15:
+        if epoch == 20:
             break
         else:
             last_train_loss, last_validation_loss = train_loss, validation_loss
