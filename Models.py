@@ -655,7 +655,7 @@ class st_gcn_block(nn.Module):
 
 
 class STGCN(nn.Module):
-    def __init__(self, is_coco, body_part, framework, max_length):
+    def __init__(self, is_coco, body_part, framework):
         super(STGCN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -668,8 +668,7 @@ class STGCN(nn.Module):
             self.stgcn_face = ST_GCN_18(3, is_coco, 1)
         if body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2)
-        self.gcn_attention = self.attn = nn.MultiheadAttention(int(self.input_size / 3) * self.keypoint_hidden_dim,
-                                                               num_heads=1)
+        self.gcn_attention = self.attn = nn.MultiheadAttention(16 * 256, num_heads=1)
         # fcn for prediction
         self.fcn = nn.Conv2d(256, 16, kernel_size=1)
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
@@ -701,16 +700,19 @@ class STGCN(nn.Module):
     def forward(self, x):
         y_list = []
         if self.body_part[0]:
-            y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype).to(device)).to(dtype).to(device)
+            y_body = self.stgcn_body(x=x[0].to(dtype).to(device)).to(dtype).to(device)
+            print(y_body.shape, 'body')
             y_list.append(y_body)
         if self.body_part[1]:
-            y_face = self.stgcn_body(x=torch.Tensor(x[1]).to(dtype).to(device)).to(dtype).to(device)
+            y_face = self.stgcn_body(x=x[1].to(dtype).to(device)).to(dtype).to(device)
             y_list.append(y_face)
+            print(y_face.shape, 'face')
         if self.body_part[2]:
-            y_hand = self.stgcn_body(x=torch.Tensor(x[2]).to(dtype).to(device)).to(dtype).to(device)
+            y_hand = self.stgcn_body(x=x[2].to(dtype).to(device)).to(dtype).to(device)
             y_list.append(y_hand)
-        y = torch.cat(y_list, dim=0).reshape(1, -1)
-        y, _ = self.gcn_attention(y, y, y)
+            print(y_hand.shape, 'hand')
+        y = torch.cat(y_list, dim=0)
+        # y, _ = self.gcn_attention(y, y, y)
         y = self.fcn(y).view(y.size(0), -1)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':

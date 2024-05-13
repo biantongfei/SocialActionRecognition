@@ -196,14 +196,9 @@ class Dataset(Dataset):
         index = 0
         for file in self.files:
             if self.model == 'stgcn':
-                x, edge_index, edge_attr, label = self.get_stgraph_data_from_file(file)
-                if type(x) == int:
-                    continue
-                elif type(self.features) == int:
-                    self.features = [(x, edge_index, edge_attr)]
-                else:
-                    self.features.append((x, edge_index, edge_attr))
-            elif self.model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
+                x, label = self.get_stgraph_data_from_file(file)
+                self.features.append(x)
+            elif 'gcn_' in self.model:
                 x, edge_index, label = self.get_graph_data_from_file(file)
                 if type(x) == int:
                     continue
@@ -230,8 +225,7 @@ class Dataset(Dataset):
                 self.labels.append(label)
             self.frame_number_list.append(
                 int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
-                                                       'stgcn'] else int(
-                    x.shape[0] * 2 / get_inputs_size(self.is_coco, self.body_part, True)) if model == 'stgcn' else int(
+                                                       'stgcn'] else self.video_len * self.sample_fps if model == 'stgcn' else int(
                     x[0].shape[0]))
         self.max_length = max(self.frame_number_list)
 
@@ -340,57 +334,49 @@ class Dataset(Dataset):
         return [np.array(x) for x in x_list], [np.array(edge_index) for edge_index in edge_index_list], label
 
     def get_stgraph_data_from_file(self, file):
-        input_size = get_inputs_size(self.is_coco, self.body_part)
         x_list = []
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        l_pair = get_l_pair(self.is_coco, self.body_part)
-        first_id = -1
-        for frame in feature_json['frames']:
-            if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
-                first_id = frame['frame_id']
-                break
-        if first_id == -1:
-            return 0, 0, 0
-        index = 0
-        frame_num = 0
-        while frame_num < int(self.video_len * self.sample_fps):
-            if index == video_frame_num:
-                break
-            else:
-                frame = feature_json['frames'][index]
-                if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (video_fps / self.sample_fps):
-                    edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i
-                                  in l_pair]
-                    x_list += x
-                    frame_num += 1
-                else:
-                    index += 1
-                    if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+        for index_body, body in enumerate(self.body_part):
+            if body:
+                bp = [False, False, False]
+                bp[index_body] = True
+                x_l = np.zeros((3, self.sample_fps * self.video_len, int(get_inputs_size(self.is_coco, bp) / 3), 1))
+                first_id = -1
+                for frame in feature_json['frames']:
+                    if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+                        first_id = frame['frame_id']
                         break
-                    elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
-                        frame_feature = np.array(frame['keypoints'])
-                        frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                        frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                        x = frame_feature.tolist()
-                        edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)]
-                                      for i in l_pair]
-                        edge_attr = self.feature_transform(frame_feature, frame_width, frame_height).tolist()
-                        x_list += x
-                        frame_num += 1
-        while frame_num < self.video_len * self.sample_fps:
-            edge_index = [[i[0] + int(frame_num * input_size / 2), i[1] + int(frame_num * input_size / 2)] for i in
-                          l_pair]
-            x_list += x
-            frame_num += 1
+                if first_id == -1:
+                    return 0, 0, 0
+                index = 0
+                frame_num = 0
+                while frame_num < int(self.video_len * self.sample_fps):
+                    if index == video_frame_num:
+                        break
+                    else:
+                        frame = feature_json['frames'][index]
+                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (
+                                video_fps / self.sample_fps):
+                            x_l[:, frame_num, :, 0] = frame_feature.T
+                            frame_num += 1
+                        else:
+                            index += 1
+                            if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                                break
+                            elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                                frame_feature = np.array(frame['keypoints'])
+                                frame_feature = get_body_part(frame_feature, self.is_coco, bp)
+                                frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                                frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                                x_l[:, frame_num, :, 0] = frame_feature.T
+                                frame_num += 1
+                    x_list.append(x_l)
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
-        if len(x_list) == 0:
-            return 0
-        return np.array(x_list), label
+        return x_list, label
 
     def feature_transform(self, features, frame_width, frame_height):
         l_pair = get_l_pair(self.is_coco, self.body_part)
@@ -406,7 +392,7 @@ class Dataset(Dataset):
     def __len__(self):
         if self.model in ['avg', 'perframe']:
             return self.features.shape[0]
-        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gcn_' in self.model:
+        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gcn' in self.model:
             return len(self.features)
 
 

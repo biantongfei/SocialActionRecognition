@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN, RNN, Cnn1D, GNN
+from Models import DNN, RNN, Cnn1D, GNN, STGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 
@@ -184,14 +184,14 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
     elif 'gcn_' in model:
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
+    elif model == 'stgcn':
+        net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=1, gamma=0.5)
     intention_best_f1 = -1
     attitude_best_f1 = -1
     action_best_f1 = -1
-    last_train_loss = 99999
-    last_validation_loss = 99999
     print('Start Training!!!')
     epoch = 1
     while True:
@@ -202,7 +202,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
-        train_loss = 0
         for data in train_loader:
             progress_bar.update(1)
             if model in ['avg', 'perframe', 'conv1d']:
@@ -235,13 +234,11 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 total_loss = loss_1 + loss_2 + loss_3
             optimizer.zero_grad()
             total_loss.backward()
-            train_loss += total_loss * int(int_labels.shape[0])
             optimizer.step()
         scheduler.step()
         progress_bar.close()
         print('Validating')
         int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
-        validation_loss = 0
         net.eval()
         for data in val_loader:
             if model in ['avg', 'perframe', 'conv1d']:
@@ -259,20 +256,12 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 device)
             if framework == 'intention':
                 int_outputs = net(inputs)
-                loss = functional.cross_entropy(int_outputs, int_labels)
             elif framework == 'attitude':
                 att_outputs = net(inputs)
-                loss = functional.cross_entropy(att_outputs, att_labels)
             elif framework == 'action':
                 act_outputs = net(inputs)
-                loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
-                loss_1 = functional.cross_entropy(int_outputs, int_labels)
-                loss_2 = functional.cross_entropy(att_outputs, att_labels)
-                loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                loss = loss_1 + loss_2 + loss_3
-            validation_loss += loss * int(int_labels.shape[0])
             if 'intention' in tasks:
                 int_pred = int_outputs.argmax(dim=1)
                 int_y_true += int_labels.tolist()
@@ -307,13 +296,11 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
             result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
-        train_loss, validation_loss = train_loss / len(trainset), validation_loss / len(valset)
-        print(result_str + "train_loss: %.4f, validation_loss: %.4f" % (train_loss, validation_loss))
+        print(result_str)
         # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
-        if epoch == 20:
+        if epoch == 15:
             break
         else:
-            last_train_loss, last_validation_loss = train_loss, validation_loss
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
             attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
@@ -416,10 +403,11 @@ if __name__ == '__main__':
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gru'
-    model = 'gcn_conv1d'
+    # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
+    # model = 'gcn_gru'
     # model = 'gcn_gcn'
-    # model = 'stgcn'
+    model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
@@ -446,8 +434,8 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save('stgcn', performance_model, framework)
+    draw_save(model, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
-    # send_email(result_str)
+    send_email(result_str)

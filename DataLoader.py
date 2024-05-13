@@ -17,6 +17,21 @@ def rnn_collate_fn(data):
                 torch.Tensor(action_labels).long())), data_length
 
 
+def stgcn_collate_fn(data):
+    input, int_label, att_label, act_label = [], [], [], []
+    for index, d in enumerate(data):
+        if index == 0:
+            for i in range(len(d[0])):
+                input.append([torch.Tensor(d[0][i])])
+        else:
+            for i in range(len(d[0])):
+                input[i].append(torch.Tensor(d[0][i]))
+        int_label.append(d[1][0])
+        att_label.append(d[1][1])
+        act_label.append(d[1][2])
+    return input, (torch.Tensor(int_label).long(), torch.Tensor(att_label).long(), torch.Tensor(act_label).long())
+
+
 class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
@@ -25,6 +40,8 @@ class JPLDataLoader(DataLoader):
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
             self.collate_fn = self.conv1d_collate_fn
+        elif model == 'stgcn':
+            self.collate_fn = stgcn_collate_fn
         self.max_length = max_length
 
     def conv1d_collate_fn(self, data):
