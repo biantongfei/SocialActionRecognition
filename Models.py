@@ -401,6 +401,8 @@ class GNN(nn.Module):
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_list.append(x_face)
                 if self.body_part[2]:
+                    print(x[2][i][ii].shape)
+                    print(edge_index[2][i][ii].shape)
                     x_hand = self.GCN_hand(x=x[2][i][ii], edge_index=edge_index[2][i][ii]).to(dtype).to(device)
                     print(x_hand.shape, 'hand')
                     if self.pooling:
