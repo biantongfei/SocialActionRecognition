@@ -388,29 +388,23 @@ class GNN(nn.Module):
                 x_list = []
                 if self.body_part[0]:
                     x_body = self.GCN_body(x=x[0][i][ii], edge_index=edge_index[0][i][ii]).to(dtype).to(device)
-                    print(x_body.shape, 'body')
                     if self.pooling:
                         x_body, _, _, _, _, _ = self.pool(x_body, edge_index[0][i][ii])
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_list.append(x_body)
                 if self.body_part[1]:
                     x_face = self.GCN_face(x=x[1][i][ii], edge_index=edge_index[1][i][ii]).to(dtype).to(device)
-                    print(x_face.shape, 'face')
                     if self.pooling:
                         x_face, _, _, _, _, _ = self.pool(x_face, edge_index[1][i][ii])
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_list.append(x_face)
                 if self.body_part[2]:
-                    print(x[2][i][ii].shape)
-                    print(edge_index[2][i][ii].shape)
                     x_hand = self.GCN_hand(x=x[2][i][ii], edge_index=edge_index[2][i][ii]).to(dtype).to(device)
-                    print(x_hand.shape, 'hand')
                     if self.pooling:
                         x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index[2][i][ii])
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_list.append(x_hand)
                 x_t = torch.cat(x_list, dim=0).reshape(1, 1, -1)
-                print(x_t.shape)
                 x_t, _ = self.gcn_attention(x_t, x_t, x_t)
                 x_time[i][ii] = x_t[0][0]
         if self.model in ['gcn_lstm', 'gcn_gru']:
