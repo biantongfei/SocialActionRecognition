@@ -306,7 +306,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
     test_loader = JPLDataLoader(model=model, dataset=testset, max_length=max_length, batch_size=batch_size,
