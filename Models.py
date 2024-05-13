@@ -404,9 +404,10 @@ class GNN(nn.Module):
                         x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index[2][i][ii])
                         # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
                     x_list.append(x_hand)
-                x_t = torch.cat(x_list, dim=0).reshape(1, -1)
+                x_t = torch.cat(x_list, dim=0).reshape(1, 1, -1)
+                print(x_t.shape)
                 x_t, _ = self.gcn_attention(x_t, x_t, x_t)
-                x_time[i][ii] = x_t[0]
+                x_time[i][ii] = x_t[0][0]
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x_time)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
