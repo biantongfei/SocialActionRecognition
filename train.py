@@ -17,7 +17,7 @@ video_len = 2
 for model in ['gcn_gru']:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
