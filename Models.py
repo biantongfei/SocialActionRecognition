@@ -290,7 +290,7 @@ class GNN(nn.Module):
         self.max_length = max_length
         self.keypoint_hidden_dim = 128
         self.pooling = False
-        self.pooling_rate = 0.5 if self.pooling else 1
+        self.pooling_rate = 0.6 if self.pooling else 1
         if body_part[0]:
             self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
@@ -306,14 +306,12 @@ class GNN(nn.Module):
         self.gcn_attention = self.attn = nn.MultiheadAttention(
             math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1,
             batch_first=True)
-        if self.model == 'gcn_lstm':
+        if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                      hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-            self.fc_input_size = 256 * 2
-            self.lstm_attention = nn.Linear(self.fc_input_size, 1)
-        elif self.model == 'gcn_gru':
-            self.time_model = nn.GRU(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                     hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+                                      hidden_size=256, num_layers=3, bidirectional=True,
+                                      batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
+                math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
             self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
