@@ -5,6 +5,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from torch_geometric.data import Data
 
 coco_body_point_num = 23
 halpe_body_point_num = 26
@@ -199,11 +200,11 @@ class Dataset(Dataset):
                 x, label = self.get_stgraph_data_from_file(file)
                 self.features.append(x)
             elif 'gcn_' in self.model:
-                x, edge_index, label = self.get_graph_data_from_file(file)
-                if type(x) == int:
+                graph_list, label = self.get_graph_data_from_file(file)
+                if type(graph_list) == int:
                     continue
                 else:
-                    self.features.append((x, edge_index))
+                    self.features.append(graph_list)
             else:
                 feature, label = self.get_data_from_file(file)
                 if type(feature) == int or feature.size == 0 or feature.ndim == 0:
@@ -225,8 +226,7 @@ class Dataset(Dataset):
                 self.labels.append(label)
             self.frame_number_list.append(
                 int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
-                                                       'stgcn'] else self.video_len * self.sample_fps if model == 'stgcn' else int(
-                    x[0].shape[0]))
+                                                       'stgcn'] else self.video_len * self.sample_fps)
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -279,7 +279,7 @@ class Dataset(Dataset):
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
-        x_list, edge_index_list = [], []
+        graph_list = []
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
         first_id = -1
@@ -291,10 +291,10 @@ class Dataset(Dataset):
             return 0, 0
         for index_body, body in enumerate(self.body_part):
             if body:
-                x_l, e_l = [], []
                 index = 0
                 b_p = [False, False, False]
                 b_p[index_body] = True
+                input_size = get_inputs_size(self.is_coco, b_p)
                 l_pair = get_l_pair(self.is_coco, b_p)
                 previous_nodes = 0
                 if index_body != 0:
@@ -302,15 +302,26 @@ class Dataset(Dataset):
                     previous_nodes += head_point_num if index_body == 2 else 0
                 edge_index = torch.tensor(np.array(l_pair) - np.full((len(l_pair), 2), previous_nodes),
                                           dtype=torch.long).t().contiguous()
-                while len(x_l) < int(self.video_len * self.sample_fps):
+                x_tensor, e_tensor = torch.zeros(
+                    (self.sample_fps * self.video_len * int(input_size / 3), 3)), torch.zeros(
+                    (2, self.sample_fps * self.video_len * len(l_pair)))
+                sample_frame_num = 0
+                while sample_frame_num + 1 < int(self.video_len * self.sample_fps):
                     if index == video_frame_num:
-                        break
+                        x_tensor[
+                        (sample_frame_num + 1) * int(input_size / 3):(sample_frame_num + 2) * int(input_size / 3)] = x
+                        e_tensor[:, (sample_frame_num + 1) * len(l_pair):(sample_frame_num + 2) * len(l_pair)] \
+                            = edge_index + torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num)
+                        sample_frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id and frame['frame_id'] > len(x_l) * (
+                        if frame['frame_id'] > first_id and frame['frame_id'] > sample_frame_num * (
                                 video_fps / self.sample_fps):
-                            x_l.append(x_l[-1])
-                            e_l.append(e_l[-1])
+                            x_tensor[(sample_frame_num + 1) * int(input_size / 3):(sample_frame_num + 2) * int(
+                                input_size / 3)] = x
+                            e_tensor[:, (sample_frame_num + 1) * len(l_pair):(sample_frame_num + 2) * len(l_pair)] \
+                                = edge_index + torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num)
+                            sample_frame_num += 1
                         else:
                             index += 1
                             if frame['frame_id'] - first_id > int(video_fps * self.video_len):
@@ -321,17 +332,17 @@ class Dataset(Dataset):
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                                 x = torch.tensor(frame_feature)
-                                x_l.append(x)
-                                e_l.append(edge_index)
-                while len(x_l) < self.sample_fps * self.video_len:
-                    x_l.append(x_l[-1])
-                    e_l.append(e_l[-1])
-                if len(x_l) == 0:
+                                x_tensor[
+                                sample_frame_num * int(input_size / 3):(sample_frame_num + 1) * int(input_size / 3)] = x
+                                e_tensor[:, sample_frame_num * len(l_pair):(sample_frame_num + 1) * len(
+                                    l_pair)] = edge_index + torch.full((2, len(l_pair)),
+                                                                       int(input_size / 3) * sample_frame_num)
+                                sample_frame_num += 1
+                if sample_frame_num == 0:
                     return 0
-                x_list.append(x_l)
-                edge_index_list.append(e_l)
+                graph_list.append(Data(x=x_tensor, edge_index=e_tensor))
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
-        return [np.array(x) for x in x_list], [np.array(edge_index) for edge_index in edge_index_list], label
+        return graph_list, label
 
     def get_stgraph_data_from_file(self, file):
         x_list = []

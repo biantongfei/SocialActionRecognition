@@ -1,7 +1,7 @@
 from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN, STGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
-from DataLoader import JPLDataLoader
+from DataLoader import JPLDataLoader, JPLGCNDataLoader
 
 import torch
 from torch.nn import functional
@@ -143,8 +143,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -195,10 +195,15 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     print('Start Training!!!')
     epoch = 1
     while True:
-        train_loader = JPLDataLoader(model=model, dataset=trainset, batch_size=batch_size, max_length=max_length,
-                                     drop_last=False, shuffle=True)
-        val_loader = JPLDataLoader(model=model, dataset=valset, max_length=max_length, drop_last=False,
-                                   batch_size=batch_size)
+        if 'gcn_' not in model:
+            train_loader = JPLDataLoader(model=model, dataset=trainset, batch_size=batch_size, max_length=max_length,
+                                         drop_last=False, shuffle=True)
+            val_loader = JPLDataLoader(model=model, dataset=valset, max_length=max_length, drop_last=False,
+                                       batch_size=batch_size)
+        else:
+            train_loader = JPLGCNDataLoader(dataset=trainset, batch_size=batch_size, max_length=max_length,
+                                            drop_last=False, shuffle=True)
+            val_loader = JPLGCNDataLoader(dataset=valset, max_length=max_length, drop_last=False, batch_size=batch_size)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -212,11 +217,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype).to(device)
             elif 'gcn_' in model:
-                x, (int_labels, att_labels, act_labels) = data
-                inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device)
-                                                                                    for i in range(len(x[1]))]
-            int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
-                device)
+                inputs, (int_labels, att_labels, act_labels) = data
+            int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
             if framework == 'intention':
                 int_outputs = net(inputs)
                 total_loss = functional.cross_entropy(int_outputs, int_labels)
@@ -249,9 +251,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype).to(device)
             elif 'gcn_' in model:
-                x, (int_labels, att_labels, act_labels) = data
-                inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device)
-                                                                                    for i in range(len(x[1]))]
+                inputs, (int_labels, att_labels, act_labels) = data
             int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(
                 device)
             if framework == 'intention':
@@ -306,11 +306,14 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
-    test_loader = JPLDataLoader(model=model, dataset=testset, max_length=max_length, batch_size=batch_size,
-                                drop_last=False)
+    if 'gcn_' not in model:
+        test_loader = JPLDataLoader(model=model, dataset=testset, max_length=max_length, batch_size=batch_size,
+                                    drop_last=False)
+    else:
+        test_loader = JPLGCNDataLoader(dataset=testset, max_length=max_length, batch_size=batch_size, drop_last=False)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     process_time = 0
     start_time = time.time()
@@ -324,9 +327,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
             inputs = inputs.to(dtype).to(device)
         elif 'gcn_' in model:
-            x, (int_labels, att_labels, act_labels) = data
-            inputs = [x[0][i].to(dtype).to(device) for i in range(len(x[0]))], [x[1][i].to(torch.int64).to(device) for i
-                                                                                in range(len(x[1]))]
+            inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         if index == 0:
             macs, params = profile(net, inputs=(inputs,), verbose=False)
@@ -406,8 +407,8 @@ if __name__ == '__main__':
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gru'
-    # model = 'gcn_gcn'
-    model = 'stgcn'
+    model = 'gcn_gcn'
+    # model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
@@ -438,4 +439,4 @@ if __name__ == '__main__':
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
-    send_email(result_str)
+    # send_email(result_str)

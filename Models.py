@@ -7,7 +7,7 @@ import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
 from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling, SAGPooling, ASAPooling
 
-from Dataset import get_inputs_size
+from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
 
 box_feature_num = 4
@@ -288,7 +288,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 8
+        self.keypoint_hidden_dim = 16
         self.pooling = False
         self.pooling_rate = 0.5 if self.pooling else 1
         if body_part[0]:
@@ -304,7 +304,8 @@ class GNN(nn.Module):
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         self.gcn_attention = self.attn = nn.MultiheadAttention(
-            math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1)
+            math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1,
+            batch_first=True)
         if self.model == 'gcn_lstm':
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
@@ -378,59 +379,60 @@ class GNN(nn.Module):
                                              )
 
     def forward(self, data):
-        x, edge_index = data[0], data[1]
-        x_time = torch.zeros((x[0].shape[0], x[0].shape[1],
-                              math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim)).to(
-            dtype).to(device)
-        # x_time = torch.zeros((x.shape[0], x.shape[1], 69 * 4)).to(dtype).to(device)
-        for i in range(x[0].shape[0]):
-            for ii in range(x[0].shape[1]):
-                x_list = []
-                if self.body_part[0]:
-                    x_body = self.GCN_body(x=x[0][i][ii], edge_index=edge_index[0][i][ii]).to(dtype).to(device)
-                    if self.pooling:
-                        x_body, _, _, _, _, _ = self.pool(x_body, edge_index[0][i][ii])
-                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    x_list.append(x_body)
-                if self.body_part[1]:
-                    x_face = self.GCN_face(x=x[1][i][ii], edge_index=edge_index[1][i][ii]).to(dtype).to(device)
-                    if self.pooling:
-                        x_face, _, _, _, _, _ = self.pool(x_face, edge_index[1][i][ii])
-                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    x_list.append(x_face)
-                if self.body_part[2]:
-                    x_hand = self.GCN_hand(x=x[2][i][ii], edge_index=edge_index[2][i][ii]).to(dtype).to(device)
-                    if self.pooling:
-                        x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index[2][i][ii])
-                        # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-                    x_list.append(x_hand)
-                x_t = torch.cat(x_list, dim=0).reshape(1, 1, -1)
-                x_t, _ = self.gcn_attention(x_t, x_t, x_t)
-                x_time[i][ii] = x_t[0][0]
+        x_list = []
+        if self.body_part[0]:
+            x_body, edge_index_body = data[0].x.to(dtype).to(device), data[0].edge_index.to(torch.int64).to(device)
+            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype).to(device)
+            if self.pooling:
+                x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
+                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+            x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
+                coco_body_point_num if self.is_coco else halpe_body_point_num))
+            x_list.append(x_body)
+        if self.body_part[1]:
+            d = data[1] if self.body_part[0] else data[1]
+            x_face, edge_index_face = d.x.to(dtype).to(device), d.edge_index.to(torch.int64).to(device)
+            x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype).to(device)
+            if self.pooling:
+                x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
+                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+            x_face = x_face.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            x_list.append(x_face)
+        if self.body_part[2]:
+            d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
+                1] else data[0]
+            x_hand, edge_index_hand = d.x.to(dtype).to(device), d.edge_index.to(torch.int64).to(device)
+            x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype).to(device)
+            if self.pooling:
+                x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
+                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
+            x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            x_list.append(x_hand)
+        x = torch.cat(x_list, dim=2)
+        x, _ = self.gcn_attention(x, x, x)
         if self.model in ['gcn_lstm', 'gcn_gru']:
-            on, _ = self.time_model(x_time)
+            on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
             x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
             attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
             x = torch.sum(x * attention_weights, dim=1)
         elif self.model == 'gcn_conv1d':
-            x = torch.transpose(x_time, 1, 2)
+            x = torch.transpose(x, 1, 2)
             x = self.time_model(x)
             x = x.flatten(1)
         else:
             time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
                                            dtype=torch.int64).t().contiguous().to(device)
-            x = torch.zeros(
-                (x_time.shape[0], math.ceil(self.pooling_rate * x_time.shape[1] * self.keypoint_hidden_dim))).to(
+            x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim))).to(
                 dtype).to(device)
-            for i in range(x_time.shape[0]):
-                x_t = x_time[i]
+            for i in range(x.shape[0]):
+                x_t = x[i]
                 x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype).to(device)
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 if self.pooling:
                     x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
-                x[i] = x_t.reshape(1, -1)[0]
-            x = x.flatten(1)
+                x_time[i] = x_t.reshape(1, -1)[0]
+            x = x_time.flatten(1)
         y = self.fc(x)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':

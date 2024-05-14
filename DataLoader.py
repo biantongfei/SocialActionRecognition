@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
+from torch_geometric.loader import DataLoader as GCNDataLoader
 
 
 def rnn_collate_fn(data):
@@ -56,3 +57,10 @@ class JPLDataLoader(DataLoader):
             att_label.append(d[1][1])
             act_label.append(d[1][2])
         return input, (torch.Tensor(int_label).long(), torch.Tensor(att_label).long(), torch.Tensor(act_label).long())
+
+
+class JPLGCNDataLoader(GCNDataLoader):
+    def __init__(self, dataset, batch_size, max_length, drop_last=True, shuffle=False):
+        super(JPLGCNDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                               drop_last=drop_last, num_workers=4)
+        self.max_length = max_length
