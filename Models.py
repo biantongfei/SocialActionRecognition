@@ -288,7 +288,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 128
         self.pooling = False
         self.pooling_rate = 0.5 if self.pooling else 1
         if body_part[0]:

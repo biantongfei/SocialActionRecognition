@@ -17,7 +17,7 @@ for model in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn']:
 # for model in ['gcn_gru']:
     performance_model = []
     i = 0
-    while i < 1:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
@@ -30,8 +30,8 @@ for model in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    # draw_save(model, performance_model, framework)
+    draw_save(model, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
     print(result_str)
-    # send_email(result_str)
+    send_email(result_str)
