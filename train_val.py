@@ -73,7 +73,7 @@ elif torch.backends.mps.is_available():
 else:
     print('Using CPU for training')
     device = torch.device('cpu')
-dtype = torch.float
+dtype = torch.float16
 intention_class = ['interacting', 'interested', 'not_interested']
 attitude_classes = ['positive', 'negative', 'no_interacting']
 action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point-converse', 'gaze', 'leave',
@@ -237,6 +237,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
+            torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
         print('Validating')
@@ -297,6 +298,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
             result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
         print(result_str)
+        torch.cuda.empty_cache()
         # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
         if epoch == 15:
             break
@@ -354,6 +356,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             act_pred = act_outputs.argmax(dim=1)
             act_y_true += act_labels.tolist()
             act_y_pred += act_pred.tolist()
+        torch.cuda.empty_cache()
     end_time = time.time()
     process_time += end_time - start_time
     result_str = ''

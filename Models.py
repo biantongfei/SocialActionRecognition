@@ -21,7 +21,7 @@ elif torch.backends.mps.is_available():
     device = torch.device('mps')
 else:
     device = torch.device('cpu')
-dtype = torch.float
+dtype = torch.float16
 
 
 class DNN(nn.Module):
@@ -379,7 +379,7 @@ class GNN(nn.Module):
     def forward(self, data):
         x_list = []
         if self.body_part[0]:
-            x_body, edge_index_body = data[0].x.to(dtype).to(device), data[0].edge_index.to(torch.int64).to(device)
+            x_body, edge_index_body = data[0].x.to(dtype).to(device), data[0].edge_index.to(torch.int16).to(device)
             x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype).to(device)
             if self.pooling:
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
@@ -389,7 +389,7 @@ class GNN(nn.Module):
             x_list.append(x_body)
         if self.body_part[1]:
             d = data[1] if self.body_part[0] else data[1]
-            x_face, edge_index_face = d.x.to(dtype).to(device), d.edge_index.to(torch.int64).to(device)
+            x_face, edge_index_face = d.x.to(dtype).to(device), d.edge_index.to(torch.int16).to(device)
             x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype).to(device)
             if self.pooling:
                 x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
@@ -399,7 +399,7 @@ class GNN(nn.Module):
         if self.body_part[2]:
             d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
                 1] else data[0]
-            x_hand, edge_index_hand = d.x.to(dtype).to(device), d.edge_index.to(torch.int64).to(device)
+            x_hand, edge_index_hand = d.x.to(dtype).to(device), d.edge_index.to(torch.int16).to(device)
             x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype).to(device)
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
@@ -420,7 +420,7 @@ class GNN(nn.Module):
             x = x.flatten(1)
         else:
             time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
-                                           dtype=torch.int64).t().contiguous().to(device)
+                                           dtype=torch.int16).t().contiguous().to(device)
             x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim))).to(
                 dtype).to(device)
             for i in range(x.shape[0]):
