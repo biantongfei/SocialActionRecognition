@@ -37,7 +37,7 @@ def stgcn_collate_fn(data):
 class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                            drop_last=drop_last, num_workers=4)
+                                            drop_last=drop_last, num_workers=1)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
@@ -63,5 +63,5 @@ class JPLDataLoader(DataLoader):
 class JPLGCNDataLoader(GCNDataLoader):
     def __init__(self, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLGCNDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                               drop_last=drop_last, num_workers=4)
+                                               drop_last=drop_last, num_workers=1)
         self.max_length = max_length
