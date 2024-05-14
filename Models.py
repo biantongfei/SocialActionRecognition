@@ -17,7 +17,7 @@ action_class_num = 10
 fps = 30
 if torch.cuda.is_available():
     device = torch.device("cuda:0")
-    device = torch.device('cpu')
+    # device = torch.device('cpu')
 elif torch.backends.mps.is_available():
     device = torch.device('mps')
 else:
@@ -290,7 +290,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 128
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         if body_part[0]:
