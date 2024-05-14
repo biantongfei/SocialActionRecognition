@@ -30,7 +30,8 @@ def stgcn_collate_fn(data):
         int_label.append(d[1][0])
         att_label.append(d[1][1])
         act_label.append(d[1][2])
-    return input, (torch.Tensor(int_label).long(), torch.Tensor(att_label).long(), torch.Tensor(act_label).long())
+    return input, (torch.Tensor(int_label).to(torch.float16), torch.Tensor(att_label).to(torch.float16),
+                   torch.Tensor(act_label).to(torch.float16))
 
 
 class JPLDataLoader(DataLoader):
