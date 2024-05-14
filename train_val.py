@@ -68,13 +68,13 @@ if torch.cuda.is_available():
     device = torch.device("cuda:0")
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+    device = torch.device('cpu')
 elif torch.backends.mps.is_available():
     print('Using MPS for training')
     device = torch.device('mps')
 else:
     print('Using CPU for training')
     device = torch.device('cpu')
-# device = torch.device('cpu')
 dtype = torch.float16
 intention_class = ['interacting', 'interested', 'not_interested']
 attitude_classes = ['positive', 'negative', 'no_interacting']
