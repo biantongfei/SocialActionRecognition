@@ -412,28 +412,28 @@ def draw_keypoints(part):
         # cv2.imshow('image', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        if id == 0:
-            plt.figure()
-            x, y = [], []
-            for index in range(len(person['keypoints'])):
-                if index % 3 == 0 and int(index / 3) in keypoint_range:
-                    x.append(person['keypoints'][index])
-                    y.append(frame_height - person['keypoints'][index + 1])
-            plt.scatter(x, y, marker='.', color='black')
-            for index, p in enumerate(pair):
-                plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
-                         (frame_height - person['keypoints'][p[0] * 3 + 1],
-                          frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
-                         color='black')
-            plt.xlim((280, 300))
-            plt.ylim((240, 280))
-            # plt.tight_layout()
-            frame = plt.gca()
-            # frame.axes.get_xaxis().set_visible(False)
-            # frame.axes.get_yaxis().set_visible(False)
-            # plt.axis('off')
-            plt.show()
-            # plt.savefig('%d.png' % id)
+        # if id == 0:
+        plt.figure()
+        x, y = [], []
+        for index in range(len(person['keypoints'])):
+            if index % 3 == 0 and int(index / 3) in keypoint_range:
+                x.append(person['keypoints'][index])
+                y.append(frame_height - person['keypoints'][index + 1])
+        plt.scatter(x, y, marker='.', color='black')
+        for index, p in enumerate(pair):
+            plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
+                     (frame_height - person['keypoints'][p[0] * 3 + 1],
+                      frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
+                     color='black')
+        # plt.xlim((270, 310))
+        # plt.ylim((240, 280))
+        plt.tight_layout()
+        frame = plt.gca()
+        frame.axes.get_xaxis().set_visible(False)
+        frame.axes.get_yaxis().set_visible(False)
+        plt.axis('off')
+        plt.show()
+        # plt.savefig('%d.png' % id)
 
 
 if __name__ == '__main__':
