@@ -300,7 +300,6 @@ class Dataset(Dataset):
                 if index_body != 0:
                     previous_nodes += coco_body_point_num if self.is_coco else halpe_body_point_num
                     previous_nodes += head_point_num if index_body == 2 else 0
-                print(previous_nodes)
                 edge_index = torch.tensor(np.array(l_pair) - np.full((len(l_pair), 2), previous_nodes),
                                           dtype=torch.int32).t().contiguous()
                 x_tensor, e_tensor = torch.zeros(
