@@ -302,6 +302,7 @@ class Dataset(Dataset):
                     previous_nodes += head_point_num if index_body == 2 else 0
                 edge_index = torch.tensor(np.array(l_pair) - np.full((len(l_pair), 2), previous_nodes),
                                           dtype=torch.int16).t().contiguous()
+                print(edge_index, 'first')
                 x_tensor, e_tensor = torch.zeros(
                     (self.sample_fps * self.video_len * int(input_size / 3), 3)), torch.zeros(
                     (2, self.sample_fps * self.video_len * len(l_pair)))
@@ -313,6 +314,7 @@ class Dataset(Dataset):
                         e_tensor[:, (sample_frame_num + 1) * len(l_pair):(sample_frame_num + 2) * len(l_pair)] \
                             = edge_index + torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num)
                         sample_frame_num += 1
+                        print(torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num))
                     else:
                         frame = feature_json['frames'][index]
                         if frame['frame_id'] > first_id and frame['frame_id'] > sample_frame_num * (
@@ -321,6 +323,7 @@ class Dataset(Dataset):
                                 input_size / 3)] = x
                             e_tensor[:, (sample_frame_num + 1) * len(l_pair):(sample_frame_num + 2) * len(l_pair)] \
                                 = edge_index + torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num)
+                            print(torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num))
                             sample_frame_num += 1
                         else:
                             index += 1
@@ -337,6 +340,7 @@ class Dataset(Dataset):
                                 e_tensor[:, sample_frame_num * len(l_pair):(sample_frame_num + 1) * len(
                                     l_pair)] = edge_index + torch.full((2, len(l_pair)),
                                                                        int(input_size / 3) * sample_frame_num)
+                                print(torch.full((2, len(l_pair)), int(input_size / 3) * sample_frame_num))
                                 sample_frame_num += 1
                 if sample_frame_num == 0:
                     return 0
