@@ -425,13 +425,13 @@ def draw_keypoints(part):
                          (frame_height - person['keypoints'][p[0] * 3 + 1],
                           frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
                          color='black')
-            plt.xlim((260, 420))
-            plt.ylim((120, 300))
-            plt.tight_layout()
+            plt.xlim((280, 300))
+            plt.ylim((240, 280))
+            # plt.tight_layout()
             frame = plt.gca()
-            frame.axes.get_xaxis().set_visible(False)
-            frame.axes.get_yaxis().set_visible(False)
-            plt.axis('off')
+            # frame.axes.get_xaxis().set_visible(False)
+            # frame.axes.get_yaxis().set_visible(False)
+            # plt.axis('off')
             plt.show()
             # plt.savefig('%d.png' % id)
 

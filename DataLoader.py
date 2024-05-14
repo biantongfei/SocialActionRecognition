@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from torch_geometric.loader import DataLoader as GCNDataLoader
-from train_val import dtype
+from Models import dtype
 
 
 def rnn_collate_fn(data):
@@ -32,7 +32,7 @@ def stgcn_collate_fn(data):
         att_label.append(d[1][1])
         act_label.append(d[1][2])
     return input, (
-    torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
+        torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
 
 
 class JPLDataLoader(DataLoader):
