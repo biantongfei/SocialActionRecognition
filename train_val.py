@@ -67,15 +67,15 @@ if torch.cuda.is_available():
     print('Using CUDA for training')
     device = torch.device("cuda:0")
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 elif torch.backends.mps.is_available():
     print('Using MPS for training')
     device = torch.device('mps')
 else:
     print('Using CPU for training')
     device = torch.device('cpu')
-device = torch.device('cpu')
+# device = torch.device('cpu')
 dtype = torch.float16
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 intention_class = ['interacting', 'interested', 'not_interested']
 attitude_classes = ['positive', 'negative', 'no_interacting']
 action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point-converse', 'gaze', 'leave',
@@ -145,8 +145,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
