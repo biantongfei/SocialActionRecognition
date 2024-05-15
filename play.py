@@ -1,6 +1,4 @@
-import torch
-
-a = torch.zeros((2, 3))
-
-a = a + torch.full((2, 3), 1)
+a = [1, 2, 3]
+b = a
+b.append(4)
 print(a)
