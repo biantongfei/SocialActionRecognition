@@ -389,6 +389,7 @@ class GNN(nn.Module):
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
+            print(x_body.shape)
             x_list.append(x_body)
         if self.body_part[1]:
             d = data[1] if self.body_part[0] else data[1]
@@ -399,6 +400,7 @@ class GNN(nn.Module):
                 x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             x_face = x_face.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            print(x_face.shape)
             x_list.append(x_face)
         if self.body_part[2]:
             d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
@@ -410,9 +412,12 @@ class GNN(nn.Module):
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            print(x_hand.shape)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
+        print(x.shape)
         x, _ = self.gcn_attention(x, x, x)
+        print(x.shape)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
