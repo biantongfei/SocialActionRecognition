@@ -381,8 +381,9 @@ class GNN(nn.Module):
     def forward(self, data):
         x_list = []
         if self.body_part[0]:
-            x_body, edge_index_body = data[0].x.to(dtype).to(device), data[0].edge_index.to(torch.int32).to(device)
-            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype).to(device)
+            x_body, edge_index_body = data[0].x.to(dtype=dtype, device=device), data[0].edge_index.to(dtype=torch.int32,
+                                                                                                      device=device)
+            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype=dtype, device=device)
             if self.pooling:
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
@@ -391,8 +392,9 @@ class GNN(nn.Module):
             x_list.append(x_body)
         if self.body_part[1]:
             d = data[1] if self.body_part[0] else data[1]
-            x_face, edge_index_face = d.x.to(dtype).to(device), d.edge_index.to(torch.int32).to(device)
-            x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype).to(device)
+            x_face, edge_index_face = d.x.to(dtype=dtype, device=device), d.edge_index.to(dtype=torch.int32,
+                                                                                          device=device)
+            x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype=dtype, device=device)
             if self.pooling:
                 x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
@@ -401,8 +403,9 @@ class GNN(nn.Module):
         if self.body_part[2]:
             d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
                 1] else data[0]
-            x_hand, edge_index_hand = d.x.to(dtype).to(device), d.edge_index.to(torch.int32).to(device)
-            x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype).to(device)
+            x_hand, edge_index_hand = d.x.to(dtype=dtype, device=device), d.edge_index.to(dtype=torch.int32,
+                                                                                          device=device)
+            x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype=dtype, device=device)
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
@@ -422,12 +425,12 @@ class GNN(nn.Module):
             x = x.flatten(1)
         else:
             time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
-                                           dtype=torch.int32).t().contiguous().to(device)
-            x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim))).to(
-                dtype).to(device)
+                                           dtype=torch.int32, device=device).t().contiguous()
+            x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim)),
+                                 dtype=dtype, device=device)
             for i in range(x.shape[0]):
                 x_t = x[i]
-                x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype).to(device)
+                x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype=dtype, device=device)
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 if self.pooling:
                     x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
@@ -702,15 +705,15 @@ class STGCN(nn.Module):
     def forward(self, x):
         y_list = []
         if self.body_part[0]:
-            y_body = self.stgcn_body(x=x[0].to(dtype).to(device)).to(dtype).to(device)
+            y_body = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y_body.shape, 'body')
             y_list.append(y_body)
         if self.body_part[1]:
-            y_face = self.stgcn_body(x=x[1].to(dtype).to(device)).to(dtype).to(device)
+            y_face = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y_face)
             print(y_face.shape, 'face')
         if self.body_part[2]:
-            y_hand = self.stgcn_body(x=x[2].to(dtype).to(device)).to(dtype).to(device)
+            y_hand = self.stgcn_body(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y_hand)
             print(y_hand.shape, 'hand')
         y = torch.cat(y_list, dim=0)
