@@ -190,7 +190,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    scheduler = StepLR(optimizer, step_size=1, gamma=0.5)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
     intention_best_f1 = -1
     attitude_best_f1 = -1
     action_best_f1 = -1
