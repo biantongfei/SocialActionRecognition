@@ -190,7 +190,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.5)
     intention_best_f1 = -1
     attitude_best_f1 = -1
     action_best_f1 = -1
@@ -302,7 +302,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             print(result_str + 'loss: %.4f' % total_loss)
             torch.cuda.empty_cache()
         # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
-        if epoch == 15:
+        if epoch == 20:
             break
         else:
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
