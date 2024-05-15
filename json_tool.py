@@ -398,7 +398,7 @@ def draw_keypoints(part):
         keypoint_range = [i for i in range(94, 136)]
     if part == 'both':
         keypoint_range = [i for i in range(136)]
-    with open('alphapose-results.json', 'r') as f:
+    with open('alphapose-results1.json', 'r') as f:
         json_file = json.load(f)
         f.close()
     for id, person in enumerate(json_file):
@@ -423,14 +423,13 @@ def draw_keypoints(part):
                 x.append(person['keypoints'][index])
                 y.append(frame_height - person['keypoints'][index + 1])
         plt.scatter(x, y, marker='.', color='black')
-        print(len(pair))
         for index, p in enumerate(pair):
             plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
                      (frame_height - person['keypoints'][p[0] * 3 + 1],
                       frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
                      color='black')
-        plt.xlim((240, 380))
-        plt.ylim((120, 280))
+        plt.xlim((270, 310))
+        plt.ylim((240, 270))
         plt.tight_layout()
         frame = plt.gca()
         frame.axes.get_xaxis().set_visible(False)
@@ -458,4 +457,4 @@ if __name__ == '__main__':
     #     pre_video = file.split('p')[0]
     # mixed_augment()
     # add_attitude_class()
-    draw_keypoints('both')
+    draw_keypoints('head')

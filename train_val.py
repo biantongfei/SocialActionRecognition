@@ -284,26 +284,26 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, valset.frame_number_list)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-            result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f%%" % (int_acc * 100), "%.4f" % int_f1)
-        if 'attitude' in tasks:
-            att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+            result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
+            if 'attitude' in tasks:
+                att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
             if model == 'perframe':
                 att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, valset.frame_number_list)
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-            result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f%%" % (att_acc * 100), "%.4f" % att_f1)
-        if 'action' in tasks:
-            act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+            result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
+            if 'action' in tasks:
+                act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
                 act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, valset.frame_number_list)
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-            result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f%%" % (act_acc * 100), "%.4f" % act_f1)
-        print(result_str)
-        torch.cuda.empty_cache()
-        # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
-        if epoch == 15:
-            break
+            result_str += 'act_acc: %.2f%%, act_f1: %.4f, ' % (act_acc * 100, act_f1)
+            print(result_str + 'loss: %.4f' % total_loss)
+            torch.cuda.empty_cache()
+            # if int_f1 < intention_best_f1 and att_f1 < attitude_best_f1 and act_f1 < action_best_f1:
+            if epoch == 15:
+                break
         else:
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
             attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
@@ -334,8 +334,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         if index == 0:
-            macs, params = profile(net, inputs=(inputs,), verbose=False)
-            model_size = params * 4.0 / 1024 / 1024
+            macs, _ = profile(net, inputs=(inputs,), verbose=False)
             MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
@@ -372,7 +371,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['intention_f1'] = int_f1
         performance_model['intention_y_true'] = int_y_true
         performance_model['intention_y_pred'] = int_y_pred
-        result_str += 'int_acc: %s, int_f1: %s, ' % ("%.2f" % (int_acc * 100), "%.4f" % int_f1)
+        result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
     if 'attitude' in tasks:
         att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
         if model == 'perframe':
@@ -383,7 +382,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['attitude_f1'] = att_f1
         performance_model['attitude_y_true'] = att_y_true
         performance_model['attitude_y_pred'] = att_y_pred
-        result_str += 'att_acc: %s, att_f1: %s, ' % ("%.2f" % (att_acc * 100), "%.4f" % att_f1)
+        result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
     if 'action' in tasks:
         act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         if model == 'perframe':
@@ -394,10 +393,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['action_f1'] = act_f1
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
-        result_str += 'act_acc: %s, act_f1: %s, ' % ("%.2f" % (act_acc * 100), "%.4f" % act_f1)
+        result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
     print(
-        result_str + 'model_size: %.2f MB, Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
-            (model_size, MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
+        result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
+            (MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)
     return performance_model

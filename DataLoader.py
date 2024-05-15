@@ -2,7 +2,10 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from torch_geometric.loader import DataLoader as GCNDataLoader
-from Models import dtype
+from Models import dtype, device
+
+# print(device)
+num_workers = 48 if device in ['cuda:0', 'cpu'] else 20
 
 
 def rnn_collate_fn(data):
@@ -38,7 +41,7 @@ def stgcn_collate_fn(data):
 class JPLDataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                            drop_last=drop_last, num_workers=1)
+                                            drop_last=drop_last, num_workers=num_workers)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
@@ -64,5 +67,5 @@ class JPLDataLoader(DataLoader):
 class JPLGCNDataLoader(GCNDataLoader):
     def __init__(self, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLGCNDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                               drop_last=drop_last, num_workers=1)
+                                               drop_last=drop_last, num_workers=num_workers)
         self.max_length = max_length
