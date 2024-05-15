@@ -5,7 +5,8 @@ from torch_geometric.loader import DataLoader as GCNDataLoader
 from Models import dtype, device
 
 # print(device)
-num_workers = 10
+num_workers = 24 if device in ['cuda:0', 'cpu'] else 10
+num_workers = 1
 
 
 def rnn_collate_fn(data):
