@@ -353,8 +353,8 @@ if __name__ == '__main__':
     # model = 'gru'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
-    # model = 'gcn_gru'
-    model = 'gcn_gcn'
+    model = 'gcn_gru'
+    # model = 'gcn_gcn'
     # model = 'stgcn'
     body_part = [True, True, True]
 
