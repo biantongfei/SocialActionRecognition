@@ -94,6 +94,7 @@ class JPLDataLoader(DataLoader):
             for i in range(len(x)):
                 for ii in range(self.max_length):
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = x[i][ii]
+                    print(edge_nums[i])
                     edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = edge_index[i][
                                                                                                          ii] + torch.full(
                         (2, edge_nums[i]), frame_num * point_nums[i])
