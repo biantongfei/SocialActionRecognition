@@ -1,5 +1,6 @@
 from train_val import train, draw_save, send_email
 
+print(bless_str)
 # model = 'gnn_keypoint_conv1d'
 body_part = [True, True, True]
 

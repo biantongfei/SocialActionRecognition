@@ -9,20 +9,11 @@ from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling, SAGPooling, 
 
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
+from constants import video_fps, intention_class, attitude_classes, action_classes, device, dtype
 
-box_feature_num = 4
-intention_class_num = 3
-attitude_class_num = 3
-action_class_num = 10
-fps = 30
-if torch.cuda.is_available():
-    device = torch.device("cuda:0")
-    # device = torch.device('cpu')
-elif torch.backends.mps.is_available():
-    device = torch.device('mps')
-else:
-    device = torch.device('cpu')
-dtype = torch.float32
+intention_class_num = len(intention_class)
+attitude_class_num = len(attitude_classes)
+action_class_num = len(action_classes)
 
 
 class DNN(nn.Module):
@@ -379,10 +370,13 @@ class GNN(nn.Module):
                                              )
 
     def forward(self, data):
+        print(len(data))
+        print(len(data[0]))
+        print(data[0][0].shape)
         x_list = []
         if self.body_part[0]:
-            x_body, edge_index_body = data[0].x.to(dtype=dtype, device=device), data[0].edge_index.to(dtype=torch.int32,
-                                                                                                      device=device)
+            x_body, edge_index_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(dtype=torch.int32,
+                                                                                               device=device)
             print(x_body.shape)
             x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype=dtype, device=device)
             if self.pooling:
@@ -393,8 +387,7 @@ class GNN(nn.Module):
             x_list.append(x_body)
         if self.body_part[1]:
             d = data[1] if self.body_part[0] else data[1]
-            x_face, edge_index_face = d.x.to(dtype=dtype, device=device), d.edge_index.to(dtype=torch.int32,
-                                                                                          device=device)
+            x_face, edge_index_face = d[0].to(dtype=dtype, device=device), d[1].to(dtype=torch.int32, device=device)
             x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype=dtype, device=device)
             if self.pooling:
                 x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
@@ -404,8 +397,7 @@ class GNN(nn.Module):
         if self.body_part[2]:
             d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
                 1] else data[0]
-            x_hand, edge_index_hand = d.x.to(dtype=dtype, device=device), d.edge_index.to(dtype=torch.int32,
-                                                                                          device=device)
+            x_hand, edge_index_hand = d[0].to(dtype=dtype, device=device), d[1].to(dtype=torch.int32, device=device)
             x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype=dtype, device=device)
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)

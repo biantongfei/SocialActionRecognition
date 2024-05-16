@@ -5,17 +5,10 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from torch_geometric.data import Data
 
-coco_body_point_num = 23
-halpe_body_point_num = 26
-head_point_num = 68
-hands_point_num = 42
-valset_rate = 0.1
-testset_rate = 0.4
-coco_point_num = 133
-halpe_point_num = 136
-video_fps = 30
+from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, valset_rate, \
+    testset_rate, video_fps, coco_body_l_pair, coco_head_l_pair, coco_hand_l_pair, halpe_body_l_pair, halpe_head_l_pair, \
+    halpe_hand_l_pair
 
 
 def get_data_path(augment_method, is_coco):
@@ -123,61 +116,18 @@ def get_l_pair(is_coco, body_part):
     l_pair = []
     if is_coco:
         if body_part[0]:
-            l_pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
-                       [5, 7], [7, 9], [6, 8], [8, 10],  # Body
-                       [5, 6], [11, 12], [5, 11], [6, 12],
-                       [11, 13], [12, 14], [13, 15], [14, 16],
-                       [15, 17], [15, 18], [15, 19], [16, 20], [16, 21], [16, 22]]
+            l_pair += coco_body_l_pair
         if body_part[1]:
-            l_pair += [[23, 24], [24, 25], [25, 26], [26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32],
-                       [32, 33], [33, 34], [34, 35],
-                       [35, 36], [36, 37], [37, 38], [38, 39], [40, 41], [41, 42], [42, 43], [43, 44], [45, 46],
-                       [46, 47], [47, 48], [48, 49],
-                       [50, 51], [51, 52], [52, 53], [54, 55], [55, 56], [56, 57], [57, 58], [59, 60], [60, 61],
-                       [61, 62], [62, 63], [63, 64],
-                       [65, 66], [66, 67], [67, 68], [68, 69], [69, 70], [71, 72], [72, 73], [73, 74], [74, 75],
-                       [75, 76], [76, 77], [77, 78],
-                       [78, 79], [79, 80], [80, 81], [81, 82], [82, 83], [83, 84], [84, 85], [85, 86], [86, 87],
-                       [87, 88], [88, 89], [89, 90]]
+            l_pair += coco_head_l_pair
         if body_part[2]:
-            l_pair += [[91, 92], [92, 93], [93, 94], [94, 95], [91, 96], [96, 97], [97, 98], [98, 99], [91, 100],
-                       [100, 101], [101, 102],
-                       [102, 103], [91, 104], [104, 105], [105, 106], [106, 107], [91, 108], [108, 109], [109, 110],
-                       [110, 111], [112, 113],
-                       [113, 114], [114, 115], [115, 116], [112, 117], [117, 118], [118, 119], [119, 120], [112, 121],
-                       [121, 122], [122, 123],
-                       [123, 124], [112, 125], [125, 126], [126, 127], [127, 128], [112, 129], [129, 130], [130, 131],
-                       [131, 132]]
+            l_pair += coco_hand_l_pair
     else:
         if body_part[0]:
-            l_pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
-                       [5, 18], [6, 18], [5, 7], [7, 9], [6, 8], [8, 10],  # Body
-                       [17, 18], [18, 19], [19, 11], [19, 12],
-                       [11, 13], [12, 14], [13, 15], [14, 16],
-                       [20, 24], [21, 25], [23, 25], [22, 24], [15, 24], [16, 25],  # Foot
-                       ]
+            l_pair += halpe_body_l_pair
         if body_part[1]:
-            l_pair += [[26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32], [32, 33], [33, 34], [34, 35],
-                       [35, 36], [36, 37], [37, 38],  # Face
-                       [38, 39], [39, 40], [40, 41], [41, 42], [43, 44], [44, 45], [45, 46], [46, 47], [48, 49],
-                       [49, 50], [50, 51], [51, 52],  # Face
-                       [53, 54], [54, 55], [55, 56], [57, 58], [58, 59], [59, 60], [60, 61], [62, 63], [63, 64],
-                       [64, 65], [65, 66], [66, 67],  # Face
-                       [68, 69], [69, 70], [70, 71], [71, 72], [72, 73], [74, 75], [75, 76], [76, 77], [77, 78],
-                       [78, 79], [79, 80], [80, 81],  # Face
-                       [81, 82], [82, 83], [83, 84], [84, 85], [85, 86], [86, 87], [87, 88], [88, 89], [89, 90],
-                       [90, 91], [91, 92], [92, 93]  # Face
-                       ]
+            l_pair += halpe_head_l_pair
         if body_part[2]:
-            l_pair += [[94, 95], [95, 96], [96, 97], [97, 98], [94, 99], [99, 100], [100, 101], [101, 102], [94, 103],
-                       [103, 104], [104, 105],  # LeftHand
-                       [105, 106], [94, 107], [107, 108], [108, 109], [109, 110], [94, 111], [111, 112], [112, 113],
-                       [113, 114],  # LeftHand
-                       [115, 116], [116, 117], [117, 118], [118, 119], [115, 120], [120, 121], [121, 122], [122, 123],
-                       [115, 124], [124, 125],  # RightHand
-                       [125, 126], [126, 127], [115, 128], [128, 129], [129, 130], [130, 131], [115, 132], [132, 133],
-                       [133, 134], [134, 135]  # RightHand
-                       ]
+            l_pair += halpe_hand_l_pair
     return l_pair
 
 
@@ -200,11 +150,11 @@ class Dataset(Dataset):
                 x, label = self.get_stgraph_data_from_file(file)
                 self.features.append(x)
             elif 'gcn_' in self.model:
-                body_graph_list, head_graph_list, hand_graph_list, label = self.get_graph_data_from_file(file)
-                if type(body_graph_list) == int:
+                x_dict, edge_index_dict, label = self.get_graph_data_from_file(file)
+                if type(x_dict) == int:
                     continue
                 else:
-                    self.features.append([body_graph_list, head_graph_list, hand_graph_list])
+                    self.features.append({'x': x_dict, 'edge_index': edge_index_dict})
             else:
                 feature, label = self.get_data_from_file(file)
                 if type(feature) == int or feature.size == 0 or feature.ndim == 0:
@@ -279,7 +229,7 @@ class Dataset(Dataset):
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
-        body_graph_list, head_graph_list, hand_graph_list = [], [], []
+        x_list, edge_index_list = [0, 0, 0], [0, 0, 0]
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
         first_id = -1
@@ -288,28 +238,35 @@ class Dataset(Dataset):
                 first_id = frame['frame_id']
                 break
         if first_id == -1:
-            return 0, 0, 0, 0
+            return 0, 0, 0
         for index_body, body in enumerate(self.body_part):
             if body:
-                graph_list = body_graph_list if index_body == 0 else head_graph_list if index_body == 1 else hand_graph_list
                 index = 0
                 b_p = [False, False, False]
                 b_p[index_body] = True
+                input_size = get_inputs_size(self.is_coco, b_p)
                 l_pair = get_l_pair(self.is_coco, b_p)
+                x_tensor, e_tensor = torch.zeros(
+                    (self.sample_fps * self.video_len, int(input_size / 3), 3)), torch.zeros(
+                    (self.sample_fps * self.video_len, 2, len(l_pair)))
                 previous_nodes = 0
                 if index_body != 0:
                     previous_nodes += coco_body_point_num if self.is_coco else halpe_body_point_num
                     previous_nodes += head_point_num if index_body == 2 else 0
                 edge_index = torch.tensor(np.array(l_pair) - np.full((len(l_pair), 2), previous_nodes),
                                           dtype=torch.int32).t().contiguous()
-                while len(graph_list) < int(self.video_len * self.sample_fps):
+                frame_num = 0
+                while frame_num < int(self.video_len * self.sample_fps):
                     if index == video_frame_num:
-                        graph_list.append(Data(x=x, edge_index=edge_index))
+                        x_tensor[frame_num] = x
+                        e_tensor[frame_num] = edge_index
+                        frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id and frame['frame_id'] > len(graph_list) * (
-                                video_fps / self.sample_fps):
-                            graph_list.append(Data(x=x, edge_index=edge_index))
+                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * video_fps / self.sample_fps:
+                            x_tensor[frame_num] = x
+                            e_tensor[frame_num] = edge_index
+                            frame_num += 1
                         else:
                             index += 1
                             if frame['frame_id'] - first_id > int(video_fps * self.video_len):
@@ -320,11 +277,15 @@ class Dataset(Dataset):
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                                 x = torch.tensor(frame_feature)
-                                graph_list.append(Data(x=x, edge_index=edge_index))
-                if len(graph_list) == 0:
-                    return 0, 0, 0, 0
+                                x_tensor[frame_num] = x
+                                e_tensor[frame_num] = edge_index
+                                frame_num += 1
+                if frame_num == 0:
+                    return 0, 0, 0
+                x_list[index_body] = x_tensor
+                edge_index_list[index_body] = e_tensor
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
-        return body_graph_list, head_graph_list, hand_graph_list, label
+        return x_list, edge_index_list, label
 
     def get_stgraph_data_from_file(self, file):
         x_list = []

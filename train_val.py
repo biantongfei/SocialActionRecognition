@@ -1,7 +1,9 @@
 from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN, STGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
-from DataLoader import JPLDataLoader, JPLGCNDataLoader
+from DataLoader import JPLDataLoader
+from constants import bless_str, intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
+    perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, learning_rate
 
 import torch
 from torch.nn import functional
@@ -14,31 +16,7 @@ import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
 from thop import profile
-import os
 import time
-
-bless_str = ("                         _oo0oo_\n"
-             "                        o8888888o\n"
-             "                        88\" . \"88\n"
-             "                        (| -_- |)\n"
-             "                        0\  =  /0\n"
-             "                      ___/`---'\___\n"
-             "                    .' \\|     |// '.\n"
-             "                   / \\|||  :  |||// \ \n"
-             "                  / _||||| -:- |||||- \ \n"
-             "                 |   | \\\  - /// |   |\n"
-             "                 | \_|  ''\---/''  |_/ |\n"
-             "                 \  .-\__  '-'  ___/-. /\n"
-             "               ___'. .'  /--.--\  `. .'___\n"
-             "            .\"\" '<  `.___\_<|>_/___.' >' \"\".\n"
-             "           | | :  `- \`.;`\ _ /`;.`/ - ` : | |\n"
-             "           \  \ `_.   \_ __\ /__ _/   .-` /  /\n"
-             "       =====`-.____`.___ \_____/___.-`___.-'=====\n"
-             "                         `=---='\n"
-             "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-             "                 BLESS ME WITH NO BUGS\n"
-             )
-print(bless_str)
 
 
 def send_email(body):
@@ -54,32 +32,6 @@ def send_email(body):
         smtp_server.login(sender, password)
         smtp_server.sendmail(sender, recipients, msg.as_string())
     print("Email sent!")
-
-
-avg_batch_size = 128
-perframe_batch_size = 2048
-rnn_batch_size = 128
-conv1d_batch_size = 128
-gcn_batch_size = 64
-stgcn_batch_size = 64
-learning_rate = 1e-2
-if torch.cuda.is_available():
-    print('Using CUDA for training')
-    device = torch.device("cuda:0")
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
-    # device = torch.device('cpu')
-elif torch.backends.mps.is_available():
-    print('Using MPS for training')
-    device = torch.device('mps')
-else:
-    print('Using CPU for training')
-    device = torch.device('cpu')
-dtype = torch.float32
-intention_class = ['interacting', 'interested', 'not_interested']
-attitude_classes = ['positive', 'negative', 'no_interacting']
-action_classes = ['hand_shake', 'hug', 'pet', 'wave', 'punch', 'throw', 'point-converse', 'gaze', 'leave',
-                  'no_response']
 
 
 def draw_save(name, performance_model, framework):
@@ -197,15 +149,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     print('Start Training!!!')
     epoch = 1
     while True:
-        if 'gcn_' not in model:
-            train_loader = JPLDataLoader(model=model, dataset=trainset, batch_size=batch_size, max_length=max_length,
-                                         drop_last=False, shuffle=True)
-            val_loader = JPLDataLoader(model=model, dataset=valset, max_length=max_length, drop_last=False,
-                                       batch_size=batch_size)
-        else:
-            train_loader = JPLGCNDataLoader(dataset=trainset, batch_size=batch_size, max_length=max_length,
-                                            drop_last=False, shuffle=True)
-            val_loader = JPLGCNDataLoader(dataset=valset, max_length=max_length, drop_last=False, batch_size=batch_size)
+        train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
+                                     max_length=max_length, drop_last=False, shuffle=True)
+        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=False,
+                                   batch_size=batch_size)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -313,11 +260,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             break
 
     print('Testing')
-    if 'gcn_' not in model:
-        test_loader = JPLDataLoader(model=model, dataset=testset, max_length=max_length, batch_size=batch_size,
-                                    drop_last=False)
-    else:
-        test_loader = JPLGCNDataLoader(dataset=testset, max_length=max_length, batch_size=batch_size, drop_last=False)
+    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, max_length=max_length,
+                                batch_size=batch_size, drop_last=False)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     process_time = 0
     start_time = time.time()
@@ -403,6 +347,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
 
 
 if __name__ == '__main__':
+    print(bless_str)
     # model = 'avg'
     # model = 'perframe'
     # model = 'conv1d'
