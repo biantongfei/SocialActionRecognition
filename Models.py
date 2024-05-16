@@ -307,10 +307,6 @@ class GNN(nn.Module):
                                       batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
                 math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                 hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-            self.time_model = nn.LSTM(body_part.count(True) * self.keypoint_hidden_dim, hidden_size=256, num_layers=3,
-                                      bidirectional=True, batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
-                body_part.count(True) * self.keypoint_hidden_dim, hidden_size=256, num_layers=3, bidirectional=True,
-                batch_first=True)
             self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
