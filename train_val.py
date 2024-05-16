@@ -178,7 +178,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
-                print(int_outputs, int_labels)
+                # print(int_outputs, int_labels)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -187,7 +187,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
-            break
         scheduler.step()
         progress_bar.close()
         print('Validating')
@@ -339,9 +338,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
-    print(
-        result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
-            (MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
+    print(result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
+        (MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)
     return performance_model
