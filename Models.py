@@ -414,6 +414,7 @@ class GNN(nn.Module):
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
             x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
+            print(x.shape)
             attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
             x = torch.sum(x * attention_weights, dim=1)
         elif self.model == 'gcn_conv1d':
