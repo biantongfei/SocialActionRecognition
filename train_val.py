@@ -97,8 +97,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # dataset = 'mixed+coco'
-    dataset = 'crop+coco'
+    dataset = 'mixed+coco'
+    # dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -179,7 +179,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
-                print(int_outputs, int_labels)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -258,7 +257,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
-            break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, max_length=max_length,
