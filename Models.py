@@ -384,8 +384,8 @@ class GNN(nn.Module):
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
-            d = data[1] if self.body_part[0] else data[1]
-            x_face, edge_index_face = d[0].to(dtype=dtype, device=device), d[1].to(dtype=torch.int32, device=device)
+            x_face, edge_index_face = data[0][1].to(dtype=dtype, device=device), data[1][1].to(dtype=torch.int32,
+                                                                                               device=device)
             x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype=dtype, device=device)
             if self.pooling:
                 x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
@@ -393,9 +393,8 @@ class GNN(nn.Module):
             x_face = x_face.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_face)
         if self.body_part[2]:
-            d = data[2] if self.body_part[0] and self.body_part[1] else data[1] if self.body_part[0] or self.body_part[
-                1] else data[0]
-            x_hand, edge_index_hand = d[0].to(dtype=dtype, device=device), d[1].to(dtype=torch.int32, device=device)
+            x_hand, edge_index_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(dtype=torch.int32,
+                                                                                               device=device)
             x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype=dtype, device=device)
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)

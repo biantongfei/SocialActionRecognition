@@ -2,7 +2,7 @@ from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN, STGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
-from constants import bless_str, intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
+from constants import intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
     perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, learning_rate
 
 import torch
@@ -146,7 +146,6 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     intention_best_f1 = -1
     attitude_best_f1 = -1
     action_best_f1 = -1
-    print('Start Training!!!')
     epoch = 1
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
