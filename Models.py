@@ -405,8 +405,9 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         print(x.shape)
-        # attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
-        # x = torch.sum(x * attention_weights, dim=1)
+        attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        x = x * attention_weights
+        print(x.shape)
         # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
