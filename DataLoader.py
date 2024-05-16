@@ -75,7 +75,6 @@ class JPLDataLoader(DataLoader):
             torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
 
     def gcn_collate_fn(self, data):
-        print(11111111)
         x_tensors_list, edge_index_list = [
             torch.zeros(
                 (len(data) * self.max_length * (coco_body_point_num if self.is_coco else halpe_body_point_num), 3)),
@@ -94,8 +93,8 @@ class JPLDataLoader(DataLoader):
             x, edge_index = d[0][0], d[0][1]
             for i in range(len(x)):
                 for ii in range(self.max_length):
-                    x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) + point_nums[i]] = x[i][ii]
-                    edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) + edge_nums[i]] = edge_index[i][
+                    x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = x[i][ii]
+                    edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = edge_index[i][
                                                                                                          ii] + torch.full(
                         (2, edge_nums[i]), frame_num * point_nums[i])
                 frame_num += 1
