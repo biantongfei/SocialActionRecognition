@@ -27,7 +27,7 @@ avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 128
 conv1d_batch_size = 128
-gcn_batch_size = 2
+gcn_batch_size = 128
 stgcn_batch_size = 64
 learning_rate = 1e-2
 if torch.cuda.is_available():

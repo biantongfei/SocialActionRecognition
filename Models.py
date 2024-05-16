@@ -399,7 +399,7 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         x, _ = self.gcn_attention(x, x, x)
-        # print(x.shape)
+        print(x.shape)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
