@@ -1,7 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
-from torch_geometric.loader import DataLoader as GCNDataLoader
 
 from Models import dtype, device
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
@@ -78,35 +77,29 @@ class JPLDataLoader(DataLoader):
     def gcn_collate_fn(self, data):
         x_tensors_list, edge_index_list = [
             torch.zeros(
-                (len(data) * self.max_length, coco_body_point_num if self.is_coco else halpe_body_point_num, 3)),
-            torch.zeros((len(data) * self.max_length, head_point_num, 3)),
-            torch.zeros((len(data) * self.max_length, hands_point_num, 3))], [
-            torch.zeros((len(data) * self.max_length, 2,
-                         self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)),
-            torch.zeros((len(data) * self.max_length, 2, self.head_l_pair_num)),
-            torch.zeros((len(data) * self.max_length, 2, self.hand_l_pair_num))]
+                (len(data) * self.max_length * (coco_body_point_num if self.is_coco else halpe_body_point_num), 3)),
+            torch.zeros((len(data) * self.max_length * head_point_num, 3)),
+            torch.zeros((len(data) * self.max_length * hands_point_num, 3))], [
+            torch.zeros((2,
+                         len(data) * self.max_length * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)),
+            torch.zeros((2, len(data) * self.max_length * self.head_l_pair_num)),
+            torch.zeros((2, len(data) * self.max_length * self.hand_l_pair_num))]
+        point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
+        edge_nums = [self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num, coco_head_l_pair,
+                     coco_hand_l_pair]
         int_label, att_label, act_label = [], [], []
         frame_num = 0
         for d in data:
             x, edge_index = d[0][0], d[0][1]
             for i in range(len(x)):
                 for ii in range(self.max_length):
-                    x_tensors_list[i][frame_num] = x[i][ii]
-                    edge_index_list[i][frame_num] = edge_index[i][ii]
+                    x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) + point_nums[i]] = x[i][ii]
+                    edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) + edge_nums[i]] = edge_index[i][
+                                                                                                         ii] + torch.full(
+                        (2, edge_nums[i]), frame_num * point_nums[i])
                 frame_num += 1
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
         return (x_tensors_list, edge_index_list), (
             torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
-
-
-class JPLGCNDataLoader(GCNDataLoader):
-    def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
-        super(JPLGCNDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                               drop_last=drop_last, num_workers=num_workers)
-        self.max_length = max_length
-        self.coco_body_l_pair_num = len(coco_body_l_pair)
-        self.halpe_body_l_pair_num = len(halpe_body_l_pair)
-        self.head_l_pair_num = len(coco_head_l_pair)
-        self.hand_l_pair_num = len(coco_hand_l_pair)

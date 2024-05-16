@@ -375,7 +375,8 @@ class GNN(nn.Module):
             x_body, edge_index_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(dtype=torch.int32,
                                                                                                device=device)
             print(x_body.shape, edge_index_body.shape)
-            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype=dtype, device=device)
+            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype=dtype,
+                                                                            device=device)
             if self.pooling:
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
