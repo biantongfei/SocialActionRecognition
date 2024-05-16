@@ -404,19 +404,15 @@ class GNN(nn.Module):
             x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        print(x.shape)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * attention_weights
-        print(x.shape)
         # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
             x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
-            print(x.shape)
             attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
             x = torch.sum(x * attention_weights, dim=1)
-            print(x.shape)
         elif self.model == 'gcn_conv1d':
             x = torch.transpose(x, 1, 2)
             x = self.time_model(x)
