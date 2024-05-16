@@ -7,7 +7,6 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
 
 # print(device)
 num_workers = 24 if device in ['cuda:0', 'cpu'] else 10
-num_workers = 1
 
 
 def rnn_collate_fn(data):
@@ -69,8 +68,7 @@ class JPLDataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-        return input, (
-            torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
+        return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
 
     def gcn_collate_fn(self, data):
         x_tensors_list, edge_index_list = [
