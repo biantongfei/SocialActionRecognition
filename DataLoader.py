@@ -83,7 +83,6 @@ class JPLDataLoader(DataLoader):
                          self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)),
             torch.zeros((len(data) * self.max_length, 2, self.head_l_pair_num)),
             torch.zeros((len(data) * self.max_length, 2, self.hand_l_pair_num))]
-        print(x_tensors_list[0].shape, edge_index_list[0].shape)
         int_label, att_label, act_label = [], [], []
         frame_num = 0
         for d in data:
@@ -93,9 +92,9 @@ class JPLDataLoader(DataLoader):
                     x_tensors_list[i][frame_num] = x[i][ii]
                     edge_index_list[i][frame_num] = edge_index[i][ii]
                     frame_num += 1
-        int_label.append(d[1][0])
-        att_label.append(d[1][1])
-        act_label.append(d[1][2])
+            int_label.append(d[1][0])
+            att_label.append(d[1][1])
+            act_label.append(d[1][2])
         print(x_tensors_list[0].shape, x_tensors_list[1].shape, x_tensors_list[2].shape, edge_index_list[0].shape,
               edge_index_list[1].shape, edge_index_list[2].shape)
         return (x_tensors_list, edge_index_list), (

@@ -1,6 +1,5 @@
 from train_val import train, draw_save, send_email
 
-print(bless_str)
 # model = 'gnn_keypoint_conv1d'
 body_part = [True, True, True]
 
@@ -14,8 +13,8 @@ ori_video = False
 sample_fps = 30
 video_len = 2
 for model in ['avg', 'perframe', 'conv1d', 'lstm', 'gru']:
-# for model in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn']:
-# for model in ['gcn_gru']:
+    # for model in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn']:
+    # for model in ['gcn_gru']:
     performance_model = []
     i = 0
     while i < 10:

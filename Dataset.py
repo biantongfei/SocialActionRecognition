@@ -150,11 +150,11 @@ class Dataset(Dataset):
                 x, label = self.get_stgraph_data_from_file(file)
                 self.features.append(x)
             elif 'gcn_' in self.model:
-                x_dict, edge_index_dict, label = self.get_graph_data_from_file(file)
-                if type(x_dict) == int:
+                x_list, edge_index_list, label = self.get_graph_data_from_file(file)
+                if type(x_list) == int:
                     continue
                 else:
-                    self.features.append({'x': x_dict, 'edge_index': edge_index_dict})
+                    self.features.append([x_list, edge_index_list])
             else:
                 feature, label = self.get_data_from_file(file)
                 if type(feature) == int or feature.size == 0 or feature.ndim == 0:

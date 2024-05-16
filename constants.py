@@ -22,6 +22,7 @@ bless_str = ("                         _oo0oo_\n"
              "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
              "                 BLESS ME WITH NO BUGS\n"
              )
+print(bless_str)
 avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 128
