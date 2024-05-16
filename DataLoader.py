@@ -21,8 +21,8 @@ def rnn_collate_fn(data):
         action_labels.append(d[1][2])
     data_length = [feature.shape[0] for feature in x]
     x = rnn_utils.pad_sequence(x, batch_first=True, padding_value=0)
-    return (x, (torch.Tensor(intention_labels).long(), torch.Tensor(attitude_labels).long(),
-                torch.Tensor(action_labels).long())), data_length
+    return (
+        x, (torch.Tensor(intention_labels), torch.Tensor(attitude_labels), torch.Tensor(action_labels))), data_length
 
 
 def stgcn_collate_fn(data):
@@ -37,8 +37,7 @@ def stgcn_collate_fn(data):
         int_label.append(d[1][0])
         att_label.append(d[1][1])
         act_label.append(d[1][2])
-    return input, (
-        torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
+    return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
 
 
 class JPLDataLoader(DataLoader):
@@ -93,23 +92,22 @@ class JPLDataLoader(DataLoader):
             for ii in range(self.max_length):
                 for i in range(len(d[0])):
                     if i == 0:
-                        edge_index = torch.Tensor(coco_body_l_pair if self.is_coco else halpe_body_l_pair).t().to(
-                            torch.int64)
+                        edge_index = torch.Tensor(coco_body_l_pair if self.is_coco else halpe_body_l_pair).t()
                     elif i == 1:
-                        edge_index = torch.Tensor(coco_head_l_pair).t().to(torch.int32) - torch.full(
-                            (2, len(coco_head_l_pair)), fill_value=coco_body_point_num).to(torch.int32)
+                        edge_index = torch.Tensor(coco_head_l_pair).t() - torch.full((2, len(coco_head_l_pair)),
+                                                                                     fill_value=coco_body_point_num)
                     else:
-                        edge_index = torch.Tensor(coco_hand_l_pair).t().to(torch.int32) - torch.full(
-                            (2, len(coco_hand_l_pair)), fill_value=head_point_num + coco_body_point_num).to(torch.int32)
+                        edge_index = torch.Tensor(coco_hand_l_pair).t() - torch.full((2, len(coco_hand_l_pair)),
+                                                                                     fill_value=head_point_num + coco_body_point_num)
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:,
-                    frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = edge_index + torch.full(
-                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i]).to(torch.int32)
+                    frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (edge_index + torch.full(
+                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(torch.int32)
                 frame_num += 1
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-            print(x_tensors_list[0])
-            print(edge_index_list[0])
+        print(x_tensors_list[0])
+        print(edge_index_list[0])
         return (x_tensors_list, edge_index_list), (
-            torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
