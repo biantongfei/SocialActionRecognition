@@ -296,11 +296,7 @@ class GNN(nn.Module):
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-        self.gcn_attention = self.attn = nn.MultiheadAttention(
-            math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1,
-            batch_first=True)
-        # self.gcn_attention = self.attn = nn.MultiheadAttention(body_part.count(True) * self.keypoint_hidden_dim,
-        #                                                        num_heads=1, batch_first=True)
+        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
@@ -409,7 +405,8 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         print(x.shape)
-        # x, _ = self.gcn_attention(x, x, x)
+        # attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        # x = torch.sum(x * attention_weights, dim=1)
         # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
@@ -418,6 +415,7 @@ class GNN(nn.Module):
             print(x.shape)
             attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
             x = torch.sum(x * attention_weights, dim=1)
+            print(x.shape)
         elif self.model == 'gcn_conv1d':
             x = torch.transpose(x, 1, 2)
             x = self.time_model(x)
