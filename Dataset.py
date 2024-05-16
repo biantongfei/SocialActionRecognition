@@ -5,6 +5,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from torch_geometric.data import Data
 
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, valset_rate, \
     testset_rate, video_fps, coco_body_l_pair, coco_head_l_pair, coco_hand_l_pair, halpe_body_l_pair, halpe_head_l_pair, \
