@@ -6,7 +6,7 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
 
 num_workers = 24 if device in ['cuda:0', 'cpu'] else 10
-num_workers = 1
+# num_workers = 1
 
 
 def rnn_collate_fn(data):
