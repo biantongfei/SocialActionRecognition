@@ -1,7 +1,7 @@
 from Dataset import Dataset, get_tra_test_files
 from Models import DNN, RNN, Cnn1D, GNN, STGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
-from DataLoader import JPLDataLoader
+from DataLoader import JPLDataLoader, JPLGCNDataLoader
 from constants import bless_str, intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
     perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, learning_rate
 
@@ -153,6 +153,10 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                                      max_length=max_length, drop_last=False, shuffle=True)
         val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=False,
                                    batch_size=batch_size)
+        train_loader = JPLGCNDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
+                                        max_length=max_length, drop_last=False, shuffle=True)
+        val_loader = JPLGCNDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length,
+                                      drop_last=False, batch_size=batch_size)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
