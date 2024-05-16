@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
-from torch_geometric.nn import GCN, GAT, GIN, EdgeCNN, TopKPooling, SAGPooling, ASAPooling
+from torch_geometric.nn import GCN, GAT, GIN, global_mean_pool, TopKPooling, SAGPooling, ASAPooling
 
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
@@ -280,7 +280,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 64
         self.time_hidden_dim = self.keypoint_hidden_dim * 128
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
@@ -289,9 +289,9 @@ class GNN(nn.Module):
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[1]:
-            self.GCN_face = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_face = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.GCN_face = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_head = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_head = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            # self.GCN_head = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[2]:
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
@@ -299,12 +299,18 @@ class GNN(nn.Module):
         self.gcn_attention = self.attn = nn.MultiheadAttention(
             math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1,
             batch_first=True)
+        self.gcn_attention = self.attn = nn.MultiheadAttention(body_part.count(True) * self.keypoint_hidden_dim,
+                                                               num_heads=1, batch_first=True)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
                                       batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
                 math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                 hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+            self.time_model = nn.LSTM(body_part.count(True) * self.keypoint_hidden_dim, hidden_size=256, num_layers=3,
+                                      bidirectional=True, batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
+                body_part.count(True) * self.keypoint_hidden_dim, hidden_size=256, num_layers=3, bidirectional=True,
+                batch_first=True)
             self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
@@ -372,33 +378,42 @@ class GNN(nn.Module):
     def forward(self, data):
         x_list = []
         if self.body_part[0]:
-            x_body, edge_index_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(device=device)
-            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body).to(dtype=dtype,
-                                                                            device=device)
+            x_body, edge_index_body, batch_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(
+                device=device), data[2][0].to(device)
+            x_body = self.GCN_body(x=x_body, edge_index=edge_index_body, batch=batch_body).to(dtype=dtype,
+                                                                                              device=device)
             if self.pooling:
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
-                coco_body_point_num if self.is_coco else halpe_body_point_num))
+            x_body = global_mean_pool(x_body, batch_body)
+            # x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
+            #     coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
-            x_face, edge_index_face = data[0][1].to(dtype=dtype, device=device), data[1][1].to(device=device)
-            x_face = self.GCN_face(x=x_face, edge_index=edge_index_face).to(dtype=dtype, device=device)
+            x_head, edge_index_head, batch_head = data[0][1].to(dtype=dtype, device=device), data[1][1].to(device), \
+                data[2][1].to(device)
+            x_head = self.GCN_head(x=x_head, edge_index=edge_index_head, batch=batch_head).to(dtype=dtype,
+                                                                                              device=device)
             if self.pooling:
-                x_face, _, _, _, _, _ = self.pool(x_face, edge_index_face)
+                x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_face = x_face.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
-            x_list.append(x_face)
+            x_head = global_mean_pool(x_head, batch_head)
+            # x_head = x_head.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            x_list.append(x_head)
         if self.body_part[2]:
-            x_hand, edge_index_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device=device)
-            x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand).to(dtype=dtype, device=device)
+            x_hand, edge_index_hand, batch_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device), \
+                data[2][2].to(device)
+            x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand, batch=batch_hand).to(dtype=dtype,
+                                                                                              device=device)
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            x_hand = global_mean_pool(x_hand, batch_hand)
+            # x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
-        x = torch.cat(x_list, dim=2)
+        x = torch.cat(x_list, dim=1)
         x, _ = self.gcn_attention(x, x, x)
+        x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
@@ -656,7 +671,7 @@ class STGCN(nn.Module):
         if body_part[0]:
             self.stgcn_body = ST_GCN_18(3, is_coco, 0)
         if body_part[1]:
-            self.stgcn_face = ST_GCN_18(3, is_coco, 1)
+            self.stgcn_head = ST_GCN_18(3, is_coco, 1)
         if body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2)
         self.gcn_attention = self.attn = nn.MultiheadAttention(16 * 256, num_heads=1)
@@ -695,9 +710,9 @@ class STGCN(nn.Module):
             print(y_body.shape, 'body')
             y_list.append(y_body)
         if self.body_part[1]:
-            y_face = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y_list.append(y_face)
-            print(y_face.shape, 'face')
+            y_head = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y_list.append(y_head)
+            print(y_head.shape, 'head')
         if self.body_part[2]:
             y_hand = self.stgcn_body(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y_hand)

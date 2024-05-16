@@ -257,6 +257,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
+            # break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, max_length=max_length,
@@ -351,9 +352,9 @@ if __name__ == '__main__':
     # model = 'lstm'
     # model = 'gru'
     # model = 'gcn_conv1d'
-    # model = 'gcn_lstm'
+    model = 'gcn_lstm'
     # model = 'gcn_gru'
-    model = 'gcn_gcn'
+    # model = 'gcn_gcn'
     # model = 'stgcn'
     body_part = [True, True, True]
 

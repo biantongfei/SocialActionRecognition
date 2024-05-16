@@ -1,5 +1,6 @@
 import torch
 
-a = torch.zeros((2, 2))
-a = a + torch.full((2, 2), fill_value=1)
+a = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8])
+a = a.reshape(2, 2, 2)
 print(a)
+print(a[0])
