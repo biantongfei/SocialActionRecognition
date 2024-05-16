@@ -56,8 +56,8 @@ class JPLDataLoader(DataLoader):
         self.max_length = max_length
         self.coco_body_l_pair_num = len(coco_body_l_pair)
         self.halpe_body_l_pair_num = len(halpe_body_l_pair)
-        self.head_l_pair_num = len(head_point_num)
-        self.hand_l_pair_num = len(hands_point_num)
+        self.head_l_pair_num = len(coco_head_l_pair)
+        self.hand_l_pair_num = len(coco_hand_l_pair)
 
     def conv1d_collate_fn(self, data):
         input, int_label, att_label, act_label = None, [], [], []
