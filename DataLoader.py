@@ -101,5 +101,6 @@ class JPLDataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
+            print(edge_index_list[0])
         return (x_tensors_list, edge_index_list), (
             torch.Tensor(int_label).to(dtype), torch.Tensor(att_label).to(dtype), torch.Tensor(act_label).to(dtype))

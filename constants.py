@@ -27,7 +27,7 @@ avg_batch_size = 128
 perframe_batch_size = 2048
 rnn_batch_size = 128
 conv1d_batch_size = 128
-gcn_batch_size = 64
+gcn_batch_size = 2
 stgcn_batch_size = 64
 learning_rate = 1e-2
 if torch.cuda.is_available():
@@ -55,6 +55,7 @@ hands_point_num = 42
 valset_rate = 0.1
 testset_rate = 0.4
 video_fps = 30
+
 coco_body_l_pair = [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
                     [5, 7], [7, 9], [6, 8], [8, 10],  # Body
                     [5, 6], [11, 12], [5, 11], [6, 12],

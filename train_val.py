@@ -178,6 +178,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
+                print(int_outputs, int_labels)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -186,6 +187,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
+            break
         scheduler.step()
         progress_bar.close()
         print('Validating')
@@ -353,8 +355,8 @@ if __name__ == '__main__':
     # model = 'gru'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
-    model = 'gcn_gru'
-    # model = 'gcn_gcn'
+    # model = 'gcn_gru'
+    model = 'gcn_gcn'
     # model = 'stgcn'
     body_part = [True, True, True]
 
