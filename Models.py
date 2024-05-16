@@ -408,6 +408,7 @@ class GNN(nn.Module):
             x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
+        print(x.shape)
         # x, _ = self.gcn_attention(x, x, x)
         # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
