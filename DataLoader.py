@@ -49,8 +49,8 @@ class JPLDataLoader(DataLoader):
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
             self.collate_fn = self.conv1d_collate_fn
-        # elif 'gcn_' in model:
-        #     self.collate_fn = self.gcn_collate_fn
+        elif 'gcn_' in model:
+            self.collate_fn = self.gcn_collate_fn
         elif model == 'stgcn':
             self.collate_fn = stgcn_collate_fn
         self.is_coco = is_coco
