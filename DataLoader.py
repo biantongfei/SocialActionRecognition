@@ -2,9 +2,8 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
 
-from Models import dtype, device
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
-    halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair
+    halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device, dtype
 
 # print(device)
 num_workers = 24 if device in ['cuda:0', 'cpu'] else 10
@@ -102,7 +101,7 @@ class JPLDataLoader(DataLoader):
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:,
                     frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (edge_index + torch.full(
-                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(torch.int64)
+                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(torch.int32)
                 frame_num += 1
             int_label.append(d[1][0])
             att_label.append(d[1][1])
