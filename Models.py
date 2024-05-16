@@ -299,8 +299,8 @@ class GNN(nn.Module):
         self.gcn_attention = self.attn = nn.MultiheadAttention(
             math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, num_heads=1,
             batch_first=True)
-        self.gcn_attention = self.attn = nn.MultiheadAttention(body_part.count(True) * self.keypoint_hidden_dim,
-                                                               num_heads=1, batch_first=True)
+        # self.gcn_attention = self.attn = nn.MultiheadAttention(body_part.count(True) * self.keypoint_hidden_dim,
+        #                                                        num_heads=1, batch_first=True)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
@@ -385,9 +385,11 @@ class GNN(nn.Module):
             if self.pooling:
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_body = global_mean_pool(x_body, batch_body)
+            # x_body = global_mean_pool(x_body, batch_body)
             # x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
             #     coco_body_point_num if self.is_coco else halpe_body_point_num))
+            x_body = x_body.reshape(self.max_length, -1, self.keypoint_hidden_dim * (
+                coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
             x_head, edge_index_head, batch_head = data[0][1].to(dtype=dtype, device=device), data[1][1].to(device), \
@@ -397,8 +399,9 @@ class GNN(nn.Module):
             if self.pooling:
                 x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_head = global_mean_pool(x_head, batch_head)
+            # x_head = global_mean_pool(x_head, batch_head)
             # x_head = x_head.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            x_head = x_head.reshape(self.max_length, -1, self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_head)
         if self.body_part[2]:
             x_hand, edge_index_hand, batch_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device), \
@@ -408,12 +411,15 @@ class GNN(nn.Module):
             if self.pooling:
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
-            x_hand = global_mean_pool(x_hand, batch_hand)
+            # x_hand = global_mean_pool(x_hand, batch_hand)
             # x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            x_hand = x_hand.reshape(self.max_length, -1, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
-        x = torch.cat(x_list, dim=1)
+        x = torch.cat(x_list, dim=2)
+        print(x.shape)
+        x = torch.transpose(x, 0, 1)
         x, _ = self.gcn_attention(x, x, x)
-        x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
+        # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.reshape(on.shape[0], on.shape[1], 2, -1)
