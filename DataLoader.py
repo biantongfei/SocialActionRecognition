@@ -80,9 +80,9 @@ class JPLDataLoader(DataLoader):
             torch.zeros((len(data) * self.max_length * head_point_num, 3)),
             torch.zeros((len(data) * self.max_length * hands_point_num, 3))], [
             torch.zeros((2,
-                         len(data) * self.max_length * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)),
-            torch.zeros((2, len(data) * self.max_length * self.head_l_pair_num)),
-            torch.zeros((2, len(data) * self.max_length * self.hand_l_pair_num))]
+                         len(data) * self.max_length * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)).to(
+                torch.int64), torch.zeros((2, len(data) * self.max_length * self.head_l_pair_num)).to(torch.int64),
+            torch.zeros((2, len(data) * self.max_length * self.hand_l_pair_num)).to(torch.int64)]
         point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
         edge_nums = [self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num, self.head_l_pair_num,
                      self.hand_l_pair_num]
@@ -102,7 +102,7 @@ class JPLDataLoader(DataLoader):
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:,
                     frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (edge_index + torch.full(
-                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(torch.int32)
+                        (2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(torch.int64)
                 frame_num += 1
             int_label.append(d[1][0])
             att_label.append(d[1][1])
