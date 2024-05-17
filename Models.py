@@ -16,6 +16,28 @@ attitude_class_num = len(attitude_classes)
 action_class_num = len(action_classes)
 
 
+class SelfAttention(nn.Module):
+    def __init__(self, embed_dim):
+        super(SelfAttention, self).__init__()
+        self.embed_dim = embed_dim
+        self.query = nn.Linear(embed_dim, embed_dim)
+        self.key = nn.Linear(embed_dim, embed_dim)
+        self.value = nn.Linear(embed_dim, embed_dim)
+
+    def forward(self, x):
+        q = self.query(x)
+        k = self.key(x)
+        v = self.value(x)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.embed_dim).float())
+
+        # 使用 softmax 函数将分数转换为权重
+        weights = F.softmax(scores, dim=-1)
+
+        # 加权求和
+        weighted_sum = torch.matmul(weights, v)
+        return weighted_sum, weights
+
+
 class DNN(nn.Module):
     def __init__(self, is_coco, body_part, framework):
         super(DNN, self).__init__()
@@ -158,7 +180,7 @@ class RNN(nn.Module):
     def forward(self, x):
         on, _ = self.rnn(x)
         on, _ = rnn_utils.pad_packed_sequence(on, batch_first=True)
-        on = on.reshape(on.shape[0], on.shape[1], 2, -1)
+        on = on.view(on.shape[0], on.shape[1], 2, -1)
         x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
         attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
         x = torch.sum(x * attention_weights, dim=1)
@@ -296,7 +318,9 @@ class GNN(nn.Module):
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
+        self.gcn_bn = nn.BatchNorm1d(int(self.keypoint_hidden_dim * self.input_size / 3))
+        # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
+        self.gcn_attention = SelfAttention(int(self.keypoint_hidden_dim * self.input_size / 3))
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
@@ -378,7 +402,7 @@ class GNN(nn.Module):
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
-            x_body = x_body.reshape(-1, self.max_length, self.keypoint_hidden_dim * (
+            x_body = x_body.view(-1, self.max_length, self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
@@ -390,7 +414,7 @@ class GNN(nn.Module):
                 x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_head = global_mean_pool(x_head, batch_head)
-            x_head = x_head.reshape(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            x_head = x_head.view(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_head)
         if self.body_part[2]:
             x_hand, edge_index_hand, batch_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device), \
@@ -401,15 +425,18 @@ class GNN(nn.Module):
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_hand = global_mean_pool(x_hand, batch_hand)
-            x_hand = x_hand.reshape(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            x_hand = x_hand.view(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
-        x = x * attention_weights
-        # x = x.reshape(-1, self.max_length, self.body_part.count(True) * self.keypoint_hidden_dim)
+        # x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
+        # x = self.gcn_bn(x)
+        # x, _ = self.gcn_attention(x)
+        # x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
+        # attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        # x = x * attention_weights
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
-            on = on.reshape(on.shape[0], on.shape[1], 2, -1)
+            on = on.view(on.shape[0], on.shape[1], 2, -1)
             x = (torch.cat([on[:, :, 0, :], on[:, :, 1, :]], dim=-1))
             attention_weights = nn.Softmax(dim=1)(self.lstm_attention(x))
             x = torch.sum(x * attention_weights, dim=1)
@@ -428,7 +455,7 @@ class GNN(nn.Module):
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 if self.pooling:
                     x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
-                x_time[i] = x_t.reshape(1, -1)[0]
+                x_time[i] = x_t.view(1, -1)[0]
             x = x_time.flatten(1)
         y = self.fc(x)
         if self.framework in ['intention', 'attitude', 'action']:
