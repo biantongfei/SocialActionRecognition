@@ -319,8 +319,8 @@ class GNN(nn.Module):
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         self.gcn_bn = nn.BatchNorm1d(int(self.keypoint_hidden_dim * self.input_size / 3))
-        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
-        # self.gcn_attention = SelfAttention(int(self.keypoint_hidden_dim * self.input_size / 3))
+        # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
+        self.gcn_attention = SelfAttention(int(self.keypoint_hidden_dim * self.input_size / 3))
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
@@ -428,10 +428,10 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        # x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
+        x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
         # x = self.gcn_bn(x)
-        # x, _ = self.gcn_attention(x)
-        # x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
+        x, _ = self.gcn_attention(x)
+        x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
         # attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * attention_weights
         if self.model in ['gcn_lstm', 'gcn_gru']:
