@@ -5,7 +5,7 @@ import torch.nn.utils.rnn as rnn_utils
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
 
-num_workers = 24 if device in ['cuda:0', 'cpu'] else 10
+num_workers = 16 if device in ['cuda:0', 'cpu'] else 10
 # num_workers = 1
 
 
