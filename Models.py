@@ -432,8 +432,8 @@ class GNN(nn.Module):
         # x = self.gcn_bn(x)
         # x, _ = self.gcn_attention(x)
         # x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
-        attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
-        x = x * attention_weights
+        # attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        # x = x * attention_weights
         if self.model in ['gcn_lstm', 'gcn_gru']:
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
