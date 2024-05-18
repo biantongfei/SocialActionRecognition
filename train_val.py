@@ -279,7 +279,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         if index == 0:
             macs, _ = profile(net, inputs=(inputs,), verbose=False)
-            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size
+            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / max_length
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
                 int_outputs = net(inputs)

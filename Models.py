@@ -192,24 +192,24 @@ class Cnn1D(nn.Module):
         self.is_coco = is_coco
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
-        self.hidden_dim = 16 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+        self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         self.cnn = nn.Sequential(
-            nn.Conv1d(self.input_size, 128, kernel_size=7, stride=3, padding=3),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
+            nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Conv1d(64, 16, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm1d(16),
+            nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
         )
         self.fc = nn.Sequential(
-            nn.Linear(self.hidden_dim, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(self.hidden_dim, 128),
+            nn.BatchNorm1d(128),
             # nn.Dropout(0.5),
             nn.ReLU(),
-            nn.Linear(64, 16),
+            nn.Linear(128, 16),
             nn.BatchNorm1d(16),
             # nn.Dropout(0.5),
         )
@@ -311,21 +311,21 @@ class GNN(nn.Module):
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
             self.time_model = nn.Sequential(
-                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 256,
+                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 128,
                           kernel_size=7, stride=3, padding=3),
-                nn.BatchNorm1d(256),
-                nn.Dropout(dropout_rate),
-                nn.ReLU(),
-                nn.Conv1d(256, 128, kernel_size=5, stride=2, padding=2),
                 nn.BatchNorm1d(128),
-                nn.Dropout(dropout_rate),
                 nn.ReLU(),
-                nn.Conv1d(128, 64, kernel_size=5, stride=2, padding=2),
-                nn.BatchNorm1d(64),
                 nn.Dropout(dropout_rate),
+                nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(256),
                 nn.ReLU(),
+                nn.Dropout(dropout_rate),
+                nn.Conv1d(256, 512, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
+                nn.Dropout(dropout_rate),
             )
-            self.fc_input_size = 64 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+            self.fc_input_size = 512 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
@@ -341,8 +341,8 @@ class GNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 64),
             nn.BatchNorm1d(64),
-            nn.Dropout(dropout_rate),
             nn.ReLU(),
+            nn.Dropout(dropout_rate),
             nn.Linear(64, 16),
             nn.BatchNorm1d(16),
             nn.Dropout(dropout_rate),
@@ -417,9 +417,9 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        # x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
-        # x = self.gcn_bn(x)
-        # x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
+        x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
+        x = self.gcn_bn(x)
+        x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * attention_weights
         if self.model in ['gcn_lstm', 'gcn_gru']:
