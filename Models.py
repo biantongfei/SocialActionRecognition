@@ -280,7 +280,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 64
         self.time_hidden_dim = self.keypoint_hidden_dim * 128
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
@@ -405,9 +405,9 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
-        x = self.gcn_bn(x)
-        x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
+        # x = x.view(-1, int(self.keypoint_hidden_dim * self.input_size / 3))
+        # x = self.gcn_bn(x)
+        # x = x.view(-1, self.max_length, int(self.keypoint_hidden_dim * self.input_size / 3))
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * attention_weights
         if self.model in ['gcn_lstm', 'gcn_gru']:
