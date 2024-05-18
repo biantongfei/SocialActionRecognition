@@ -280,7 +280,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 64
+        self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 128
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
@@ -339,12 +339,12 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(self.fc_input_size, 128),
+            nn.BatchNorm1d(128),
             nn.Dropout(dropout_rate),
             nn.ReLU(),
-            nn.Linear(64, 16),
-            nn.BatchNorm1d(16),
+            nn.Linear(128, 32),
+            nn.BatchNorm1d(32),
             nn.Dropout(dropout_rate),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
