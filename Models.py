@@ -339,12 +339,12 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(self.fc_input_size, 64),
+            nn.BatchNorm1d(64),
             nn.Dropout(dropout_rate),
             nn.ReLU(),
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(64, 16),
+            nn.BatchNorm1d(16),
             nn.Dropout(dropout_rate),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
