@@ -9,7 +9,7 @@ from torch_geometric.nn import GCN, GAT, GIN, global_mean_pool, TopKPooling, SAG
 
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
-from constants import video_fps, intention_class, attitude_classes, action_classes, device, dtype, dropout_rate
+from constants import video_fps, intention_class, attitude_classes, action_classes, device, dtype
 
 intention_class_num = len(intention_class)
 attitude_class_num = len(attitude_classes)
@@ -280,23 +280,20 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 8
         self.time_hidden_dim = self.keypoint_hidden_dim * 128
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         if body_part[0]:
-            self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3,
-                                dropout=dropout_rate)
+            self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[1]:
-            self.GCN_head = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3,
-                                dropout=dropout_rate)
+            self.GCN_head = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[2]:
-            self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3,
-                                dropout=dropout_rate)
+            self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         self.gcn_bn = nn.BatchNorm1d(int(self.keypoint_hidden_dim * self.input_size / 3))
@@ -304,9 +301,9 @@ class GNN(nn.Module):
         if self.model in ['gcn_lstm', 'gcn_gru']:
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=256, num_layers=3, bidirectional=True,
-                                      batch_first=True, dropout=dropout_rate) if self.model == 'gcn_lstm' else nn.GRU(
+                                      batch_first=True) if self.model == 'gcn_lstm' else nn.GRU(
                 math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                hidden_size=256, num_layers=3, bidirectional=True, batch_first=True, dropout=dropout_rate)
+                hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
             self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
@@ -315,21 +312,18 @@ class GNN(nn.Module):
                           kernel_size=7, stride=3, padding=3),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
-                nn.Dropout(dropout_rate),
                 nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
-                nn.Dropout(dropout_rate),
                 nn.Conv1d(256, 512, kernel_size=5, stride=2, padding=2),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
-                nn.Dropout(dropout_rate),
             )
             self.fc_input_size = 512 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                hidden_channels=self.keypoint_hidden_dim, num_layers=2, dropout=dropout_rate)
+                hidden_channels=self.keypoint_hidden_dim, num_layers=2)
             # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
@@ -339,13 +333,11 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(self.fc_input_size, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(64, 16),
+            nn.Linear(128, 16),
             nn.BatchNorm1d(16),
-            nn.Dropout(dropout_rate),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
                                             nn.Linear(16, intention_class_num)
@@ -359,23 +351,19 @@ class GNN(nn.Module):
                                              )
         elif self.framework == 'tree':
             self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
-                                               nn.Dropout(dropout_rate),
                                                nn.ReLU(),
                                                nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
-                                             nn.Dropout(dropout_rate),
                                              nn.ReLU(),
                                              nn.Linear(16 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
             self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
-                                               nn.Dropout(dropout_rate),
                                                nn.ReLU(),
                                                nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
-                                             nn.Dropout(dropout_rate),
                                              nn.ReLU(),
                                              nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
                                              )
