@@ -157,7 +157,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
-            if model in ['avg', 'perframe', 'conv1d']:
+            if model in ['avg', 'perframe', 'conv1d', 'stgcn']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model in ['lstm', 'gru']:
