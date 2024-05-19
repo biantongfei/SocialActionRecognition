@@ -316,7 +316,7 @@ class Dataset(Dataset):
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                                 x_l[:, frame_num, :, 0] = frame_feature.T
                                 frame_num += 1
-                    x_list.append(x_l)
+                x_list.append(x_l)
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         return x_list, label
 

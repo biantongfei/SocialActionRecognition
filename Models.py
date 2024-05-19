@@ -694,6 +694,8 @@ class STGCN(nn.Module):
                                              )
 
     def forward(self, x):
+        print(len(x))
+        print(type(x[0]))
         y_list = []
         if self.body_part[0]:
             y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
