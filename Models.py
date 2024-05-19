@@ -654,6 +654,7 @@ class STGCN(nn.Module):
         super(STGCN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
+        self.body_part = body_part
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         graph_cfg = ()
