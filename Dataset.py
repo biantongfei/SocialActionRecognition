@@ -315,9 +315,9 @@ class Dataset(Dataset):
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
                                 if index_body == 2:
-                                    frame_feature = torch.cat([frame_feature, torch.Tensor(
+                                    frame_feature = np.append(frame_feature, np.array(
                                         [(frame_feature[0, 0] + frame_feature[21, 0]) / 2,
-                                         (frame_feature[0, 1] + frame_feature[21, 1]) / 2, 1])], dim=0)
+                                         (frame_feature[0, 1] + frame_feature[21, 1]) / 2, 1]))
                                 x_l[:, frame_num, :, 0] = frame_feature.T
                                 frame_num += 1
                 x_list.append(x_l)
