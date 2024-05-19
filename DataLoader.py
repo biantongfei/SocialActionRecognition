@@ -6,7 +6,6 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
 
 
-
 def rnn_collate_fn(data):
     data.sort(key=lambda feature: feature[0].shape[0], reverse=True)
     x, intention_labels, attitude_labels, action_labels = [], [], [], []
@@ -33,7 +32,7 @@ def stgcn_collate_fn(data):
         int_label.append(d[1][0])
         att_label.append(d[1][1])
         act_label.append(d[1][2])
-    return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+    return [torch.Tensor(i) for i in input], (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
 
 
 class JPLDataLoader(DataLoader):
