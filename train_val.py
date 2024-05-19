@@ -97,8 +97,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -352,10 +352,10 @@ if __name__ == '__main__':
     # model = 'lstm'
     # model = 'gru'
     # model = 'gcn_conv1d'
-    model = 'gcn_lstm'
+    # model = 'gcn_lstm'
     # model = 'gcn_gru'
     # model = 'gcn_gcn'
-    # model = 'stgcn'
+    model = 'stgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
