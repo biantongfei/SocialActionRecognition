@@ -658,12 +658,9 @@ class STGCN(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         graph_cfg = ()
-        if body_part[0]:
-            self.stgcn_body = ST_GCN_18(3, is_coco, 0)
-        if body_part[1]:
-            self.stgcn_head = ST_GCN_18(3, is_coco, 1)
-        if body_part[2]:
-            self.stgcn_hand = ST_GCN_18(3, is_coco, 2)
+        self.stgcn_list = []
+        for i in range(self.body_part.count(True)):
+            self.stgcn_list.append(ST_GCN_18(3, is_coco, 0))
         self.gcn_attention = nn.Linear(16 * 256, 1)
         # fcn for prediction
         self.fcn = nn.Conv2d(256, 64, kernel_size=1)
@@ -697,18 +694,10 @@ class STGCN(nn.Module):
         print(len(x))
         print(type(x[0]))
         y_list = []
-        if self.body_part[0]:
-            y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            print(y_body.shape, 'body')
-            y_list.append(y_body)
-        if self.body_part[1]:
-            y_head = self.stgcn_body(torch.Tensor(x=x[1]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y_list.append(y_head)
-            print(y_head.shape, 'head')
-        if self.body_part[2]:
-            y_hand = self.stgcn_body(x=torch.Tensor(x[2]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y_list.append(y_hand)
-            print(y_hand.shape, 'hand')
+        for xx in x:
+            y = self.stgcn_body(x=torch.Tensor(xx).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            print(y.shape)
+            y_list.append(y)
         y = torch.cat(y_list, dim=0)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * attention_weights

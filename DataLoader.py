@@ -20,22 +20,6 @@ def rnn_collate_fn(data):
         x, (torch.Tensor(intention_labels), torch.Tensor(attitude_labels), torch.Tensor(action_labels))), data_length
 
 
-def stgcn_collate_fn(data):
-    input, int_label, att_label, act_label = [], [], [], []
-    for index, d in enumerate(data):
-        if index == 0:
-            for i in range(len(d[0])):
-                print(type(d[0][i]))
-                input.append([torch.Tensor(d[0][i])])
-        else:
-            for i in range(len(d[0])):
-                input[i].append(torch.Tensor(d[0][i]))
-        int_label.append(d[1][0])
-        att_label.append(d[1][1])
-        act_label.append(d[1][2])
-    return [torch.Tensor(i) for i in input], (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
-
-
 class JPLDataLoader(DataLoader):
     def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
@@ -47,7 +31,7 @@ class JPLDataLoader(DataLoader):
         elif 'gcn_' in model:
             self.collate_fn = self.gcn_collate_fn
         elif model == 'stgcn':
-            self.collate_fn = stgcn_collate_fn
+            self.collate_fn = self.stgcn_collate_fn
         self.is_coco = is_coco
         self.max_length = max_length
         self.coco_body_l_pair_num = len(coco_body_l_pair)
@@ -110,3 +94,18 @@ class JPLDataLoader(DataLoader):
             act_label.append(d[1][2])
         return (x_tensors_list, edge_index_list, batch), (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+
+    def stgcn_collate_fn(self, data):
+        input, int_label, att_label, act_label = [], [], [], []
+        for index, d in enumerate(data):
+            if index == 0:
+                for i in range(len(d[0])):
+                    input[i] = torch.zeros((len(data), 3, data[0][0][0].shape[1], data[0][0][0].shape[2], 1))
+                    input[i][0] = torch.Tensor(d[0][i])
+            else:
+                for i in range(len(d[0])):
+                    input[i][index] = torch.Tensor(d[0][i])
+            int_label.append(d[1][0])
+            att_label.append(d[1][1])
+            act_label.append(d[1][2])
+        return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
