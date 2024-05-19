@@ -101,6 +101,7 @@ class JPLDataLoader(DataLoader):
             if index == 0:
                 for i in range(len(d[0])):
                     print(type(d[0][0]))
+                    print(d[0][0].shape)
                     input[i] = torch.zeros((len(data), 3, d[0][0].shape[1], d[0][0].shape[2], 1))
                     input[i][0] = torch.Tensor(d[0][i])
             else:
