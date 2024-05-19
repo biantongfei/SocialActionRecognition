@@ -694,8 +694,8 @@ class STGCN(nn.Module):
         print(len(x))
         print(type(x[0]))
         y_list = []
-        for xx in x:
-            y = self.stgcn_body(x=torch.Tensor(xx).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+        for index, xx in enumerate(x):
+            y = self.stgcn_list[index](x=torch.Tensor(xx).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y.shape)
             y_list.append(y)
         y = torch.cat(y_list, dim=0)
