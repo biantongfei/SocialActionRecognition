@@ -5,8 +5,8 @@ import torch.nn.utils.rnn as rnn_utils
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
 
-num_workers = 8
-# num_workers = 1
+# num_workers = 8
+num_workers = 1
 
 
 def rnn_collate_fn(data):
