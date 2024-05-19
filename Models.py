@@ -664,7 +664,7 @@ class STGCN(nn.Module):
             self.stgcn_head = ST_GCN_18(3, is_coco, 1)
         if body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2)
-        self.gcn_attention = self.attn = nn.MultiheadAttention(16 * 256, num_heads=1)
+        self.gcn_attention = nn.Linear(16 * 256, 1)
         # fcn for prediction
         self.fcn = nn.Conv2d(256, 64, kernel_size=1)
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
@@ -696,19 +696,20 @@ class STGCN(nn.Module):
     def forward(self, x):
         y_list = []
         if self.body_part[0]:
-            y_body = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y_body = self.stgcn_body(x=torch.Tensor(x[0]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y_body.shape, 'body')
             y_list.append(y_body)
         if self.body_part[1]:
-            y_head = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y_head = self.stgcn_body(torch.Tensor(x=x[1]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y_head)
             print(y_head.shape, 'head')
         if self.body_part[2]:
-            y_hand = self.stgcn_body(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y_hand = self.stgcn_body(x=torch.Tensor(x[2]).to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y_hand)
             print(y_hand.shape, 'hand')
         y = torch.cat(y_list, dim=0)
-        # y, _ = self.gcn_attention(y, y, y)
+        attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        x = x * attention_weights
         y = self.fcn(y).view(y.size(0), -1)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
