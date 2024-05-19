@@ -25,6 +25,7 @@ def stgcn_collate_fn(data):
     for index, d in enumerate(data):
         if index == 0:
             for i in range(len(d[0])):
+                print(type(d[0][i]))
                 input.append([torch.Tensor(d[0][i])])
         else:
             for i in range(len(d[0])):
