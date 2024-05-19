@@ -35,7 +35,7 @@ class Graph():
         # self.get_edge(layout)
         body_part = [False, False, False]
         body_part[body] = True
-        self.num_node = get_inputs_size(is_coco, body_part)
+        self.num_node = int(get_inputs_size(is_coco, body_part) / 3)
         self.center = 0 if body == 0 else 27
         previous_nodes = 0
         if body != 0:
