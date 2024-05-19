@@ -5,8 +5,6 @@ import torch.nn.utils.rnn as rnn_utils
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
 
-# num_workers = 8
-num_workers = 1
 
 
 def rnn_collate_fn(data):
@@ -41,7 +39,7 @@ def stgcn_collate_fn(data):
 class JPLDataLoader(DataLoader):
     def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                            drop_last=drop_last, num_workers=num_workers)
+                                            drop_last=drop_last)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
