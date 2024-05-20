@@ -100,11 +100,13 @@ class JPLDataLoader(DataLoader):
         for index, d in enumerate(data):
             if index == 0:
                 for i in range(len(d[0])):
-                    input.append(torch.zeros((len(data), 3, d[0][i].shape[1], d[0][i].shape[2], 1)))
-                    input[i][0] = torch.Tensor(d[0][i])
+                    if type(d[0][i]) != int:
+                        input.append(torch.zeros((len(data), 3, d[0][i].shape[1], d[0][i].shape[2], 1)))
+                        input[i][0] = torch.Tensor(d[0][i])
             else:
                 for i in range(len(d[0])):
-                    input[i][index] = torch.Tensor(d[0][i])
+                    if type(d[0][i]) != int:
+                        input[i][index] = torch.Tensor(d[0][i])
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])

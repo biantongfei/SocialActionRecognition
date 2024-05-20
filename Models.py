@@ -661,8 +661,12 @@ class STGCN(nn.Module):
         self.framework = framework
         graph_cfg = ()
         self.stgcn_list = []
-        for i in range(self.body_part.count(True)):
-            self.stgcn_list.append(ST_GCN_18(3, is_coco, 0).to(device))
+        if self.body_part[0]:
+            self.stgcn_body = ST_GCN_18(3, is_coco, 0).to(device)
+        if self.body_part[1]:
+            self.stgcn_head = ST_GCN_18(3, is_coco, 1).to(device)
+        if self.body_part[2]:
+            self.stgcn_hand = ST_GCN_18(3, is_coco, 2).to(device)
         self.gcn_attention = nn.Linear(16 * 256, 1)
         # fcn for prediction
         self.fcn = nn.Conv2d(256, 64, kernel_size=1)
@@ -694,9 +698,19 @@ class STGCN(nn.Module):
 
     def forward(self, x):
         y_list = []
-        for index, xx in enumerate(x):
-            print(xx.shape, 'xx')
-            y = self.stgcn_list[index](x=xx.to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+        if self.body_part[0]:
+            print(x[0].shape, 'x')
+            y = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            print(y.shape, 'y')
+            y_list.append(y)
+        if self.body_part[1]:
+            print(x[1].shape, 'x')
+            y = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            print(y.shape, 'y')
+            y_list.append(y)
+        if self.body_part[2]:
+            print(x[2].shape, 'x')
+            y = self.stgcn_body(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y.shape, 'y')
             y_list.append(y)
         y = torch.cat(y_list, dim=0)
