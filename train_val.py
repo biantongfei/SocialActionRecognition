@@ -248,8 +248,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, ' % (act_acc * 100, act_f1)
             print(result_str + 'loss: %.4f' % total_loss)
             torch.cuda.empty_cache()
-        if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
-        # if epoch == 25:
+        # if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
+        if epoch == 25:
             break
         else:
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
