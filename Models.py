@@ -710,7 +710,7 @@ class STGCN(nn.Module):
         if self.body_part[1]:
             print(x[1].shape, 'x')
             y = self.stgcn_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = self.fcn_hand(y).view(y.size(0), -1)
+            y = self.fcn_head(y).view(y.size(0), -1)
             print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[2]:
@@ -722,7 +722,6 @@ class STGCN(nn.Module):
         y = torch.cat(y_list, dim=1)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))
         y = y * attention_weights
-        y = self.fcn(y).view(y.size(0), -1)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
                 y = self.intention_head(y)
