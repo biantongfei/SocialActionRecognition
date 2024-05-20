@@ -705,12 +705,12 @@ class STGCN(nn.Module):
             y_list.append(y)
         if self.body_part[1]:
             print(x[1].shape, 'x')
-            y = self.stgcn_body(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y = self.stgcn_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[2]:
             print(x[2].shape, 'x')
-            y = self.stgcn_body(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
+            y = self.stgcn_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             print(y.shape, 'y')
             y_list.append(y)
         y = torch.cat(y_list, dim=0)

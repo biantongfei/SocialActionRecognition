@@ -36,7 +36,6 @@ class Graph():
         body_part = [False, False, False]
         body_part[body] = True
         self.num_node = int(get_inputs_size(is_coco, body_part) / 3)
-        print(self.num_node, 'num_node')
         self.center = 0 if body != 1 else 27
         previous_nodes = 0
         if body != 0:
