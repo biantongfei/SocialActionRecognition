@@ -121,16 +121,14 @@ class Graph():
                 a_close = np.zeros((self.num_node, self.num_node))
                 a_further = np.zeros((self.num_node, self.num_node))
                 for i in range(self.num_node):
-                    if self.body != 2 or i != self.center:
-                        for j in range(self.num_node):
-                            if self.body != 2 or j != self.center:
-                                if self.hop_dis[j, i] == hop:
-                                    if self.hop_dis[j, self.center] == self.hop_dis[i, self.center]:
-                                        a_root[j, i] = normalize_adjacency[j, i]
-                                    elif self.hop_dis[j, self.center] > self.hop_dis[i, self.center]:
-                                        a_close[j, i] = normalize_adjacency[j, i]
-                                    else:
-                                        a_further[j, i] = normalize_adjacency[j, i]
+                    for j in range(self.num_node):
+                        if self.hop_dis[j, i] == hop:
+                            if self.hop_dis[j, self.center] == self.hop_dis[i, self.center]:
+                                a_root[j, i] = normalize_adjacency[j, i]
+                            elif self.hop_dis[j, self.center] > self.hop_dis[i, self.center]:
+                                a_close[j, i] = normalize_adjacency[j, i]
+                            else:
+                                a_further[j, i] = normalize_adjacency[j, i]
                 if hop == 0:
                     A.append(a_root)
                 else:
