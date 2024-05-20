@@ -663,13 +663,16 @@ class STGCN(nn.Module):
         self.stgcn_list = []
         if self.body_part[0]:
             self.stgcn_body = ST_GCN_18(3, is_coco, 0).to(device)
+            self.fcn_body = nn.Conv2d(256, 64, kernel_size=1).to(device)
         if self.body_part[1]:
             self.stgcn_head = ST_GCN_18(3, is_coco, 1).to(device)
+            self.fcn_head = nn.Conv2d(256, 64, kernel_size=1).to(device)
         if self.body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 256, 1)
+            self.fcn_hand = nn.Conv2d(256, 64, kernel_size=1).to(device)
+        self.gcn_attention = nn.Linear(self.body_part.count(True) * 64, 1)
         # fcn for prediction
-        self.fcn = nn.Conv2d(256, 64, kernel_size=1)
+
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(64, attitude_class_num)
@@ -701,23 +704,22 @@ class STGCN(nn.Module):
         if self.body_part[0]:
             print(x[0].shape, 'x')
             y = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = y.reshape(y.shape[0], y.shape[1])
+            y = self.fcn_body(y).view(y.size(0), -1)
             print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[1]:
             print(x[1].shape, 'x')
             y = self.stgcn_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = y.reshape(y.shape[0], y.shape[1])
+            y = self.fcn_hand(y).view(y.size(0), -1)
             print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[2]:
             print(x[2].shape, 'x')
             y = self.stgcn_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = y.reshape(y.shape[0], y.shape[1])
+            y = self.fcn_hand(y).view(y.size(0), -1)
             print(y.shape, 'y')
             y_list.append(y)
         y = torch.cat(y_list, dim=1)
-        print(y.shape)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))
         y = y * attention_weights
         y = self.fcn(y).view(y.size(0), -1)
