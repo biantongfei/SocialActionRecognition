@@ -496,7 +496,6 @@ class ST_GCN_18(nn.Module):
         temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
         self.data_bn = nn.BatchNorm1d(in_channels * A.size(1)).to(device) if data_bn else iden
-        print(in_channels * A.size(1))
         kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
         self.st_gcn_networks = nn.ModuleList((
             st_gcn_block(in_channels,
@@ -703,26 +702,21 @@ class STGCN(nn.Module):
     def forward(self, x):
         y_list = []
         if self.body_part[0]:
-            print(x[0].shape, 'x')
             y = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y = self.fcn_body(y).view(y.size(0), -1)
-            print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[1]:
-            print(x[1].shape, 'x')
             y = self.stgcn_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y = self.fcn_head(y).view(y.size(0), -1)
-            print(y.shape, 'y')
             y_list.append(y)
         if self.body_part[2]:
-            print(x[2].shape, 'x')
             y = self.stgcn_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y = self.fcn_hand(y).view(y.size(0), -1)
-            print(y.shape, 'y')
             y_list.append(y)
         y = torch.cat(y_list, dim=1)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))
         y = y * attention_weights
+        print(y.shape)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
                 y = self.intention_head(y)
