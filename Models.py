@@ -716,7 +716,7 @@ class STGCN(nn.Module):
             y = y.reshape(y.shape[0], y.shape[1])
             print(y.shape, 'y')
             y_list.append(y)
-        y = torch.cat(y_list, dim=0)
+        y = torch.cat(y_list, dim=1)
         print(y.shape)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))
         y = y * attention_weights
