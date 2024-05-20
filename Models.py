@@ -503,16 +503,16 @@ class ST_GCN_18(nn.Module):
                          kernel_size,
                          1,
                          residual=False,
-                         **kwargs0),
-            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
-            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
-            st_gcn_block(64, 64, kernel_size, 1, **kwargs),
-            st_gcn_block(64, 128, kernel_size, 2, **kwargs),
-            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
-            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
-            st_gcn_block(128, 256, kernel_size, 2, **kwargs),
-            st_gcn_block(256, 256, kernel_size, 1, **kwargs),
-            st_gcn_block(256, 256, kernel_size, 1, **kwargs),
+                         **kwargs0).to(device),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(64, 64, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(64, 128, kernel_size, 2, **kwargs).to(device),
+            st_gcn_block(128, 128, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(128, 128, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(128, 256, kernel_size, 2, **kwargs).to(device),
+            st_gcn_block(256, 256, kernel_size, 1, **kwargs).to(device),
+            st_gcn_block(256, 256, kernel_size, 1, **kwargs).to(device),
         ))
 
         # initialize parameters for edge importance weighting
@@ -661,7 +661,7 @@ class STGCN(nn.Module):
         graph_cfg = ()
         self.stgcn_list = []
         for i in range(self.body_part.count(True)):
-            self.stgcn_list.append(ST_GCN_18(3, is_coco, 0))
+            self.stgcn_list.append(ST_GCN_18(3, is_coco, 0).to(device))
         self.gcn_attention = nn.Linear(16 * 256, 1)
         # fcn for prediction
         self.fcn = nn.Conv2d(256, 64, kernel_size=1)
