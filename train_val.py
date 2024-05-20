@@ -338,7 +338,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
-    print(result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f' % (
+    print(result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)

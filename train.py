@@ -13,11 +13,11 @@ ori_video = False
 sample_fps = 30
 video_len = 2
 # for model in ['avg', 'perframe', 'conv1d', 'lstm', 'gru']:
-# for model in ['gcn_lstm', 'gcn_gru']:
-for model in ['stgcn']:
+for model in ['gcn_lstm', 'gcn_gru', 'gcn_conv1d', 'gcn_gcn']:
+# for model in ['stgcn']:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if video_len:
