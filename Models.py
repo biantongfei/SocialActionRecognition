@@ -529,7 +529,6 @@ class ST_GCN_18(nn.Module):
         N, C, T, V, M = x.size()
         x = x.permute(0, 4, 3, 1, 2).contiguous()
         x = x.view(N * M, V * C, T)
-        print(x.shape)
         x = self.data_bn(x)
         x = x.view(N, M, V, C, T)
         x = x.permute(0, 1, 3, 4, 2).contiguous()
@@ -721,7 +720,6 @@ class STGCN(nn.Module):
         y = torch.cat(y_list, dim=1)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))
         y = y * attention_weights
-        print(y.shape)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
                 y = self.intention_head(y)
