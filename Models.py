@@ -671,8 +671,9 @@ class STGCN(nn.Module):
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2).to(device)
             self.fcn_hand = nn.Conv2d(256, 64, kernel_size=1).to(device)
         self.gcn_attention = nn.Linear(self.body_part.count(True) * 64, 1)
-        # fcn for prediction
-
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                            nn.Linear(64, intention_class_num)
+                                            )
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(64, attitude_class_num)
