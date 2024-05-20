@@ -36,22 +36,15 @@ class Graph():
         body_part = [False, False, False]
         body_part[body] = True
         self.num_node = int(get_inputs_size(is_coco, body_part) / 3)
-        self.center = 0 if body == 0 else 27
+        self.center = 0 if body != 1 else 27
         previous_nodes = 0
         if body != 0:
             previous_nodes += coco_body_point_num if is_coco else halpe_body_point_num
             previous_nodes += head_point_num if body == 2 else 0
         self.edge = [[i, i] for i in range(self.num_node)] + [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
                                                               get_l_pair(is_coco, body_part)]
-        if body == 2:
-            self.num_node += 1
-            self.edge += [[0, 42], [21, 42]]
-            self.center = 42
         self.hop_dis = get_hop_distance(self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
-        if body == 2:
-            self.num_node -= 1
-            self.edge = self.edge[:-2]
 
     def __str__(self):
         return self.A
