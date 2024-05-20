@@ -149,8 +149,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     epoch = 1
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                     max_length=max_length, drop_last=False, shuffle=True)
-        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=False,
+                                     max_length=max_length, drop_last=True, shuffle=True)
+        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=True,
                                    batch_size=batch_size)
         net.train()
         print('Training')
