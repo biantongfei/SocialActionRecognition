@@ -695,8 +695,9 @@ class STGCN(nn.Module):
     def forward(self, x):
         y_list = []
         for index, xx in enumerate(x):
+            print(xx.shape, 'xx')
             y = self.stgcn_list[index](x=xx.to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            print(y.shape)
+            print(y.shape, 'y')
             y_list.append(y)
         y = torch.cat(y_list, dim=0)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
