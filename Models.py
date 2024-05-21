@@ -33,40 +33,37 @@ class DNN(nn.Module):
             nn.Linear(256, 64),
             nn.ReLU(),
             nn.BatchNorm1d(64),
-            nn.Linear(64, 16),
-            nn.ReLU(),
-            nn.BatchNorm1d(16),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
-                                            nn.Linear(16, intention_class_num)
+                                            nn.Linear(64, intention_class_num)
                                             )
 
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64),
                                                nn.ReLU(),
-                                               nn.Linear(16, attitude_class_num)
+                                               nn.Linear(64, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64),
                                              nn.ReLU(),
-                                             nn.Linear(16, action_class_num)
+                                             nn.Linear(64, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, x):
@@ -110,42 +107,42 @@ class RNN(nn.Module):
             nn.Linear(self.hidden_size * 2, 128),
             nn.ReLU(),
             nn.BatchNorm1d(128),
-            nn.Linear(128, 16),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.BatchNorm1d(16),
+            nn.BatchNorm1d(64),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
-                                            nn.Linear(16, intention_class_num)
+                                            nn.Linear(64, intention_class_num)
                                             )
 
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
-                                               nn.Linear(16, attitude_class_num)
+                                               nn.Linear(64, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(16, action_class_num)
+                                             nn.Linear(64, action_class_num)
                                              )
         elif self.framework == 'tree':
             self.attitude_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intention_class_num),
+                nn.BatchNorm1d(64 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intention_class_num, attitude_class_num)
+                nn.Linear(64 + intention_class_num, attitude_class_num)
             )
             self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intention_class_num),
+                nn.BatchNorm1d(64 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intention_class_num, action_class_num)
+                nn.Linear(64 + intention_class_num, action_class_num)
             )
         elif self.framework == 'chain':
             self.attitude_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intention_class_num),
+                nn.BatchNorm1d(64 + intention_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intention_class_num, attitude_class_num)
+                nn.Linear(64 + intention_class_num, attitude_class_num)
             )
             self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+                nn.BatchNorm1d(64 + intention_class_num + attitude_class_num),
                 nn.ReLU(),
-                nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                nn.Linear(64 + intention_class_num + attitude_class_num, action_class_num)
             )
 
     def forward(self, x):
@@ -190,50 +187,68 @@ class Cnn1D(nn.Module):
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(64),
             nn.ReLU(),
+            nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
             nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm1d(256),
             nn.ReLU(),
+            nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
         )
         self.fc = nn.Sequential(
-            nn.Linear(self.hidden_dim, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(self.hidden_dim, 256),
+            nn.BatchNorm1d(256),
             # nn.Dropout(0.5),
             nn.ReLU(),
-            nn.Linear(128, 16),
-            nn.BatchNorm1d(16),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             # nn.Dropout(0.5),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
-                                            nn.Linear(16, intention_class_num)
+                                            nn.Linear(64, intention_class_num)
                                             )
 
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
-                                               nn.Linear(16, attitude_class_num)
+                                               nn.Linear(64, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(16, action_class_num)
+                                             nn.Linear(64, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, x):
@@ -301,10 +316,28 @@ class GNN(nn.Module):
                           kernel_size=7, stride=3, padding=3),
                 nn.BatchNorm1d(64),
                 nn.ReLU(),
+                nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
                 nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
+                nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
                 nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
             )
@@ -322,39 +355,39 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(self.fc_input_size, 256),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Linear(128, 16),
-            nn.BatchNorm1d(16),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
-                                            nn.Linear(16, intention_class_num)
+                                            nn.Linear(64, intention_class_num)
                                             )
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
-                                               nn.Linear(16, attitude_class_num)
+                                               nn.Linear(64, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(16, action_class_num)
+                                             nn.Linear(64, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               nn.Linear(64 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 + intention_class_num + attitude_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             nn.Linear(64 + intention_class_num + attitude_class_num, action_class_num)
                                              )
 
     def forward(self, data):
@@ -654,46 +687,46 @@ class STGCN(nn.Module):
         self.stgcn_list = []
         if self.body_part[0]:
             self.stgcn_body = ST_GCN_18(3, is_coco, 0).to(device)
-            self.fcn_body = nn.Conv2d(256, 16, kernel_size=1).to(device)
+            self.fcn_body = nn.Conv2d(256, 64, kernel_size=1).to(device)
         if self.body_part[1]:
             self.stgcn_head = ST_GCN_18(3, is_coco, 1).to(device)
-            self.fcn_head = nn.Conv2d(256, 16, kernel_size=1).to(device)
+            self.fcn_head = nn.Conv2d(256, 64, kernel_size=1).to(device)
         if self.body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, is_coco, 2).to(device)
-            self.fcn_hand = nn.Conv2d(256, 16, kernel_size=1).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
-        self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
+            self.fcn_hand = nn.Conv2d(256, 64, kernel_size=1).to(device)
+        self.gcn_attention = nn.Linear(self.body_part.count(True) * 64, 1)
+        self.intention_head = nn.Sequential(nn.BatchNorm1d(64 * self.body_part.count(True)),
                                             nn.ReLU(),
-                                            nn.Linear(16 * self.body_part.count(True), intention_class_num)
+                                            nn.Linear(64 * self.body_part.count(True), intention_class_num)
                                             )
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True), attitude_class_num)
+                                               nn.Linear(64 * self.body_part.count(True), attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(16 * self.body_part.count(True), action_class_num)
+                                             nn.Linear(64 * self.body_part.count(True), action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 * self.body_part.count(True) + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                               nn.Linear(64 * self.body_part.count(True) + intention_class_num,
                                                          attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(64 * self.body_part.count(True) + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                             nn.Linear(64 * self.body_part.count(True) + intention_class_num,
                                                        action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(64 * self.body_part.count(True) + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                               nn.Linear(64 * self.body_part.count(True) + intention_class_num,
                                                          attitude_class_num)
                                                )
             self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num + attitude_class_num),
+                nn.BatchNorm1d(64 * self.body_part.count(True) + intention_class_num + attitude_class_num),
                 nn.ReLU(),
-                nn.Linear(16 * self.body_part.count(True) + intention_class_num + attitude_class_num, action_class_num)
+                nn.Linear(64 * self.body_part.count(True) + intention_class_num + attitude_class_num, action_class_num)
             )
 
     def forward(self, x):
