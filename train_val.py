@@ -91,7 +91,7 @@ def transform_preframe_result(y_true, y_pred, frame_num_list):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=False):
+def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -108,7 +108,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         batch_size = avg_batch_size
     elif model == 'perframe':
         batch_size = perframe_batch_size
-    elif model in ['lstm', 'gru']:
+    elif model == 'lstm':
         batch_size = rnn_batch_size
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
@@ -123,17 +123,17 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
     tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
                                                           ori_videos=ori_videos)
     trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                       model=model, sample_fps=sample_fps, video_len=video_len)
+                       model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                     model=model, sample_fps=sample_fps, video_len=video_len)
+                     model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                      model=model, sample_fps=sample_fps, video_len=video_len)
+                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     max_length = max(trainset.max_length, valset.max_length, testset.max_length)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
-    elif model in ['lstm', 'gru']:
-        net = RNN(is_coco=is_coco, body_part=body_part, framework=framework, gru=model == 'gru')
+    elif model == 'lstm':
+        net = RNN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'conv1d':
         net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
     elif 'gcn_' in model:
@@ -160,7 +160,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             if model in ['avg', 'perframe', 'conv1d']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
-            elif model in ['lstm', 'gru']:
+            elif model == 'lstm':
                 (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype=dtype, device=device)
@@ -196,7 +196,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
             if model in ['avg', 'perframe', 'conv1d']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
-            elif model in ['lstm', 'gru']:
+            elif model == 'lstm':
                 (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype=dtype, device=device)
@@ -270,7 +270,7 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         if model in ['avg', 'perframe', 'conv1d']:
             inputs, (int_labels, att_labels, act_labels) = data
             inputs = inputs.to(dtype=dtype, device=device)
-        elif model in ['lstm', 'gru']:
+        elif model == 'lstm':
             (inputs, (int_labels, att_labels, act_labels)), data_length = data
             inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
             inputs = inputs.to(dtype=dtype, device=device)
@@ -338,8 +338,8 @@ def train(model, body_part, framework, sample_fps, video_len=99999, ori_videos=F
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
-    print(result_str + 'Computational complexity: %.2f MFLOPs, process_time_pre_frame: %.3f ms' % (
-        (MFlops, process_time * 1000 / len(testset) / (video_len * sample_fps))))
+    print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
+        (MFlops, process_time * 1000 / len(testset) / sequence_length)))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)
     return performance_model
@@ -350,10 +350,8 @@ if __name__ == '__main__':
     # model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
-    # model = 'gru'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
-    # model = 'gcn_gru'
     # model = 'gcn_gcn'
     model = 'stgcn'
     body_part = [True, True, True]
@@ -365,25 +363,25 @@ if __name__ == '__main__':
     # framework = 'tree'
     # framework = 'chain'
     ori_video = False
-    sample_fps = 30
-    video_len = 2
+    frame_sample_hop = 1
+    sequence_length = 30
     performance_model = []
     i = 0
     while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
-        if video_len:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
-                        ori_videos=ori_video, video_len=video_len)
+        if sequence_length:
+            p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
+                        ori_videos=ori_video, sequence_length=sequence_length)
         else:
-            p_m = train(model=model, body_part=body_part, framework=framework, sample_fps=sample_fps,
+            p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
                         ori_videos=ori_video)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
     draw_save(model, performance_model, framework)
-    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sample_fps: %d, video_len: %s' % (
-        model, body_part[0], body_part[1], body_part[2], framework, sample_fps, str(video_len))
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
+        model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
     # send_email(result_str)

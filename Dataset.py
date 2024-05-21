@@ -133,7 +133,7 @@ def get_l_pair(is_coco, body_part):
 
 
 class Dataset(Dataset):
-    def __init__(self, data_files, augment_method, is_coco, body_part, model, sample_fps, video_len=99999):
+    def __init__(self, data_files, augment_method, is_coco, body_part, model, frame_sample_hop, sequence_length=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
@@ -141,8 +141,8 @@ class Dataset(Dataset):
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.model = model
-        self.sample_fps = sample_fps
-        self.video_len = video_len
+        self.frame_sample_hop = frame_sample_hop
+        self.sequence_length = sequence_length
 
         self.features, self.labels, self.frame_number_list = [], [], []
         index = 0
@@ -177,7 +177,7 @@ class Dataset(Dataset):
                 self.labels.append(label)
             self.frame_number_list.append(
                 int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
-                                                       'stgcn'] else self.video_len * self.sample_fps)
+                                                       'stgcn'] else int(self.sequence_length / self.frame_sample_hop))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
@@ -189,24 +189,24 @@ class Dataset(Dataset):
         video_frame_num = len(feature_json['frames'])
         first_id = -1
         for frame in feature_json['frames']:
-            if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+            if frame['frame_id'] % self.frame_sample_hop == 0:
                 first_id = frame['frame_id']
                 break
         if first_id == -1:
             return 0, 0
         index = 0
-        while len(features) < int(self.video_len * self.sample_fps):
+        while len(features) < int(self.sequence_length / self.frame_sample_hop):
             if index == video_frame_num:
                 break
             else:
                 frame = feature_json['frames'][index]
-                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * (video_fps / self.sample_fps):
+                if frame['frame_id'] > first_id and frame['frame_id'] > len(features) * self.frame_sample_hop:
                     features.append(features[-1])
                 else:
                     index += 1
-                    if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                    if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                         break
-                    elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                    elif frame['frame_id'] % self.frame_sample_hop == 0:
                         frame_feature = np.array(frame['keypoints'])
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
                         frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
@@ -235,7 +235,7 @@ class Dataset(Dataset):
         video_frame_num = len(feature_json['frames'])
         first_id = -1
         for frame in feature_json['frames']:
-            if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+            if frame['frame_id'] % self.frame_sample_hop == 0:
                 first_id = frame['frame_id']
                 break
         if first_id == -1:
@@ -246,22 +246,22 @@ class Dataset(Dataset):
                 b_p = [False, False, False]
                 b_p[index_body] = True
                 input_size = get_inputs_size(self.is_coco, b_p)
-                x_tensor = torch.zeros((self.sample_fps * self.video_len, int(input_size / 3), 3))
+                x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 3), 3))
                 frame_num = 0
-                while frame_num < int(self.video_len * self.sample_fps):
+                while frame_num < int(self.sequence_length / self.frame_sample_hop):
                     if index == video_frame_num:
                         x_tensor[frame_num] = x
                         frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * video_fps / self.sample_fps:
+                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
                             x_tensor[frame_num] = x
                             frame_num += 1
                         else:
                             index += 1
-                            if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                            if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
-                            elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                            elif frame['frame_id'] % self.frame_sample_hop == 0:
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
@@ -286,30 +286,30 @@ class Dataset(Dataset):
             if body:
                 bp = [False, False, False]
                 bp[index_body] = True
-                x_l = np.zeros((3, self.sample_fps * self.video_len, int(get_inputs_size(self.is_coco, bp) / 3), 1))
+                x_l = np.zeros((3, int(self.sequence_length / self.frame_sample_hop),
+                                int(get_inputs_size(self.is_coco, bp) / 3), 1))
                 first_id = -1
                 for frame in feature_json['frames']:
-                    if frame['frame_id'] % (video_fps / self.sample_fps) == 0:
+                    if frame['frame_id'] % self.frame_sample_hop == 0:
                         first_id = frame['frame_id']
                         break
                 if first_id == -1:
                     return 0, 0, 0
                 index = 0
                 frame_num = 0
-                while frame_num < int(self.video_len * self.sample_fps):
+                while frame_num < int(self.sequence_length / self.frame_sample_hop):
                     if index == video_frame_num:
                         break
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * (
-                                video_fps / self.sample_fps):
+                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
                             x_l[:, frame_num, :, 0] = frame_feature.T
                             frame_num += 1
                         else:
                             index += 1
-                            if frame['frame_id'] - first_id > int(video_fps * self.video_len):
+                            if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
-                            elif frame['frame_id'] % int(video_fps / self.sample_fps) == 0:
+                            elif frame['frame_id'] % self.frame_sample_hop == 0:
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, bp)
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
