@@ -144,7 +144,7 @@ class Dataset(Dataset):
         self.frame_sample_hop = frame_sample_hop
         self.sequence_length = sequence_length
 
-        self.features, self.labels, self.frame_number_list = [], [], []
+        self.features, self.labels = [], []
         index = 0
         for file in self.files:
             if self.model == 'stgcn':
@@ -175,9 +175,6 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
-            self.frame_number_list.append(
-                int(feature.shape[0]) if model not in ['gcn_conv1d', 'gcn_lstm', 'gcn_gru', 'gcn_gcn',
-                                                       'stgcn'] else int(self.sequence_length / self.frame_sample_hop))
         self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):

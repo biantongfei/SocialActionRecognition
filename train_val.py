@@ -77,17 +77,15 @@ def draw_save(name, performance_model, framework):
         plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
-def transform_preframe_result(y_true, y_pred, frame_num_list):
-    index_1 = 0
-    index_2 = 0
+def transform_preframe_result(y_true, y_pred, sequence_length):
+    index = 0
     y, y_hat = [], []
-    for frame_num in frame_num_list:
-        index_2 += frame_num
-        label = int(torch.mean(y_true[index_1:index_2]))
-        predict = int(torch.mode(y_pred[index_1:index_2])[0])
+    while index < y_true.shape[0]:
+        label = int(torch.mean(y_true[index:index + sequence_length]))
+        predict = int(torch.mode(y_pred[index:index + sequence_length])[0])
         y.append(label)
         y_hat.append(predict)
-        index_1 += frame_num
+        index += sequence_length
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
@@ -228,21 +226,21 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         if 'intention' in tasks:
             int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
             if model == 'perframe':
-                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, valset.frame_number_list)
+                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
             result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
         if 'attitude' in tasks:
             att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
             if model == 'perframe':
-                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, valset.frame_number_list)
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,sequence_length)
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
             result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
         if 'action' in tasks:
             act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
-                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, valset.frame_number_list)
+                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, ' % (act_acc * 100, act_f1)
@@ -308,7 +306,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     if 'intention' in tasks:
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
         if model == 'perframe':
-            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, testset.frame_number_list)
+            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
         int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
         int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
         performance_model['intention_accuracy'] = int_acc
@@ -319,7 +317,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     if 'attitude' in tasks:
         att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
         if model == 'perframe':
-            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, testset.frame_number_list)
+            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
         att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
         att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
         performance_model['attitude_accuracy'] = att_acc
@@ -330,7 +328,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     if 'action' in tasks:
         act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         if model == 'perframe':
-            act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, testset.frame_number_list)
+            act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
         act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
         performance_model['action_accuracy'] = act_acc
