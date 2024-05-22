@@ -1,4 +1,5 @@
 import sys
+from Dataset import get_inputs_size
 
 sys.path.insert(0, '')
 
@@ -111,14 +112,20 @@ class MultiWindow_MS_G3D(nn.Module):
 
 class Model(nn.Module):
     def __init__(self,
+                 is_coco,
+                 body,
                  num_class,
-                 num_point,
-                 num_person,
                  num_gcn_scales,
                  num_g3d_scales,
                  graph,
                  in_channels=3):
         super(Model, self).__init__()
+        self.is_coco = is_coco
+        self.body = body
+        body_part = [False, False, False]
+        body_part[body] = True
+        num_point = int(get_inputs_size(is_coco, body_part) / 3)
+        num_person = 1
 
         Graph = import_class(graph)
         A_binary = Graph().A_binary
@@ -191,8 +198,6 @@ if __name__ == "__main__":
 
     model = Model(
         num_class=60,
-        num_point=25,
-        num_person=2,
         num_gcn_scales=13,
         num_g3d_scales=6,
         graph='graph.ntu_rgb_d.AdjMatrixGraph'
