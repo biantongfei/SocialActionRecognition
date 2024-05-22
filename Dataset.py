@@ -164,12 +164,12 @@ class Dataset(Dataset):
                     index += 1
                     if self.model in ['avg', 'perframe']:
                         self.features = feature
-                    elif self.model in ['lstm', 'gru', 'conv1d']:
+                    elif self.model in ['lstm', 'conv1d']:
                         self.features = [feature]
                 else:
                     if self.model in ['avg', 'perframe']:
                         self.features = np.append(self.features, feature, axis=0)
-                    elif self.model in ['lstm', 'gru', 'conv1d']:
+                    elif self.model in ['lstm', 'conv1d']:
                         self.features.append(feature)
             if model == 'perframe':
                 self.labels += label
@@ -218,7 +218,7 @@ class Dataset(Dataset):
             features = features.reshape(1, features.size)
         elif self.model == 'perframe':
             label = [label for _ in range(int(features.shape[0]))]
-        elif self.model in ['lstm', 'gru', 'conv1d']:
+        elif self.model in ['lstm', 'conv1d']:
             features = torch.from_numpy(features)
         return features, label
 
