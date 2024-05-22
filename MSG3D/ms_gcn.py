@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from mlp import MLP
-from activation import activation_factory
+from MSG3D.mlp import MLP
+from MSG3D.activation import activation_factory
 
 
 def k_adjacency(A, k, with_self=False, self_factor=1):

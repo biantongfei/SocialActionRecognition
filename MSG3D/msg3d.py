@@ -9,11 +9,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ms_gcn import MultiScale_GraphConv as MS_GCN
-from ms_tcn import MultiScale_TemporalConv as MS_TCN
-from ms_gtcn import SpatialTemporal_MS_GCN, UnfoldTemporalWindows
-from mlp import MLP
-from activation import activation_factory
+from MSG3D.ms_gcn import MultiScale_GraphConv as MS_GCN
+from MSG3D.ms_tcn import MultiScale_TemporalConv as MS_TCN
+from MSG3D.ms_gtcn import SpatialTemporal_MS_GCN, UnfoldTemporalWindows
+from MSG3D.mlp import MLP
+from MSG3D.activation import activation_factory
 
 
 def import_class(name):
@@ -115,9 +115,8 @@ class Model(nn.Module):
                  is_coco,
                  body,
                  num_class,
-                 num_gcn_scales,
-                 num_g3d_scales,
-                 graph,
+                 num_gcn_scales=13,
+                 num_g3d_scales=6,
                  in_channels=3):
         super(Model, self).__init__()
         self.is_coco = is_coco
@@ -127,7 +126,7 @@ class Model(nn.Module):
         num_point = int(get_inputs_size(is_coco, body_part) / 3)
         num_person = 1
 
-        Graph = import_class(graph)
+        Graph =
         A_binary = Graph().A_binary
 
         self.data_bn = nn.BatchNorm1d(num_person * in_channels * num_point)
@@ -188,6 +187,15 @@ class Model(nn.Module):
 
         out = self.fc(out)
         return out
+
+
+class AdjMatrixGraph:
+    def __init__(self, num_node,neighbor):
+        self.num_nodes = num_node
+        self.edges = neighbor
+        self.self_loops = [(i, i) for i in range(self.num_nodes)]
+        self.A_binary = get_adjacency_matrix(self.edges, self.num_nodes)
+        self.A_binary_with_I = get_adjacency_matrix(self.edges + self.self_loops, self.num_nodes)
 
 
 if __name__ == "__main__":

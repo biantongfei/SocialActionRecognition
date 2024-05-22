@@ -1,1 +1,1 @@
-from . import msg3d
+import msg3d

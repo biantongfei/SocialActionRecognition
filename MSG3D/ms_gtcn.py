@@ -6,10 +6,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from ms_tcn import MultiScale_TemporalConv as MS_TCN
-from mlp import MLP
-from activation import activation_factory
-from ms_gcn import k_adjacency, normalize_adjacency_matrix
+from MSG3D.ms_tcn import MultiScale_TemporalConv as MS_TCN
+from MSG3D.mlp import MLP
+from MSG3D.activation import activation_factory
+from MSG3D.ms_gcn import k_adjacency, normalize_adjacency_matrix
 
 
 class UnfoldTemporalWindows(nn.Module):

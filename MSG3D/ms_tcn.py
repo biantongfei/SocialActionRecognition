@@ -4,7 +4,7 @@ sys.path.insert(0, '')
 import torch
 import torch.nn as nn
 
-from activation import activation_factory
+from MSG3D.activation import activation_factory
 
 
 class TemporalConv(nn.Module):
