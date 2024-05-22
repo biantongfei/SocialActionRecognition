@@ -1,1 +1,1 @@
-import msg3d
+from MSG3D import msg3d
