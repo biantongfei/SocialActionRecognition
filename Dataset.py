@@ -147,7 +147,7 @@ class Dataset(Dataset):
         self.features, self.labels = [], []
         index = 0
         for file in self.files:
-            if self.model == 'stgcn':
+            if self.model in ['stgcn', 'msgcn']:
                 x, label = self.get_stgraph_data_from_file(file)
                 self.features.append(x)
             elif 'gcn_' in self.model:

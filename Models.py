@@ -289,8 +289,8 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 64
-        self.time_hidden_dim = self.keypoint_hidden_dim * 128
+        self.keypoint_hidden_dim = 16
+        self.time_hidden_dim = self.keypoint_hidden_dim * 64
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         if body_part[0]:
@@ -308,8 +308,8 @@ class GNN(nn.Module):
         self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         if self.model == 'gcn_lstm':
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                      hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
-            self.fc_input_size = 256 * 2
+                                      hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
+            self.fc_input_size = 128 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
             self.time_model = nn.Sequential(
@@ -356,10 +356,10 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(self.fc_input_size, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Linear(256, 16),
+            nn.Linear(128, 16),
             nn.BatchNorm1d(16),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
@@ -777,11 +777,11 @@ class MSGCN(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         if self.body_part[0]:
-            self.MSGCN_body = MsG3d(is_coco, 0,16,).to(device)
+            self.MSGCN_body = MsG3d(is_coco, 0, 16).to(device)
         if self.body_part[1]:
-            self.MSGCN_head = MsG3d(3, is_coco, 1).to(device)
+            self.MSGCN_head = MsG3d(is_coco, 0, 16).to(device)
         if self.body_part[2]:
-            self.MSGCN_hand = MsG3d(3, is_coco, 2).to(device)
+            self.MSGCN_hand = MsG3d(is_coco, 0, 16).to(device)
         self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
         self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
                                             nn.ReLU(),
@@ -820,16 +820,13 @@ class MSGCN(nn.Module):
     def forward(self, x):
         y_list = []
         if self.body_part[0]:
-            y = self.stgcn_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = self.fcn_body(y).view(y.size(0), -1)
+            y = self.MSGCN_body(x=x[0].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y)
         if self.body_part[1]:
-            y = self.stgcn_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = self.fcn_head(y).view(y.size(0), -1)
+            y = self.MSGCN_head(x=x[1].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y)
         if self.body_part[2]:
-            y = self.stgcn_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
-            y = self.fcn_hand(y).view(y.size(0), -1)
+            y = self.MSGCN_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y)
         y = torch.cat(y_list, dim=1)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(y))

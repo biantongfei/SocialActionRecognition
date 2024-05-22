@@ -1,5 +1,5 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN, RNN, Cnn1D, GNN, STGCN
+from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
@@ -95,8 +95,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -112,7 +112,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = conv1d_batch_size
     elif 'gcn_' in model:
         batch_size = gcn_batch_size
-    elif model == 'stgcn':
+    elif model in ['stgcn', 'msgcn']:
         batch_size = stgcn_batch_size
 
     print('loading data for %s' % dataset)
@@ -138,6 +138,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
+    elif model == 'msgcn':
+        net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.5)
@@ -233,7 +235,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         if 'attitude' in tasks:
             att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
             if model == 'perframe':
-                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred,sequence_length)
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
             result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
@@ -247,7 +249,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             print(result_str + 'loss: %.4f' % total_loss)
             torch.cuda.empty_cache()
         # if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
-        if epoch == 50:
+        if epoch == 20:
             break
         else:
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
@@ -345,13 +347,14 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 
 if __name__ == '__main__':
     # model = 'avg'
-    # model = 'perframe'
+    model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
-    model = 'stgcn'
+    # model = 'stgcn'
+    # model = 'msgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
