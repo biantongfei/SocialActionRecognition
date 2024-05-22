@@ -175,7 +175,6 @@ class Dataset(Dataset):
                 self.labels += label
             else:
                 self.labels.append(label)
-        self.max_length = max(self.frame_number_list)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:

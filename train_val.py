@@ -126,7 +126,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                       model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    max_length = max(trainset.max_length, valset.max_length, testset.max_length)
+    max_length = sequence_length
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
