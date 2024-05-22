@@ -98,7 +98,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         self.framework = framework
         self.input_size = get_inputs_size(is_coco, body_part)
-        self.hidden_size = 128
+        self.hidden_size = 256
         self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=True,
                            batch_first=True)
         self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)
@@ -289,7 +289,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 16
+        self.keypoint_hidden_dim = 64
         self.time_hidden_dim = self.keypoint_hidden_dim * 64
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
@@ -308,8 +308,8 @@ class GNN(nn.Module):
         self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         if self.model == 'gcn_lstm':
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                      hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            self.fc_input_size = 128 * 2
+                                      hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+            self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
             self.time_model = nn.Sequential(
