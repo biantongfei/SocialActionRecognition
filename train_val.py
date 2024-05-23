@@ -95,8 +95,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -347,14 +347,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 
 if __name__ == '__main__':
     # model = 'avg'
-    model = 'perframe'
     # model = 'conv1d'
     # model = 'lstm'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
     # model = 'stgcn'
-    # model = 'msgcn'
+    model = 'msg3d'
     body_part = [True, True, True]
 
     # framework = 'intention'
