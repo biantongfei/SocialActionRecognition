@@ -786,9 +786,9 @@ class MSGCN(nn.Module):
         if self.body_part[0]:
             self.MSGCN_body = MsG3d(is_coco, 0, 16).to(device)
         if self.body_part[1]:
-            self.MSGCN_head = MsG3d(is_coco, 0, 16).to(device)
+            self.MSGCN_head = MsG3d(is_coco, 1, 16).to(device)
         if self.body_part[2]:
-            self.MSGCN_hand = MsG3d(is_coco, 0, 16).to(device)
+            self.MSGCN_hand = MsG3d(is_coco, 2, 16).to(device)
         self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
         self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
                                             nn.ReLU(),
