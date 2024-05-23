@@ -104,7 +104,7 @@ class RNN(nn.Module):
         self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)
         # Readout layer
         self.fc = nn.Sequential(
-            nn.Linear(self.input_size, 256),
+            nn.Linear(2 * self.hidden_size, 256),
             nn.ReLU(),
             nn.BatchNorm1d(256),
             nn.Linear(256, 64),
