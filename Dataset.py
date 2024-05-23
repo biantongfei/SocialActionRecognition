@@ -147,7 +147,7 @@ class Dataset(Dataset):
         self.features, self.labels = [], []
         index = 0
         for file in self.files:
-            if self.model in ['stgcn', 'msgcn']:
+            if self.model in ['stgcn', 'msg3d']:
                 x, label = self.get_stgraph_data_from_file(file)
                 self.features.append(x)
             elif 'gcn_' in self.model:
@@ -330,7 +330,7 @@ class Dataset(Dataset):
     def __len__(self):
         if self.model in ['avg', 'perframe']:
             return self.features.shape[0]
-        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gcn' in self.model:
+        elif self.model in ['lstm', 'gru', 'conv1d','msg3d'] or 'gcn' in self.model:
             return len(self.features)
 
 

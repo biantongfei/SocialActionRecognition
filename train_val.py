@@ -112,7 +112,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = conv1d_batch_size
     elif 'gcn_' in model:
         batch_size = gcn_batch_size
-    elif model in ['stgcn', 'msgcn']:
+    elif model in ['stgcn', 'msg3d']:
         batch_size = stgcn_batch_size
 
     print('loading data for %s' % dataset)
@@ -138,7 +138,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
-    elif model == 'msgcn':
+    elif model == 'msg3d':
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
