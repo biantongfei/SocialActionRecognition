@@ -164,7 +164,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype=dtype, device=device)
-            elif 'gcn' in model:
+            elif 'gcn' in model or model=='msg3d':
                 inputs, (int_labels, att_labels, act_labels) = data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
