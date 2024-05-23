@@ -95,8 +95,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # dataset = 'mixed+coco'
-    dataset = 'crop+coco'
+    dataset = 'mixed+coco'
+    # dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -147,6 +147,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     attitude_best_f1 = -1
     action_best_f1 = -1
     epoch = 1
+    all_loss = 0
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
                                      max_length=max_length, drop_last=True, shuffle=True)
