@@ -11,7 +11,7 @@ framework = 'parallel'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 15
-for model in ['avg', 'gcn_lstm']:
+for model in ['gcn_lstm']:
     # for model in ['conv1d', 'lstm']:
     # for model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn']:
     performance_model = []

@@ -186,16 +186,8 @@ class Cnn1D(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
-        self.cnn = nn.Sequential(
+        self.cnn1 = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Conv1d(64, 64, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Conv1d(64, 64, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(0.5),
@@ -211,10 +203,6 @@ class Cnn1D(nn.Module):
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Dropout(0.5),
             nn.Conv1d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(256),
             nn.ReLU(),
@@ -222,12 +210,7 @@ class Cnn1D(nn.Module):
             nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-        )
+            nn.Dropout(0.5))
         self.fc = nn.Sequential(
             nn.Linear(self.hidden_dim, 512),
             nn.BatchNorm1d(512),
@@ -308,7 +291,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.max_length = max_length
-        self.keypoint_hidden_dim = 8
+        self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 64
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
@@ -337,23 +320,11 @@ class GNN(nn.Module):
                 nn.BatchNorm1d(64),
                 nn.ReLU(),
                 nn.Dropout(0.5),
-                nn.Conv1d(64, 64, kernel_size=5, stride=2, padding=2),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-                nn.Conv1d(64, 64, kernel_size=5, stride=1, padding=2),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Dropout(0.5),
                 nn.Conv1d(64, 64, kernel_size=5, stride=1, padding=2),
                 nn.BatchNorm1d(64),
                 nn.ReLU(),
                 nn.Dropout(0.5),
                 nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
-                nn.BatchNorm1d(128),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-                nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
                 nn.Dropout(0.5),
@@ -368,12 +339,7 @@ class GNN(nn.Module):
                 nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
-                nn.Dropout(0.5),
-                nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
-                nn.BatchNorm1d(256),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-            )
+                nn.Dropout(0.5))
             self.fc_input_size = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         else:
             self.GCN_time = GCN(
