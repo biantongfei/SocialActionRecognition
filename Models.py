@@ -98,7 +98,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         self.framework = framework
         self.input_size = get_inputs_size(is_coco, body_part)
-        self.hidden_size = 128
+        self.hidden_size = 256
         self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=True,
                            batch_first=True)
         self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)
@@ -185,22 +185,13 @@ class Cnn1D(nn.Module):
         self.framework = framework
         self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         self.cnn = nn.Sequential(
-            nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
+            nn.Conv1d(self.input_size, 128, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+            nn.Conv1d(128, 128, kernel_size=7, stride=1, padding=3),
             nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+            nn.Conv1d(128, 128, kernel_size=7, stride=1, padding=3),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
@@ -212,13 +203,26 @@ class Cnn1D(nn.Module):
             nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm1d(256),
             nn.ReLU(),
+            nn.Conv1d(256, 512, kernel_size=5, stride=2, padding=2),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Conv1d(512, 512, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Conv1d(512, 512, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
         )
         self.fc = nn.Sequential(
-            nn.Linear(self.hidden_dim, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(self.hidden_dim, 512),
+            nn.BatchNorm1d(512),
             # nn.Dropout(0.5),
             nn.ReLU(),
-            nn.Linear(256, 16),
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
+            # nn.Dropout(0.5),
+            nn.ReLU(),
+            nn.Linear(128, 16),
             nn.BatchNorm1d(16),
             # nn.Dropout(0.5),
         )
@@ -308,28 +312,19 @@ class GNN(nn.Module):
         self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         if self.model == 'gcn_lstm':
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                      hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            self.fc_input_size = 128 * 2
+                                      hidden_size=256, num_layers=3, bidirectional=True, batch_first=True)
+            self.fc_input_size = 256 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
         elif self.model == 'gcn_conv1d':
             self.time_model = nn.Sequential(
-                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 64,
+                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 128,
                           kernel_size=7, stride=3, padding=3),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Conv1d(64, 64, kernel_size=7, stride=1, padding=3),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
-                nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+                nn.Conv1d(128, 128, kernel_size=7, stride=1, padding=3),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
-                nn.Conv1d(128, 128, kernel_size=5, stride=1, padding=2),
+                nn.Conv1d(128, 128, kernel_size=7, stride=1, padding=3),
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
                 nn.Conv1d(128, 256, kernel_size=5, stride=2, padding=2),
@@ -341,12 +336,21 @@ class GNN(nn.Module):
                 nn.Conv1d(256, 256, kernel_size=5, stride=1, padding=2),
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
+                nn.Conv1d(256, 512, kernel_size=5, stride=2, padding=2),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
+                nn.Conv1d(512, 512, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
+                nn.Conv1d(512, 512, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
             )
-            self.fc_input_size = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+            self.fc_input_size = 512 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                hidden_channels=self.keypoint_hidden_dim, num_layers=2)
+                hidden_channels=self.time_hidden_dim, num_layers=2)
             # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
@@ -356,7 +360,10 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 128),
+            nn.Linear(self.fc_input_size, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Linear(128, 16),

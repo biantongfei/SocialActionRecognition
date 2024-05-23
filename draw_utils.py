@@ -78,5 +78,25 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     plt.savefig('plots/%s.jpg' % sub_name, dpi=300)
 
 
+def draw_observe_window_plots():
+    # windows = [5, 10, 15, 20, 25, 30, 35, 40]
+    windows = [5, 10, 15, 20]
+    # int_f1 = [0.5, 0.56, 0.64, 0.71, 0.79, 0.84, 0.89, 0.91]
+    # att_f1 = [0.4, 0.48, 0.56, 0.61, 0.68, 0.73, 0.81, 0.90]
+    # act_f1 = [0.3, 0.39, 0.45, 0.51, 0.58, 0.62, 0.71, 0.76]
+    int_f1 = [0.5, 0.64, 0.79, 0.89]
+    att_f1 = [0.4, 0.56, 0.68, 0.81]
+    act_f1 = [0.3, 0.45, 0.58, 0.71]
+
+    l1 = plt.plot(windows, int_f1, 'r--', label='Interest')
+    l2 = plt.plot(windows, att_f1, 'g--', label='Attitude')
+    l3 = plt.plot(windows, act_f1, 'b--', label='Action')
+    plt.plot(windows, int_f1, 'ro-', windows, att_f1, 'g+-', windows, act_f1, 'b^-')
+    plt.xlabel('Observation Window Size (Frame)')
+    plt.ylabel('F1 Score')
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    pass
+    draw_observe_window_plots()
