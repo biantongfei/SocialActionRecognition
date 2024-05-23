@@ -95,8 +95,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    # dataset = 'mixed+coco'
-    dataset = 'crop+coco'
+    dataset = 'mixed+coco'
+    # dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -112,7 +112,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = conv1d_batch_size
     elif 'gcn_' in model:
         batch_size = gcn_batch_size
-    elif model in ['stgcn', 'msg3d']:
+    elif model in ['stgcn', 'msgcn']:
         batch_size = stgcn_batch_size
 
     print('loading data for %s' % dataset)
@@ -138,7 +138,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
-    elif model == 'msg3d':
+    elif model == 'msgcn':
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
@@ -164,7 +164,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 (inputs, (int_labels, att_labels, act_labels)), data_length = data
                 inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
                 inputs = inputs.to(dtype=dtype, device=device)
-            elif 'gcn' in model or model=='msg3d':
+            elif 'gcn' in model:
                 inputs, (int_labels, att_labels, act_labels) = data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
     # model = 'stgcn'
-    model = 'msg3d'
+    model = 'msgcn'
     body_part = [True, True, True]
 
     # framework = 'intention'
