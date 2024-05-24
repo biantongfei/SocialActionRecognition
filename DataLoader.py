@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.utils.rnn as rnn_utils
+from torch_geometric.utils import add_self_loops
 
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, \
     halpe_body_l_pair, coco_head_l_pair, coco_hand_l_pair, device
@@ -66,8 +67,9 @@ class JPLDataLoader(DataLoader):
             torch.int64), torch.zeros(len(data) * self.max_length * head_point_num, ).to(torch.int64),
             torch.zeros((len(data) * self.max_length * hands_point_num,)).to(torch.int64)]
         point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
-        edge_nums = [self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num, self.head_l_pair_num,
-                     self.hand_l_pair_num]
+        edge_nums = [
+            2 * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num + coco_body_point_num if self.is_coco else halpe_body_point_num,
+            2 * self.head_l_pair_num + head_point_num, 2 * self.hand_l_pair_num + hands_point_num]
         int_label, att_label, act_label = [], [], []
         frame_num = 0
         for d in data:
@@ -75,12 +77,17 @@ class JPLDataLoader(DataLoader):
                 for i in range(len(d[0])):
                     if i == 0:
                         edge_index = torch.Tensor(coco_body_l_pair if self.is_coco else halpe_body_l_pair).t()
+                        point_num = coco_body_point_num if self.is_coco else halpe_body_point_num
                     elif i == 1:
                         edge_index = torch.Tensor(coco_head_l_pair).t() - torch.full((2, len(coco_head_l_pair)),
                                                                                      fill_value=coco_body_point_num)
+                        point_num = head_point_num
                     else:
                         edge_index = torch.Tensor(coco_hand_l_pair).t() - torch.full((2, len(coco_hand_l_pair)),
                                                                                      fill_value=head_point_num + coco_body_point_num)
+                        point_num = hands_point_num
+                    edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
+                    edge_index, _ = add_self_loops(edge_index, num_nodes=point_num)
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:,
                     frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (edge_index + torch.full(
