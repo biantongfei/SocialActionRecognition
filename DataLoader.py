@@ -22,7 +22,7 @@ def rnn_collate_fn(data):
 
 
 class JPLDataLoader(DataLoader):
-    def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False,num_workers=1):
+    def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False, num_workers=1):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                             drop_last=drop_last, num_workers=num_workers)
         if model in ['lstm', 'gru']:
@@ -68,7 +68,8 @@ class JPLDataLoader(DataLoader):
             torch.zeros((len(data) * self.max_length * hands_point_num,)).to(torch.int64)]
         point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
         edge_nums = [
-            2 * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num + coco_body_point_num if self.is_coco else halpe_body_point_num,
+            2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
+                coco_body_point_num if self.is_coco else halpe_body_point_num),
             2 * self.head_l_pair_num + head_point_num, 2 * self.hand_l_pair_num + hands_point_num]
         int_label, att_label, act_label = [], [], []
         frame_num = 0
