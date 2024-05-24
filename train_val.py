@@ -3,7 +3,8 @@ from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
-    perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, learning_rate
+    perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, msgcn_batch_size, \
+    learning_rate
 
 import torch
 from torch.nn import functional
@@ -112,8 +113,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = conv1d_batch_size
     elif 'gcn_' in model:
         batch_size = gcn_batch_size
-    elif model in ['stgcn', 'msgcn']:
+    elif model == 'stgcn':
         batch_size = stgcn_batch_size
+    elif model == 'msgcn':
+        batch_size = msgcn_batch_size
 
     print('loading data for %s' % dataset)
     augment_method = dataset.split('+')[0]
