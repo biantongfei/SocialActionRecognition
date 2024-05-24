@@ -102,7 +102,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_y_true' % t: None, '%s_y_pred' % t: None}
-
+    num_workers = 8
     if model == 'avg':
         batch_size = avg_batch_size
     elif model == 'perframe':
@@ -115,8 +115,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = gcn_batch_size
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
+        num_workers = 1
     elif model == 'msgcn':
         batch_size = msgcn_batch_size
+        num_workers = 1
 
     print('loading data for %s' % dataset)
     augment_method = dataset.split('+')[0]
@@ -153,9 +155,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     all_loss = 0
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                     max_length=max_length, drop_last=True, shuffle=True)
+                                     max_length=max_length, drop_last=True, shuffle=True, num_workers=num_workers)
         val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=True,
-                                   batch_size=batch_size)
+                                   batch_size=batch_size, num_workers=num_workers)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -265,7 +267,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, max_length=max_length,
-                                batch_size=batch_size, drop_last=False)
+                                batch_size=batch_size, drop_last=False, num_workers=num_workers)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     process_time = 0
     start_time = time.time()
