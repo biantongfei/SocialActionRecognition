@@ -98,7 +98,7 @@ class RNN(nn.Module):
         self.is_coco = is_coco
         self.framework = framework
         self.input_size = get_inputs_size(is_coco, body_part)
-        self.hidden_size = 256
+        self.hidden_size = 128
         self.rnn = nn.LSTM(self.input_size, hidden_size=self.hidden_size, num_layers=3, bidirectional=True,
                            batch_first=True)
         self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)

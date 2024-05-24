@@ -343,7 +343,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
-        (MFlops, process_time * 1000 / len(testset) / sequence_length)))
+        (MFlops, process_time * 1000 / len(testset))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # draw_training_process(trainging_process)
     return performance_model
