@@ -6,6 +6,7 @@ from torch import nn
 import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
 from torch_geometric.nn import GCN, GAT, GIN, global_mean_pool, TopKPooling, SAGPooling, ASAPooling
+from torch_geometric.utils import add_self_loops
 
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
@@ -179,13 +180,13 @@ class RNN(nn.Module):
 
 
 class Cnn1D(nn.Module):
-    def __init__(self, is_coco, body_part, framework, max_length):
+    def __init__(self, is_coco, body_part, framework, sequence_length):
         super(Cnn1D, self).__init__()
         super().__init__()
         self.is_coco = is_coco
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
-        self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+        self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(sequence_length / 3) / 2) / 2)
         self.cnn1 = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(64),
@@ -282,7 +283,7 @@ class Cnn1D(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, is_coco, body_part, framework, model, max_length):
+    def __init__(self, is_coco, body_part, framework, model, sequence_length):
         super(GNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -290,7 +291,7 @@ class GNN(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         self.model = model
-        self.max_length = max_length
+        self.sequence_length = sequence_length
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 64
         self.pooling = False
@@ -340,7 +341,7 @@ class GNN(nn.Module):
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
                 nn.Dropout(0.5))
-            self.fc_input_size = 256 * math.ceil(math.ceil(math.ceil(max_length / 3) / 2) / 2)
+            self.fc_input_size = 256 * math.ceil(math.ceil(math.ceil(sequence_length / 3) / 2) / 2)
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
@@ -352,7 +353,7 @@ class GNN(nn.Module):
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * max_length)
+            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * sequence_length)
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 128),
             nn.BatchNorm1d(128),
@@ -400,7 +401,7 @@ class GNN(nn.Module):
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
-            x_body = x_body.view(-1, self.max_length, self.keypoint_hidden_dim * (
+            x_body = x_body.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
@@ -412,7 +413,7 @@ class GNN(nn.Module):
                 x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_head = global_mean_pool(x_head, batch_head)
-            x_head = x_head.view(-1, self.max_length, self.keypoint_hidden_dim * head_point_num)
+            x_head = x_head.view(-1, self.sequence_length, self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_head)
         if self.body_part[2]:
             x_hand, edge_index_hand, batch_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device), \
@@ -423,7 +424,7 @@ class GNN(nn.Module):
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_hand = global_mean_pool(x_hand, batch_hand)
-            x_hand = x_hand.view(-1, self.max_length, self.keypoint_hidden_dim * hands_point_num)
+            x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
@@ -439,8 +440,10 @@ class GNN(nn.Module):
             x = self.time_model(x)
             x = x.flatten(1)
         else:
-            time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.max_length - 1)]),
+            time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
                                            dtype=torch.int32, device=device).t().contiguous()
+            time_edge_index = torch.cat([time_edge_index, time_edge_index.flip([0])], dim=1)
+            time_edge_index, _ = add_self_loops(time_edge_index, num_nodes=self.sequence_length)
             x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim)),
                                  dtype=dtype, device=device)
             for i in range(x.shape[0]):
