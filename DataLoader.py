@@ -22,7 +22,8 @@ def rnn_collate_fn(data):
 
 
 class JPLDataLoader(DataLoader):
-    def __init__(self, is_coco, model, dataset, batch_size, max_length, drop_last=True, shuffle=False, num_workers=1):
+    def __init__(self, is_coco, model, dataset, batch_size, sequence_length, drop_last=True, shuffle=False,
+                 num_workers=1):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                             drop_last=drop_last, num_workers=num_workers)
         if model in ['lstm', 'gru']:
@@ -34,7 +35,7 @@ class JPLDataLoader(DataLoader):
         elif model in ['stgcn', 'msgcn']:
             self.collate_fn = self.stgcn_collate_fn
         self.is_coco = is_coco
-        self.max_length = max_length
+        self.sequence_length = sequence_length
         self.coco_body_l_pair_num = len(coco_body_l_pair)
         self.halpe_body_l_pair_num = len(halpe_body_l_pair)
         self.head_l_pair_num = len(coco_head_l_pair)
@@ -44,7 +45,7 @@ class JPLDataLoader(DataLoader):
         input, int_label, att_label, act_label = None, [], [], []
         for index, d in enumerate(data):
             x = d[0]
-            while x.shape[0] < self.max_length:
+            while x.shape[0] < self.sequence_length:
                 x = torch.cat((x, x[-1].reshape((1, x.shape[1]))), dim=0)
             input = x.reshape(1, x.shape[0], x.shape[1]) if index == 0 else torch.cat(
                 (input, x.reshape(1, x.shape[0], x.shape[1])), dim=0)
@@ -56,16 +57,17 @@ class JPLDataLoader(DataLoader):
     def gcn_collate_fn(self, data):
         x_tensors_list, edge_index_list, batch = [
             torch.zeros(
-                (len(data) * self.max_length * (coco_body_point_num if self.is_coco else halpe_body_point_num), 3)),
-            torch.zeros((len(data) * self.max_length * head_point_num, 3)),
-            torch.zeros((len(data) * self.max_length * hands_point_num, 3))], [
+                (
+                len(data) * self.sequence_length * (coco_body_point_num if self.is_coco else halpe_body_point_num), 3)),
+            torch.zeros((len(data) * self.sequence_length * head_point_num, 3)),
+            torch.zeros((len(data) * self.sequence_length * hands_point_num, 3))], [
             torch.zeros((2,
-                         len(data) * self.max_length * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)).to(
-                torch.int64), torch.zeros((2, len(data) * self.max_length * self.head_l_pair_num)).to(torch.int64),
-            torch.zeros((2, len(data) * self.max_length * self.hand_l_pair_num)).to(torch.int64)], [torch.zeros(
-            (len(data) * self.max_length * (coco_body_point_num if self.is_coco else halpe_body_point_num),)).to(
-            torch.int64), torch.zeros(len(data) * self.max_length * head_point_num, ).to(torch.int64),
-            torch.zeros((len(data) * self.max_length * hands_point_num,)).to(torch.int64)]
+                         len(data) * self.sequence_length * self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num)).to(
+                torch.int64), torch.zeros((2, len(data) * self.sequence_length * self.head_l_pair_num)).to(torch.int64),
+            torch.zeros((2, len(data) * self.sequence_length * self.hand_l_pair_num)).to(torch.int64)], [torch.zeros(
+            (len(data) * self.sequence_length * (coco_body_point_num if self.is_coco else halpe_body_point_num),)).to(
+            torch.int64), torch.zeros(len(data) * self.sequence_length * head_point_num, ).to(torch.int64),
+            torch.zeros((len(data) * self.sequence_length * hands_point_num,)).to(torch.int64)]
         point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
         edge_nums = [
             2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
@@ -74,7 +76,7 @@ class JPLDataLoader(DataLoader):
         int_label, att_label, act_label = [], [], []
         frame_num = 0
         for d in data:
-            for ii in range(self.max_length):
+            for ii in range(self.sequence_length):
                 for i in range(len(d[0])):
                     if i == 0:
                         edge_index = torch.Tensor(coco_body_l_pair if self.is_coco else halpe_body_l_pair).t()

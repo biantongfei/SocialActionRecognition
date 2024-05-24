@@ -131,16 +131,16 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                       model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    max_length = sequence_length
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'lstm':
         net = RNN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'conv1d':
-        net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, max_length=max_length)
+        net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
-        net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model, max_length=max_length)
+        net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
+                  sequence_length=sequence_length)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'msgcn':
@@ -152,11 +152,12 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     attitude_best_f1 = -1
     action_best_f1 = -1
     epoch = 1
-    all_loss = 0
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                     max_length=max_length, drop_last=True, shuffle=True, num_workers=num_workers)
-        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, max_length=max_length, drop_last=True,
+                                     sequence_length=sequence_length, drop_last=True, shuffle=True,
+                                     num_workers=num_workers)
+        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
+                                   drop_last=True,
                                    batch_size=batch_size, num_workers=num_workers)
         net.train()
         print('Training')
@@ -266,7 +267,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             # break
 
     print('Testing')
-    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, max_length=max_length,
+    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
                                 batch_size=batch_size, drop_last=False, num_workers=num_workers)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     process_time = 0
@@ -285,7 +286,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         if index == 0:
             macs, _ = profile(net, inputs=(inputs,), verbose=False)
-            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / max_length
+            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
                 int_outputs = net(inputs)
