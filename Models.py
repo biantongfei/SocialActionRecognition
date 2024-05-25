@@ -354,10 +354,7 @@ class GNN(nn.Module):
             nn.Linear(self.fc_input_size, 256),
             nn.ReLU(),
             nn.BatchNorm1d(256),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.BatchNorm1d(64),
-            nn.Linear(64, 16),
+            nn.Linear(256, 16),
             nn.ReLU(),
             nn.BatchNorm1d(16),
         )
