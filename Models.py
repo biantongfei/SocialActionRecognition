@@ -182,7 +182,7 @@ class Cnn1D(nn.Module):
         self.is_coco = is_coco
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
-        self.hidden_dim = 256 * math.ceil(math.ceil(math.ceil(sequence_length / 3) / 2) / 2)
+        self.hidden_dim = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
         self.cnn = nn.Sequential(
             nn.Conv1d(self.input_size, 64, kernel_size=7, stride=3, padding=3),
             nn.BatchNorm1d(64),
