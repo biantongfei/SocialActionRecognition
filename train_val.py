@@ -217,13 +217,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
             if framework == 'intention':
-                int_outputs = net(inputs)
+                int_outputs = torch.softmax(net(inputs), dim=1)
             elif framework == 'attitude':
-                att_outputs = net(inputs)
+                att_outputs = torch.softmax(net(inputs), dim=1)
             elif framework == 'action':
-                act_outputs = net(inputs)
+                act_outputs = torch.softmax(net(inputs), dim=1)
             else:
-                int_outputs, att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs = torch.softmax(net(inputs), dim=1)
             if 'intention' in tasks:
                 score, pred = torch.max(int_outputs, dim=1)
                 print(score)
@@ -308,13 +308,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
-                int_outputs = net(inputs)
+                int_outputs = torch.softmax(net(inputs), dim=1)
             elif framework == 'attitude':
-                att_outputs = net(inputs)
+                att_outputs = torch.softmax(net(inputs), dim=1)
             else:
-                act_outputs = net(inputs)
+                act_outputs = torch.softmax(net(inputs), dim=1)
         else:
-            int_outputs, att_outputs, act_outputs = net(inputs)
+            int_outputs, att_outputs, act_outputs = torch.softmax(net(inputs), dim=1)
         if 'intention' in tasks:
             score, pred = torch.max(int_outputs, dim=1)
             # int_pred = int_outputs.argmax(dim=1)
