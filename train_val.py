@@ -217,14 +217,15 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
             if framework == 'intention':
-                int_outputs = torch.softmax(net(inputs), dim=1)
+                int_outputs = net(inputs)
             elif framework == 'attitude':
-                att_outputs = torch.softmax(net(inputs), dim=1)
+                att_outputs = net(inputs)
             elif framework == 'action':
-                act_outputs = torch.softmax(net(inputs), dim=1)
+                act_outputs = net(inputs)
             else:
-                int_outputs, att_outputs, act_outputs = torch.softmax(net(inputs), dim=1)
+                int_outputs, att_outputs, act_outputs = net(inputs)
             if 'intention' in tasks:
+                int_outputs = torch.softmax(int_outputs, dim=1)
                 score, pred = torch.max(int_outputs, dim=1)
                 print(score)
                 print(score.shape)
@@ -233,12 +234,14 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 int_y_pred += pred.tolist()
                 int_y_score += score.tolist()
             if 'attitude' in tasks:
+                att_outputs = torch.softmax(att_outputs, dim=1)
                 score, pred = torch.max(att_outputs, dim=1)
                 # att_pred = att_outputs.argmax(dim=1)
                 att_y_true += att_labels.tolist()
                 att_y_pred += pred.tolist()
                 att_y_score += score.tolist()
             if 'action' in tasks:
+                act_outputs = torch.softmax(act_outputs, dim=1)
                 score, pred = torch.max(act_outputs, dim=1)
                 # act_pred = act_outputs.argmax(dim=1)
                 act_y_true += act_labels.tolist()
@@ -308,26 +311,29 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
-                int_outputs = torch.softmax(net(inputs), dim=1)
+                int_outputs = net(inputs)
             elif framework == 'attitude':
-                att_outputs = torch.softmax(net(inputs), dim=1)
+                att_outputs = net(inputs)
             else:
-                act_outputs = torch.softmax(net(inputs), dim=1)
+                act_outputs = net(inputs)
         else:
-            int_outputs, att_outputs, act_outputs = torch.softmax(net(inputs), dim=1)
+            int_outputs, att_outputs, act_outputs = net(inputs)
         if 'intention' in tasks:
+            int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
             # int_pred = int_outputs.argmax(dim=1)
             int_y_true += int_labels.tolist()
             int_y_pred += pred.tolist()
             int_y_score += score.tolist()
         if 'attitude' in tasks:
+            att_outputs = torch.softmax(att_outputs, dim=1)
             score, pred = torch.max(att_outputs, dim=1)
             # att_pred = att_outputs.argmax(dim=1)
             att_y_true += att_labels.tolist()
             att_y_pred += pred.tolist()
             att_y_score += score.tolist()
         if 'action' in tasks:
+            act_outputs = torch.softmax(act_outputs, dim=1)
             score, pred = torch.max(act_outputs, dim=1)
             # act_pred = act_outputs.argmax(dim=1)
             act_y_true += act_labels.tolist()
