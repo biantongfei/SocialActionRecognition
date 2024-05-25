@@ -12,7 +12,7 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 # for model in ['stgcn', 'msgcn']:
-for model in ['conv1d']:
+for model in ['lstm', 'conv1d']:
 # for model in ['gcn_lstm', 'stgcn']:
     performance_model = []
     i = 0

@@ -105,14 +105,10 @@ class RNN(nn.Module):
         self.lstm_attention = nn.Linear(self.hidden_size * 2, 1)
         # Readout layer
         self.fc = nn.Sequential(
-            nn.Linear(2 * self.hidden_size, 256),
+            nn.Linear(self.fc_input_size, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.BatchNorm1d(64),
-            nn.Linear(64, 16),
-            nn.ReLU(),
+            nn.Linear(128, 16),
             nn.BatchNorm1d(16),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
@@ -355,10 +351,14 @@ class GNN(nn.Module):
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
             self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * sequence_length)
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(self.fc_input_size, 256),
             nn.ReLU(),
-            nn.Linear(128, 16),
+            nn.BatchNorm1d(256),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.BatchNorm1d(64),
+            nn.Linear(64, 16),
+            nn.ReLU(),
             nn.BatchNorm1d(16),
         )
         self.intention_head = nn.Sequential(nn.ReLU(),
