@@ -194,7 +194,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                total_loss = loss_1 + loss_2 + loss_3
+                # total_loss = loss_1 + loss_2 + loss_3
+                total_loss = (1.0 / loss_1.item()) * loss_1 + (1.0 / loss_2.item()) * loss_2 + (
+                            1.0 / loss_3.item()) * loss_3
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
