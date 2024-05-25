@@ -226,6 +226,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 int_outputs, att_outputs, act_outputs = net(inputs)
             if 'intention' in tasks:
                 score, pred = torch.max(int_outputs, dim=1)
+                print(score)
+                print(score.shape)
                 # int_pred = int_outputs.argmax(dim=1)
                 int_y_true += int_labels.tolist()
                 int_y_pred += pred.tolist()
@@ -249,7 +251,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-            print(int_y_score)
             int_score = np.mean(int_y_score)
             result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
                 int_acc * 100, int_f1, int_score)
@@ -282,7 +283,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
