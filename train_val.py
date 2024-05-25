@@ -100,8 +100,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    # dataset = 'mixed+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -249,6 +249,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+            print(int_y_score)
             int_score = np.mean(int_y_score)
             result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
                 int_acc * 100, int_f1, int_score)
