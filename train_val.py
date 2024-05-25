@@ -194,9 +194,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                print(loss_1)
-                print(loss_2)
-                print(loss_3)
                 total_loss = loss_1 + loss_2 + loss_3
             optimizer.zero_grad()
             total_loss.backward()
@@ -279,7 +276,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             print(result_str + 'loss: %.4f' % total_loss)
             torch.cuda.empty_cache()
         # if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
-        if epoch == 30:
+        if epoch == 40:
             break
         else:
             intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
