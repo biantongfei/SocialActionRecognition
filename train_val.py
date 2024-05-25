@@ -157,6 +157,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     attitude_best_f1 = -1
     action_best_f1 = -1
     epoch = 1
+    epsilon = 1e-6
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
                                      sequence_length=sequence_length, drop_last=True, shuffle=True,
@@ -195,8 +196,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 # total_loss = loss_1 + loss_2 + loss_3
-                total_loss = (1.0 / loss_1.item()) * loss_1 + (1.0 / loss_2.item()) * loss_2 + (
-                            1.0 / loss_3.item()) * loss_3
+                total_loss = (1.0 / (loss_1.item() + epsilon)) * loss_1 + (1.0 / (loss_2.item() + epsilon)) * loss_2 + (
+                        1.0 / (loss_3.item() + epsilon)) * loss_3
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
