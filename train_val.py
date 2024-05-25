@@ -227,8 +227,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             if 'intention' in tasks:
                 int_outputs = torch.softmax(int_outputs, dim=1)
                 score, pred = torch.max(int_outputs, dim=1)
-                print(score)
-                print(score.shape)
                 # int_pred = int_outputs.argmax(dim=1)
                 int_y_true += int_labels.tolist()
                 int_y_pred += pred.tolist()
