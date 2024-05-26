@@ -196,6 +196,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 # total_loss = loss_1 + loss_2 + loss_3
+                losses = [loss_1, loss_2, loss_3]
+                # Compute inverse loss weights
+                weights = [1.0 / (loss.item() + epsilon) for loss in losses]
+                weight_sum = sum(weights)
+                weights = [w / weight_sum for w in weights]
+                # Compute weighted loss
+                total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
                 total_loss = (1.0 / (loss_1.item() + epsilon)) * loss_1 + (1.0 / (loss_2.item() + epsilon)) * loss_2 + (
                         1.0 / (loss_3.item() + epsilon)) * loss_3
             optimizer.zero_grad()
