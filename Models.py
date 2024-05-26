@@ -337,7 +337,7 @@ class GNN(nn.Module):
                 nn.BatchNorm1d(256),
                 nn.ReLU(),
                 nn.Dropout(0.5))
-            self.fc_input_size = 256 * math.ceil(math.ceil(math.ceil(sequence_length / 3) / 2) / 2)
+            self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
