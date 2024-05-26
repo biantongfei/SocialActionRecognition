@@ -349,7 +349,7 @@ class GNN(nn.Module):
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = int(self.pooling_rate * self.keypoint_hidden_dim * sequence_length)
+            self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length)
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 256),
             nn.ReLU(),
