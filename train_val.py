@@ -100,7 +100,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+halpe'
+    dataset = 'mixed+coco'
     # dataset = 'crop+halpe'
     # dataset = 'noise+halpe'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']

@@ -2,6 +2,7 @@ from train_val import train, draw_save, send_email
 
 body_part = [True, True, True]
 
+model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
@@ -11,9 +12,8 @@ framework = 'parallel'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-for model in ['gcn_lstm']:
-# for model in ['avg','lstm','conv1d']:
-# for model in ['gcn_conv1d', 'gcn_gcn']:
+for framework in ['parallel']:
+# for framework in ['intention', 'attitude', 'action', 'parallel', 'chain', 'tree']:
     performance_model = []
     i = 0
     while i < 10:
@@ -29,7 +29,7 @@ for model in ['gcn_lstm']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save(framework, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
