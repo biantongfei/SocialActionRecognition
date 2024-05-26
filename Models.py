@@ -441,8 +441,7 @@ class GNN(nn.Module):
                                            dtype=torch.int32, device=device).t().contiguous()
             time_edge_index = torch.cat([time_edge_index, time_edge_index.flip([0])], dim=1)
             time_edge_index, _ = add_self_loops(time_edge_index, num_nodes=self.sequence_length)
-            x_time = torch.zeros((x.shape[0], math.ceil(self.pooling_rate * x.shape[1] * self.keypoint_hidden_dim)),
-                                 dtype=dtype, device=device)
+            x_time = torch.zeros((x.shape[0], x.shape[1] * self.time_hidden_dim), dtype=dtype, device=device)
             for i in range(x.shape[0]):
                 x_t = x[i]
                 x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype=dtype, device=device)
