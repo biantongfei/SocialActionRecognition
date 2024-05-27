@@ -292,7 +292,6 @@ class GNN(nn.Module):
         self.time_hidden_dim = self.keypoint_hidden_dim * 64
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
-        self.task_weights = nn.Parameter(torch.ones(3))
         if body_part[0]:
             self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)

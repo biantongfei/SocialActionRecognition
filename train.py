@@ -6,14 +6,14 @@ model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
-framework = 'parallel'
-# framework = 'tree'
+# framework = 'parallel'
+framework = 'tree'
 # framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-for framework in ['parallel','tree','chain']:
-# for sequence_length in [5, 10, 15]:
+# for framework in ['parallel','tree','chain']:
+for sequence_length in [5, 10, 15, 20]:
     performance_model = []
     i = 0
     while i < 10:
@@ -29,7 +29,7 @@ for framework in ['parallel','tree','chain']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(framework, performance_model, framework)
+    draw_save(str(sequence_length), performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)

@@ -116,7 +116,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
                              '%s_y_true' % t: None, '%s_y_pred' % t: None}
-    num_workers = 24
+    num_workers = 8
     if model == 'avg':
         batch_size = avg_batch_size
     elif model == 'perframe':
@@ -200,8 +200,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                # total_loss = loss_1 + loss_2 + loss_3
-                losses = [loss_1, loss_2, loss_3]
+                total_loss = loss_1 + loss_2 + loss_3
+                # losses = [loss_1, loss_2, loss_3]
 
                 # Compute inverse loss weights
                 # weights = [1.0 / (loss.item() + epsilon) for loss in losses]
@@ -215,8 +215,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 # gradnorm_loss = compute_gradnorm(losses, initial_losses).to(device=device, dtype=dtype)
                 # weights = torch.softmax(net.task_weights, dim=0).to(device=device, dtype=dtype)
                 # total_loss = sum(weight * loss for weight, loss in zip(weights, losses)) + gradnorm_loss
-                #
-                total_loss = loss_1 + loss_2 + loss_3
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
