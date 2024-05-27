@@ -94,6 +94,15 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
+def compute_gradnorm(losses, initial_losses, alpha=0.16):
+    gradnorm_loss = 0.0
+    avg_loss = sum(losses) / len(losses)
+    for i, loss in enumerate(losses):
+        norm_loss = (loss / initial_losses[i]) ** alpha
+        gradnorm_loss += torch.abs(norm_loss - avg_loss)
+    return gradnorm_loss
+
+
 def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False):
     """
     :param
@@ -153,9 +162,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
-    intention_best_f1 = -1
-    attitude_best_f1 = -1
-    action_best_f1 = -1
     epoch = 1
     epsilon = 1e-6
     while True:
@@ -196,14 +202,21 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 # total_loss = loss_1 + loss_2 + loss_3
                 losses = [loss_1, loss_2, loss_3]
+
                 # Compute inverse loss weights
-                weights = [1.0 / (loss.item() + epsilon) for loss in losses]
-                weight_sum = sum(weights)
-                weights = [w / weight_sum for w in weights]
-                # Compute weighted loss
-                total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
-                # total_loss = (1.0 / (loss_1.item() + epsilon)) * loss_1 + (1.0 / (loss_2.item() + epsilon)) * loss_2 + (
-                #         1.0 / (loss_3.item() + epsilon)) * loss_3
+                # weights = [1.0 / (loss.item() + epsilon) for loss in losses]
+                # weight_sum = sum(weights)
+                # weights = [w / weight_sum for w in weights]
+                # # Compute weighted loss
+                # total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
+
+                # if epoch == 0:
+                #     initial_losses = [loss.item() for loss in losses]
+                # gradnorm_loss = compute_gradnorm(losses, initial_losses)
+                # weights = torch.softmax(model.task_weights, dim=0)
+                # total_loss = sum(weight * loss for weight, loss in zip(weights, losses)) + gradnorm_loss
+
+                total_loss = loss_1 + loss_2 + loss_3
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -284,13 +297,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_acc * 100, act_f1, act_score)
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        # if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
         if epoch == 50:
             break
         else:
-            # intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
-            # attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
-            # action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
             # break

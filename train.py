@@ -13,10 +13,10 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 for framework in ['parallel']:
-# for framework in ['intention', 'attitude', 'action', 'chain', 'tree']:
+# for framework in ['chain', 'tree']:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:

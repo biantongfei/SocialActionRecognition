@@ -93,7 +93,7 @@ def draw_observe_window_plots():
     l3 = plt.plot(windows, act_f1, 'b--', label='Action')
     plt.plot(windows, int_f1, 'ro-', windows, att_f1, 'g+-', windows, act_f1, 'b^-')
     plt.xlabel('Observation Window Size (Frame)')
-    plt.ylabel('F1 Score')
+    plt.ylabel('Confidence score')
     plt.legend()
     plt.show()
 
