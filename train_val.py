@@ -289,9 +289,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         if epoch == 50:
             break
         else:
-            intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
-            attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
-            action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
+            # intention_best_f1 = int_f1 if int_f1 > intention_best_f1 else intention_best_f1
+            # attitude_best_f1 = att_f1 if att_f1 > attitude_best_f1 else attitude_best_f1
+            # action_best_f1 = act_f1 if act_f1 > action_best_f1 else action_best_f1
             epoch += 1
             print('------------------------------------------')
             # break
