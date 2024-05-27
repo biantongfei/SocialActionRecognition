@@ -9,7 +9,7 @@ model = 'gcn_lstm'
 framework = 'parallel'
 # framework = 'tree'
 # framework = 'chain'
-ori_video = True
+ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 for framework in ['parallel']:
