@@ -210,7 +210,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 # # Compute weighted loss
                 # total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
 
-                if epoch == 0:
+                if epoch == 1:
                     initial_losses = [loss.item() for loss in losses]
                 gradnorm_loss = compute_gradnorm(losses, initial_losses).to(device=device, dtype=dtype)
                 weights = torch.softmax(model.task_weights, dim=0).to(device=device, dtype=dtype)
