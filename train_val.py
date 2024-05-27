@@ -116,7 +116,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
                              '%s_y_true' % t: None, '%s_y_pred' % t: None}
-    num_workers = 8
+    num_workers = 24
     if model == 'avg':
         batch_size = avg_batch_size
     elif model == 'perframe':
