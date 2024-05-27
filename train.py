@@ -12,8 +12,8 @@ framework = 'parallel'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-# for framework in ['parallel']:
-for sequence_length in [5, 10, 15]:
+for framework in ['parallel','tree','chain']:
+# for sequence_length in [5, 10, 15]:
     performance_model = []
     i = 0
     while i < 10:
