@@ -282,8 +282,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             act_score = np.mean(act_y_score)
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
                 act_acc * 100, act_f1, act_score)
-            print(result_str + 'loss: %.4f' % total_loss)
-            torch.cuda.empty_cache()
+        print(result_str + 'loss: %.4f' % total_loss)
+        torch.cuda.empty_cache()
         # if int_f1 <= intention_best_f1 and att_f1 <= attitude_best_f1 and act_f1 <= action_best_f1:
         if epoch == 50:
             break
