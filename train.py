@@ -9,11 +9,11 @@ model = 'gcn_lstm'
 framework = 'parallel'
 # framework = 'tree'
 # framework = 'chain'
-ori_video = False
+ori_video = True
 frame_sample_hop = 1
 sequence_length = 30
-# for framework in ['parallel']:
-for framework in ['intention', 'attitude', 'action', 'chain', 'tree']:
+for framework in ['parallel']:
+# for framework in ['intention', 'attitude', 'action', 'chain', 'tree']:
     performance_model = []
     i = 0
     while i < 10:
