@@ -163,8 +163,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                                      sequence_length=sequence_length, drop_last=True, shuffle=True,
                                      num_workers=num_workers)
         val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
-                                   drop_last=True,
-                                   batch_size=batch_size, num_workers=num_workers)
+                                   drop_last=True, batch_size=batch_size, num_workers=num_workers)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')

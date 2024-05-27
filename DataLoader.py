@@ -25,7 +25,7 @@ class JPLDataLoader(DataLoader):
     def __init__(self, is_coco, model, dataset, batch_size, sequence_length, drop_last=True, shuffle=False,
                  num_workers=1):
         super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                            drop_last=drop_last, num_workers=num_workers)
+                                            drop_last=False, num_workers=num_workers)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model == 'conv1d':
