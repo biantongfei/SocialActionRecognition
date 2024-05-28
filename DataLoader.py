@@ -91,6 +91,8 @@ class JPLDataLoader(DataLoader):
                     else:
                         edge_index = torch.Tensor(coco_hand_l_pair).t() - torch.full((2, len(coco_hand_l_pair)),
                                                                                      fill_value=head_point_num + coco_body_point_num)
+                    if type(d[i]) == int:
+                        continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
                     edge_index, _ = add_self_loops(edge_index, num_nodes=point_nums[i])
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]

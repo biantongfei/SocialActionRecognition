@@ -1,2 +1,2 @@
-a = [True, True]
-print(str(a))
+a = 1
+print(type(a) == int)
