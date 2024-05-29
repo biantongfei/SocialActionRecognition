@@ -32,8 +32,6 @@ def get_data_path(augment_method, is_coco):
 
 
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
-    print(augment_method)
-    print(type(augment_method))
     if augment_method in ['1', '2']:
         return get_tra_test_files_generalisation(augment_method)
     data_path = get_data_path(augment_method, is_coco)
@@ -87,9 +85,8 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
 
 
 def get_tra_test_files_generalisation(augment_method):
-    print(1111111111)
     tra_files, val_files, test_files = [], [], []
-    data_path = get_data_path('mixed+coco', True)
+    data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
     for file in files:
         if file[0] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'c']:
