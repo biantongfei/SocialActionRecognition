@@ -24,6 +24,8 @@ def summarize_features(feature_path):
         # print(feature)
         if 'json' not in feature:
             continue
+        if feature[0] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'c']:
+            continue
         with open(feature_path + feature, "r") as f:
             feature_json = json.load(f)
             f.close()
@@ -37,18 +39,22 @@ def summarize_features(feature_path):
         action_dict[feature_json['action_class']]['total_frames'] += feature_json['detected_frames_number']
 
     for c in intention_dict.keys():
-        print('intention: %s: {count:%d, avg_frames:%s}' % (
-            intention_class_list[c], intention_dict[c]['count'], '{:.2f}'.format(
-                intention_dict[c]['total_frames'] / intention_dict[c]['count'])))
+        if intention_dict[c]['count'] != 0:
+            print('intention: %s: {count:%d, avg_frames:%s}' % (
+                intention_class_list[c], intention_dict[c]['count'], '{:.2f}'.format(
+                    intention_dict[c]['total_frames'] / intention_dict[c]['count'])))
         # print('intention: %s: {count:%d}' % (intention_class_list[c], intention_dict[c]['count']))
     for c in attitude_dict.keys():
-        print('attitude: %s: {count:%d, avg_frames:%s}' % (
-            attitude_class_list[c], attitude_dict[c]['count'], '{:.2f}'.format(
-                attitude_dict[c]['total_frames'] / attitude_dict[c]['count'])))
+        if attitude_dict[c]['count'] != 0:
+            print('attitude: %s: {count:%d, avg_frames:%s}' % (
+                attitude_class_list[c], attitude_dict[c]['count'], '{:.2f}'.format(
+                    attitude_dict[c]['total_frames'] / attitude_dict[c]['count'])))
         # print('attitude: %s: {count:%d}' % (attitude_class_list[c], attitude_dict[c]['count']))
     for c in action_dict.keys():
-        print('action: %s: {count:%d, avg_frames:%s}' % (action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
-            action_dict[c]['total_frames'] / action_dict[c]['count'])))
+        if action_dict[c]['count'] != 0:
+            print('action: %s: {count:%d, avg_frames:%s}' % (
+            action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
+                action_dict[c]['total_frames'] / action_dict[c]['count'])))
         # print('action: %s: {count:%d}' % (action_class_list[c], action_dict[c]['count']))
 
 
@@ -442,8 +448,8 @@ def draw_keypoints(part):
 if __name__ == '__main__':
     # add_attitude_class()
     # refactor_jsons()
-    # feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
-    # summarize_features(feature_path)
+    feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
+    summarize_features(feature_path)
     # gaussion_augment()
     # files = os.listdir(feature_path)
     # files.sort()
@@ -457,4 +463,4 @@ if __name__ == '__main__':
     #     pre_video = file.split('p')[0]
     # mixed_augment()
     # add_attitude_class()
-    draw_keypoints('head')
+    # draw_keypoints('head')

@@ -12,7 +12,7 @@ import torch.nn.utils.rnn as rnn_utils
 from torch.optim.lr_scheduler import StepLR
 
 import numpy as np
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, recall_score
 import csv
 import smtplib
 from email.mime.text import MIMEText
@@ -36,7 +36,7 @@ def send_email(body):
     print("Email sent!")
 
 
-def draw_save(name, performance_model, framework):
+def draw_save(name, performance_model, framework, augment_method=False):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     with open('plots/%s.csv' % name, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
@@ -72,6 +72,14 @@ def draw_save(name, performance_model, framework):
                 else:
                     act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
                     act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
+            if augment_method in ['1', '2']:
+                r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
+                                                                                           att_y_true, att_y_pred,
+                                                                                           act_y_true, augment_method)
+                int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
+                att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
+                data.append(int_recall)
+                data.append(att_recall)
             spamwriter.writerow(data)
         csvfile.close()
     if 'intention' in tasks:
@@ -94,13 +102,18 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
     return torch.Tensor(y), torch.Tensor(y_hat)
 
 
-def compute_gradnorm(losses, initial_losses, alpha=0.16):
-    gradnorm_loss = 0.0
-    avg_loss = sum(losses) / len(losses)
-    for i, loss in enumerate(losses):
-        norm_loss = (loss / initial_losses[i]) ** alpha
-        gradnorm_loss += torch.abs(norm_loss - avg_loss)
-    return gradnorm_loss
+def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_true, augment_method):
+    unseen_actions = [8] if augment_method == '1' else [2, 6, 7, 9]
+    indexes = []
+    for i in range(action_y_true.shape[0]):
+        if action_y_true[i] in unseen_actions:
+            indexes.append(i)
+    indexes = torch.Tensor(indexes)
+    int_y_true = torch.index_select(int_y_true, 0, indexes)
+    int_y_pred = torch.index_select(int_y_pred, 0, indexes)
+    att_y_true = torch.index_select(att_y_true, 0, indexes)
+    att_y_pred = torch.index_select(att_y_pred, 0, indexes)
+    return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
 def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False):
@@ -294,6 +307,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             act_score = np.mean(act_y_score)
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
                 act_acc * 100, act_f1, act_score)
+        if augment_method in ['1', '2']:
+            r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
+                                                                                       att_y_true, att_y_pred,
+                                                                                       act_y_true, augment_method)
+            int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
+            att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
+            result_str += 'int_recall: %.4f%%, att_recall: %.4f, ' % (int_recall, att_recall)
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
         if epoch == 50:
@@ -397,6 +417,13 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (act_acc * 100, act_f1, act_score)
+    if augment_method in ['1', '2']:
+        r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
+                                                                                   att_y_true, att_y_pred,
+                                                                                   act_y_true, augment_method)
+        int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
+        att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
+        result_str += 'int_recall: %.4f%%, att_recall: %.4f, ' % (int_recall, att_recall)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -407,9 +434,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 if __name__ == '__main__':
     # model = 'avg'
     # model = 'conv1d'
-    model = 'lstm'
+    # model = 'lstm'
     # model = 'gcn_conv1d'
-    # model = 'gcn_lstm'
+    model = 'gcn_lstm'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     # model = 'msgcn'
@@ -418,8 +445,8 @@ if __name__ == '__main__':
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
-    framework = 'parallel'
-    # framework = 'tree'
+    # framework = 'parallel'
+    framework = 'tree'
     # framework = 'chain'
     ori_video = False
     frame_sample_hop = 1
