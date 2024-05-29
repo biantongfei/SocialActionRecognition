@@ -123,9 +123,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     :return:
     """
     # dataset = 'mixed+coco'
-    dataset = 'crop+coco'
+    # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
-    # dataset = '1+coco'
+    dataset = '1+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -321,7 +321,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
