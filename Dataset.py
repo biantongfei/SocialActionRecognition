@@ -32,6 +32,7 @@ def get_data_path(augment_method, is_coco):
 
 
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
+    print(augment_method)
     if augment_method in ['1', '2']:
         return get_tra_test_files_generalisation(augment_method)
     data_path = get_data_path(augment_method, is_coco)
