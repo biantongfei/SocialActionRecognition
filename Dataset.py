@@ -5,10 +5,9 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from torch_geometric.data import Data
 
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, valset_rate, \
-    testset_rate, video_fps, coco_body_l_pair, coco_head_l_pair, coco_hand_l_pair, halpe_body_l_pair, halpe_head_l_pair, \
+    testset_rate, coco_body_l_pair, coco_head_l_pair, coco_hand_l_pair, halpe_body_l_pair, halpe_head_l_pair, \
     halpe_hand_l_pair
 
 
@@ -95,9 +94,9 @@ def get_tra_test_files_generalisation(augment_method):
             elif '-ori_' in file:
                 test_files.append(file)
         else:
-            if augment_method == '1':
+            if augment_method == '1' and '-ori_' in file:
                 test_files.append(file)
-            elif '-ori_' in file:
+            else:
                 tra_files.append(file)
     random.shuffle(tra_files)
     val_files = tra_files[:int(valset_rate * len(tra_files))]

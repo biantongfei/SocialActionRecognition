@@ -108,6 +108,7 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     for i in range(action_y_true.shape[0]):
         if action_y_true[i] in unseen_actions:
             indexes.append(i)
+    print(indexes)
     indexes = torch.Tensor(indexes).to(torch.int64)
     int_y_true = torch.index_select(int_y_true, 0, indexes)
     int_y_pred = torch.index_select(int_y_pred, 0, indexes)
@@ -307,13 +308,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             act_score = np.mean(act_y_score)
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
                 act_acc * 100, act_f1, act_score)
-        if augment_method in ['1', '2']:
-            r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
-                                                                                       att_y_true, att_y_pred,
-                                                                                       act_y_true, augment_method)
-            int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
-            att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
-            result_str += 'int_recall: %.4f%%, att_recall: %.4f, ' % (int_recall, att_recall)
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
         if epoch == 50:
