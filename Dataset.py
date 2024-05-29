@@ -13,7 +13,6 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
 
 
 def get_data_path(augment_method, is_coco):
-    print(augment_method, 11111111)
     if augment_method == 'crop':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
@@ -24,7 +23,7 @@ def get_data_path(augment_method, is_coco):
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    elif augment_method == 'mixed':
+    elif augment_method in ['mixed', '1', '2']:
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
         else:
@@ -162,7 +161,6 @@ class Dataset(Dataset):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
-        self.augment_method = augment_method
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.model = model
