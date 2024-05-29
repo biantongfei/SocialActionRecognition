@@ -82,12 +82,12 @@ def draw_save(name, performance_model, framework, augment_method=False):
                 data.append(att_recall)
             spamwriter.writerow(data)
         csvfile.close()
-    if 'intention' in tasks:
-        plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
-    if 'attitude' in tasks:
-        plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
-    if 'action' in tasks:
-        plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
+    # if 'intention' in tasks:
+    #     plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
+    # if 'attitude' in tasks:
+    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    # if 'action' in tasks:
+    #     plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):
@@ -108,16 +108,12 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     for i in range(action_y_true.shape[0]):
         if action_y_true[i] in unseen_actions:
             indexes.append(i)
-    print(indexes)
     indexes = torch.Tensor(indexes).to(torch.int64)
     action_y_true = torch.index_select(action_y_true, 0, indexes)
     int_y_true = torch.index_select(int_y_true, 0, indexes)
     int_y_pred = torch.index_select(int_y_pred, 0, indexes)
     att_y_true = torch.index_select(att_y_true, 0, indexes)
     att_y_pred = torch.index_select(att_y_pred, 0, indexes)
-    print(action_y_true)
-    print(int_y_true)
-    print(int_y_pred)
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
@@ -319,7 +315,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,

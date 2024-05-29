@@ -11,12 +11,12 @@ model = 'gcn_lstm'
 framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
-sequence_length = 15
+sequence_length = 30
 # for framework in ['parallel','tree','chain']:
 for sequence_length in [30]:
     performance_model = []
     i = 0
-    while i < 1:
+    while i < 10:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
