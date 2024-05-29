@@ -87,6 +87,7 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
 
 
 def get_tra_test_files_generalisation(augment_method):
+    print(1111111111)
     tra_files, val_files, test_files = [], [], []
     data_path = get_data_path('mixed+coco', True)
     files = os.listdir(data_path)
