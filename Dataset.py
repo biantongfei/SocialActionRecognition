@@ -89,7 +89,6 @@ def get_tra_test_files_generalisation(augment_method):
     data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
     for file in files:
-        print(file)
         if file[0] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'c']:
             if augment_method == '1':
                 tra_files.append(file)
