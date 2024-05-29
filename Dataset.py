@@ -13,6 +13,7 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
 
 
 def get_data_path(augment_method, is_coco):
+    print(augment_method)
     if augment_method == 'crop':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
