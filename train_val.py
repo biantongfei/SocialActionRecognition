@@ -406,8 +406,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 
 if __name__ == '__main__':
     # model = 'avg'
-    model = 'conv1d'
-    # model = 'lstm'
+    # model = 'conv1d'
+    model = 'lstm'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
     # model = 'gcn_gcn'
