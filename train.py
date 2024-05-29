@@ -16,7 +16,7 @@ sequence_length = 15
 for sequence_length in [30]:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
