@@ -23,7 +23,7 @@ def get_data_path(augment_method, is_coco):
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    elif augment_method == 'mixed':
+    elif augment_method in ['mixed', '1', '2']:
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
         else:
