@@ -13,7 +13,7 @@ from constants import coco_body_point_num, halpe_body_point_num, head_point_num,
 
 
 def get_data_path(augment_method, is_coco):
-    print(augment_method,11111111)
+    print(augment_method, 11111111)
     if augment_method == 'crop':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
@@ -35,6 +35,7 @@ def get_data_path(augment_method, is_coco):
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     if augment_method in ['1', '2']:
         return get_tra_test_files_generalisation(augment_method)
+    print(222222222)
     data_path = get_data_path(augment_method, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
