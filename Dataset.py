@@ -85,7 +85,7 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
 
 def get_tra_test_files_generalisation(augment_method):
     tra_files, val_files, test_files = [], [], []
-    data_path = get_data_path('mixed', True)
+    data_path = get_data_path('crop', True)
     files = os.listdir(data_path)
     for file in files:
         if file[0] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'c']:
