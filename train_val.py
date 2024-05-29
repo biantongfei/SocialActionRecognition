@@ -108,7 +108,7 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     for i in range(action_y_true.shape[0]):
         if action_y_true[i] in unseen_actions:
             indexes.append(i)
-    indexes = torch.Tensor(indexes)
+    indexes = torch.Tensor(indexes).to(torch.int64)
     int_y_true = torch.index_select(int_y_true, 0, indexes)
     int_y_pred = torch.index_select(int_y_pred, 0, indexes)
     att_y_true = torch.index_select(att_y_true, 0, indexes)
