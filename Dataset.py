@@ -23,7 +23,7 @@ def get_data_path(augment_method, is_coco):
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    elif augment_method in ['mixed', '1', '2']:
+    elif augment_method == 'mixed':
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
         else:
@@ -33,6 +33,7 @@ def get_data_path(augment_method, is_coco):
 
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     print(augment_method)
+    print(type(augment_method))
     if augment_method in ['1', '2']:
         return get_tra_test_files_generalisation(augment_method)
     data_path = get_data_path(augment_method, is_coco)
