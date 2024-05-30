@@ -417,8 +417,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
                                                                                    att_y_true, att_y_pred,
                                                                                    act_y_true, augment_method)
-        int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
-        att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
+        int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
+        att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
         result_str += 'int_recall: %.4f%%, att_recall: %.4f, ' % (int_recall, att_recall)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
