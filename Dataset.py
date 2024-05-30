@@ -96,12 +96,12 @@ def get_tra_test_files_generalisation(augment_method):
         else:
             if augment_method == '1' and '-ori_' in file:
                 test_files.append(file)
-            else:
+            elif augment_method == '2':
                 tra_files.append(file)
     random.shuffle(tra_files)
-    print(len(tra_files), len(val_files), len(test_files))
     val_files = tra_files[:int(valset_rate * len(tra_files))]
     tra_files = tra_files[int(valset_rate * len(tra_files)):]
+    print(len(tra_files), len(val_files), len(test_files))
     return tra_files, val_files, test_files
 
 
