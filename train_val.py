@@ -181,7 +181,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    epsilon = 1e-6
     while True:
         train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
                                      sequence_length=sequence_length, drop_last=True, shuffle=True,

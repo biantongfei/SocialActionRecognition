@@ -99,6 +99,7 @@ def get_tra_test_files_generalisation(augment_method):
             else:
                 tra_files.append(file)
     random.shuffle(tra_files)
+    print(len(tra_files), len(val_files), len(test_files))
     val_files = tra_files[:int(valset_rate * len(tra_files))]
     tra_files = tra_files[int(valset_rate * len(tra_files)):]
     return tra_files, val_files, test_files
