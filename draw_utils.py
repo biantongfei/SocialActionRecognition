@@ -84,16 +84,19 @@ def draw_observe_window_plots():
     int_f1 = [0.858, 0.890, 0.892, 0.901, 0.913, 0.919, 0.911, 0.923]
     att_f1 = [0.733, 0.783, 0.812, 0.834, 0.843, 0.867, 0.878, 0.883]
     act_f1 = [0.558, 0.611, 0.646, 0.681, 0.686, 0.749, 0.762, 0.761]
-    # int_f1 = [0.5, 0.64, 0.79, 0.89]
-    # att_f1 = [0.4, 0.56, 0.68, 0.81]
-    # act_f1 = [0.3, 0.45, 0.58, 0.71]
+    # int_f1 = [0.868, 0.889, 0.894, 0.904]
+    # att_f1 = [0.757, 0.795, 0.804, 0.810]
+    # act_f1 = [0.558, 0.603, 0.652, 0.682]
 
     l1 = plt.plot(windows, int_f1, 'r--', label='Interest')
     l2 = plt.plot(windows, att_f1, 'g--', label='Attitude')
     l3 = plt.plot(windows, act_f1, 'b--', label='Action')
     plt.plot(windows, int_f1, 'ro-', windows, att_f1, 'g+-', windows, act_f1, 'b^-')
     plt.xlabel('Observation Window Size (Frame)')
-    plt.ylabel('Confidence score')
+    plt.ylabel('F1 score')
+    ax = plt.gca()
+    x_major_locator = plt.MultipleLocator(5)
+    ax.xaxis.set_major_locator(x_major_locator)
     plt.legend()
     plt.show()
 
