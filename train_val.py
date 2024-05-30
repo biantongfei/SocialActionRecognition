@@ -113,6 +113,10 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     int_y_pred = torch.index_select(int_y_pred, 0, indexes)
     att_y_true = torch.index_select(att_y_true, 0, indexes)
     att_y_pred = torch.index_select(att_y_pred, 0, indexes)
+    print(int_y_true)
+    print(int_y_pred)
+    print(att_y_true)
+    print(att_y_pred)
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
@@ -458,7 +462,7 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save(model, performance_model, framework, '1')
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
