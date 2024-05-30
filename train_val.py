@@ -113,10 +113,6 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     int_y_pred = torch.index_select(int_y_pred, 0, indexes)
     att_y_true = torch.index_select(att_y_true, 0, indexes)
     att_y_pred = torch.index_select(att_y_pred, 0, indexes)
-    print(int_y_true)
-    print(int_y_pred)
-    print(att_y_true)
-    print(att_y_pred)
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
