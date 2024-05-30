@@ -129,7 +129,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     # dataset = 'mixed+coco'
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
-    dataset = '1+coco'
+    dataset = '2+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -419,7 +419,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                                                                                    act_y_true, augment_method)
         int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
         att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
-        result_str += 'int_recall: %.4f%%, att_recall: %.4f, ' % (int_recall, att_recall)
+        result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
