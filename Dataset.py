@@ -151,6 +151,27 @@ def get_l_pair(is_coco, body_part):
     return l_pair
 
 
+def add_body_center(feature, index_body):
+    new_feature = torch.zeros((feature.shape[0], 5))
+    if index_body == 0:
+        center = [(feature[5:0] + feature[6:0]) / 2, (feature[5:1] + feature[6:1]) / 2]
+    elif index_body == 1:
+        center = [feature[30:0], feature[30:1]]
+    elif index_body == 2:
+        right_center = [feature[0:0], feature[0:1]]
+        left_center = [feature[21:0], feature[21:1]]
+    new_feature[:, :3] = feature
+    if index_body != 2:
+        new_feature[:, 3] = new_feature[:, 0] - torch.full((feature.shape[0], 1), center[0])
+        new_feature[:, 4] = new_feature[:, 1] - torch.full((feature.shape[0], 1), center[1])
+    else:
+        new_feature[:21, 3] = new_feature[:21, 0] - torch.full((feature.shape[0], 1), right_center[0])
+        new_feature[:21, 4] = new_feature[:21, 1] - torch.full((feature.shape[0], 1), right_center[1])
+        new_feature[21:, 3] = new_feature[21:, 0] - torch.full((feature.shape[0], 1), left_center[0])
+        new_feature[21:, 4] = new_feature[21:, 1] - torch.full((feature.shape[0], 1), left_center[1])
+    return new_feature
+
+
 class Dataset(Dataset):
     def __init__(self, data_files, augment_method, is_coco, body_part, model, frame_sample_hop, sequence_length=99999):
         super(Dataset, self).__init__()
@@ -261,6 +282,7 @@ class Dataset(Dataset):
                 b_p[index_body] = True
                 input_size = get_inputs_size(self.is_coco, b_p)
                 x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 3), 3))
+                # x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 3), 5))
                 frame_num = 0
                 while frame_num < int(self.sequence_length / self.frame_sample_hop):
                     if index == video_frame_num:
@@ -280,6 +302,7 @@ class Dataset(Dataset):
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                                # frame_feature = add_body_center(frame_feature, index_body)
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1

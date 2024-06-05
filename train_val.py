@@ -412,7 +412,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (act_acc * 100, act_f1, act_score)
-    if augment_method in ['1', '2']:
+    if augment_method not in ['mixed', 'crop', 'noise']:
         r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
                                                                                    att_y_true, att_y_pred,
                                                                                    act_y_true, augment_method)

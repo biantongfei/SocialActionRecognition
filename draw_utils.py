@@ -99,7 +99,9 @@ def draw_observe_window_plots():
     ax.xaxis.set_major_locator(x_major_locator)
     plt.legend()
     plt.show()
-
+def draw_attention_weight():
+    heatmap_data = np.zeros((300, 650))
+    points=[[]]
 
 if __name__ == '__main__':
     draw_observe_window_plots()
