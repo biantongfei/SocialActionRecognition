@@ -2,7 +2,7 @@ from train_val import train, draw_save, send_email
 
 body_part = [True, True, True]
 
-model = 'msgcn'
+model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
@@ -29,7 +29,7 @@ for sequence_length in [30]:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save('msgcn', performance_model, framework)
+    draw_save(model, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
