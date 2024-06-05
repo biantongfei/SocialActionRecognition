@@ -119,7 +119,7 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
-def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False):
+def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False, dataset='mixed+coco'):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -128,7 +128,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     # dataset = 'mixed+coco'
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
-    dataset = '0+coco'
+    # dataset = '0+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,

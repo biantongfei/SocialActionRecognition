@@ -13,7 +13,7 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 # for framework in ['parallel','tree','chain']:
-for sequence_length in [30]:
+for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
     performance_model = []
     i = 0
     while i < 10:
@@ -21,15 +21,15 @@ for sequence_length in [30]:
         # try:
         if sequence_length:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, sequence_length=sequence_length)
+                        ori_videos=ori_video, sequence_length=sequence_length, dataset=dataset)
         else:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video)
+                        ori_videos=ori_video, dataset=dataset)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save(dataset, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
