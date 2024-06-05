@@ -103,10 +103,9 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
 
 
 def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_true, augment_method):
-    unseen_actions = [8] if augment_method == '1' else [2, 6, 7, 9]
     indexes = []
     for i in range(action_y_true.shape[0]):
-        if action_y_true[i] in unseen_actions:
+        if action_y_true[i] == int(augment_method):
             indexes.append(i)
     indexes = torch.Tensor(indexes).to(torch.int64)
     int_y_true = torch.index_select(int_y_true, 0, indexes)
@@ -126,10 +125,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
     :return:
     """
-    dataset = 'mixed+coco'
+    # dataset = 'mixed+coco'
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
-    # dataset = '2+coco'
+    dataset = '0+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
