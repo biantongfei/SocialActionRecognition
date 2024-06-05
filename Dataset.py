@@ -22,7 +22,7 @@ def get_data_path(augment_method, is_coco):
             data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
         else:
             data_path = '../JPL_Augmented_Posefeatures/gaussian/halpe136/'
-    elif augment_method in ['mixed', '1', '2']:
+    elif augment_method in ['mixed', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
         if is_coco:
             data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
         else:
@@ -31,7 +31,7 @@ def get_data_path(augment_method, is_coco):
 
 
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
-    if augment_method.split('+')[0] not in ['mixed', 'crop', 'mnise']:
+    if augment_method.split('+')[0] not in ['mixed', 'crop', 'noise']:
         return get_tra_test_files_generalisation(augment_method)
     data_path = get_data_path(augment_method, is_coco)
     files = os.listdir(data_path)
@@ -85,7 +85,7 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
 
 def get_tra_test_files_generalisation(augment_method):
     tra_files, val_files, test_files = [], [], []
-    data_path = get_data_path('crop', True)
+    data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
     for file in files:
         with open(data_path + file, 'r') as f:
