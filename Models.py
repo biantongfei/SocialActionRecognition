@@ -278,6 +278,85 @@ class Cnn1D(nn.Module):
             return y1, y2, y3
 
 
+class Transformer(nn.Module):
+    def __init__(self, is_coco, body_part, framework, sequence_length):
+        super(Transformer, self).__init__()
+        self.is_coco = is_coco
+        self.input_size = get_inputs_size(is_coco, body_part)
+        self.framework = framework
+        model_dim, num_heads, num_layers, num_classes = 512, 8, 3, 16
+        self.embedding = nn.Embedding(3, model_dim)
+        self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
+        self.fc = nn.Sequential(
+            nn.Linear(model_dim, 256),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Linear(256, 16),
+            nn.ReLU(),
+            nn.BatchNorm1d(16),
+        )
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                            nn.Linear(16, intention_class_num)
+                                            )
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
+            self.attitude_head = nn.Sequential(nn.ReLU(),
+                                               nn.Linear(16, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(16, action_class_num)
+                                             )
+        elif self.framework == 'tree':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intention_class_num, action_class_num)
+                                             )
+        elif self.framework == 'chain':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             )
+
+    def forward(self, src):
+        src = self.embedding(src) + self.positional_encoding[:, :src.size(1), :]
+        src = src.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
+
+        transformer_output = self.transformer_encoder(src)
+        transformer_output = transformer_output.mean(dim=0)  # Global average pooling
+        y = self.fc(transformer_output)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
+            elif self.framework == 'attitude':
+                y = self.attitude_head(y)
+            elif self.framework == 'chain':
+                y = self.action_head(y)
+            return y
+        else:
+            y1 = self.intention_head(y)
+            if self.framework == 'parallel':
+                y2 = self.attitude_head(y)
+                y3 = self.action_head(y)
+            elif self.framework == 'tree':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1), dim=1))
+            elif self.framework == 'chain':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
+            return y1, y2, y3
+
+
 class GNN(nn.Module):
     def __init__(self, is_coco, body_part, framework, model, sequence_length):
         super(GNN, self).__init__()

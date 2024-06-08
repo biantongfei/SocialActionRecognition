@@ -83,14 +83,14 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     return tra_files, val_files, test_files
 
 
-def get_tra_test_files_generalisation(augment_method):
+def get_tra_test_files_generalisation():
     tra_files, val_files, test_files = [], [], []
     data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
     for file in files:
         with open(data_path + file, 'r') as f:
             feature_json = json.load(f)
-            if feature_json['action_class'] == int(augment_method):
+            if feature_json['action_class'] in [2, 4, 7, 8]:
                 if '-ori_' in file:
                     test_files.append(file)
             else:

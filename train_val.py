@@ -1,10 +1,10 @@
 from Dataset import Dataset, get_tra_test_files
-from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN
+from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import intention_class, attitude_classes, action_classes, dtype, device, avg_batch_size, \
     perframe_batch_size, conv1d_batch_size, rnn_batch_size, gcn_batch_size, stgcn_batch_size, msgcn_batch_size, \
-    learning_rate
+    learning_rate, tran_batch_size
 
 import torch
 from torch.nn import functional
@@ -126,7 +126,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     :return:
     """
     # dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
+    dataset = 'crop+coco'
     # dataset = 'noise+halpe'
     # dataset = '0+coco'
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
@@ -142,6 +142,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         batch_size = rnn_batch_size
     elif model == 'conv1d':
         batch_size = conv1d_batch_size
+    elif model == 'tran':
+        batch_size = tran_batch_size
     elif 'gcn_' in model:
         batch_size = gcn_batch_size
     elif model == 'stgcn':
@@ -169,6 +171,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = RNN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'conv1d':
         net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
+    elif model == 'tran':
+        net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework)
     elif 'gcn_' in model:
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
                   sequence_length=sequence_length)
@@ -191,7 +195,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
-            if model in ['avg', 'perframe', 'conv1d']:
+            if model in ['avg', 'perframe', 'conv1d', 'tran']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model == 'lstm':
@@ -241,7 +245,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
         net.eval()
         for data in val_loader:
-            if model in ['avg', 'perframe', 'conv1d']:
+            if model in ['avg', 'perframe', 'conv1d', 'tran']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model == 'lstm':
@@ -326,7 +330,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     start_time = time.time()
     net.eval()
     for index, data in enumerate(test_loader):
-        if model in ['avg', 'perframe', 'conv1d']:
+        if model in ['avg', 'perframe', 'conv1d', 'tran']:
             inputs, (int_labels, att_labels, act_labels) = data
             inputs = inputs.to(dtype=dtype, device=device)
         elif model == 'lstm':
@@ -429,9 +433,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
 if __name__ == '__main__':
     # model = 'avg'
     # model = 'conv1d'
+    model = 'tran'
     # model = 'lstm'
     # model = 'gcn_conv1d'
-    model = 'gcn_lstm'
+    # model = 'gcn_lstm'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     # model = 'msgcn'
@@ -441,8 +446,8 @@ if __name__ == '__main__':
     # framework = 'attitude'
     # framework = 'action'
     # framework = 'parallel'
-    framework = 'tree'
-    # framework = 'chain'
+    # framework = 'tree'
+    framework = 'chain'
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
