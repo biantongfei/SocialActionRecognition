@@ -28,7 +28,7 @@ class JPLDataLoader(DataLoader):
                                             drop_last=drop_last, num_workers=num_workers)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
-        elif model == 'conv1d':
+        elif model in ['conv1d', 'tran']:
             self.collate_fn = self.conv1d_collate_fn
         elif 'gcn_' in model:
             self.collate_fn = self.gcn_collate_fn
