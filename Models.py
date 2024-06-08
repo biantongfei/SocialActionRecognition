@@ -330,7 +330,7 @@ class Transformer(nn.Module):
 
     def forward(self, src):
         print(src.shape)
-        src = self.embedding(src.to(torch.long)) + self.positional_encoding
+        src = self.embedding(src) + self.positional_encoding
         src = src.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
 
         transformer_output = self.transformer_encoder(src)
