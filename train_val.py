@@ -217,6 +217,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs,_ = net(inputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -264,6 +265,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs,_ = net(inputs)
             if 'intention' in tasks:
                 int_outputs = torch.softmax(int_outputs, dim=1)
                 score, pred = torch.max(int_outputs, dim=1)
@@ -352,6 +354,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
         else:
             int_outputs, att_outputs, act_outputs = net(inputs)
+            # int_outputs, att_outputs, act_outputs,attention_weight = net(inputs)
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -426,6 +429,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
     return performance_model
 

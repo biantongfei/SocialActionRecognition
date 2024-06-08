@@ -285,7 +285,7 @@ class Transformer(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         model_dim, num_heads, num_layers, num_classes = 512, 8, 3, 16
-        self.embedding = nn.Embedding(3, model_dim)
+        self.embedding = nn.Embedding(self.input_size, model_dim)
         self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
@@ -329,8 +329,7 @@ class Transformer(nn.Module):
                                              )
 
     def forward(self, src):
-        src = self.embedding(src.to(torch.long))
-        src += self.positional_encoding[:, :src.size(1), :]
+        src = self.embedding(src.to(torch.long)) + self.positional_encoding
         src = src.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
 
         transformer_output = self.transformer_encoder(src)
@@ -549,7 +548,7 @@ class GNN(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            return y1, y2, y3
+            return y1, y2, y3, attention_weights
 
 
 def zero(x):
