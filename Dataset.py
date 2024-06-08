@@ -257,7 +257,7 @@ class Dataset(Dataset):
             features = features.reshape(1, features.size)
         elif self.model == 'perframe':
             label = [label for _ in range(int(features.shape[0]))]
-        elif self.model in ['lstm', 'conv1d']:
+        elif self.model in ['lstm', 'conv1d', 'tran']:
             features = torch.from_numpy(features)
         return features, label
 
