@@ -203,12 +203,12 @@ class Dataset(Dataset):
                     index += 1
                     if self.model in ['avg', 'perframe']:
                         self.features = feature
-                    elif self.model in ['lstm', 'conv1d']:
+                    elif self.model in ['lstm', 'conv1d', 'tran']:
                         self.features = [feature]
                 else:
                     if self.model in ['avg', 'perframe']:
                         self.features = np.append(self.features, feature, axis=0)
-                    elif self.model in ['lstm', 'conv1d']:
+                    elif self.model in ['lstm', 'conv1d', 'tran']:
                         self.features.append(feature)
             if model == 'perframe':
                 self.labels += label
@@ -371,7 +371,7 @@ class Dataset(Dataset):
     def __len__(self):
         if self.model in ['avg', 'perframe']:
             return self.features.shape[0]
-        elif self.model in ['lstm', 'gru', 'conv1d'] or 'gcn' in self.model:
+        elif self.model in ['lstm', 'gru', 'conv1d', 'tran'] or 'gcn' in self.model:
             return len(self.features)
 
 
