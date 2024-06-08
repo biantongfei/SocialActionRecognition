@@ -163,15 +163,13 @@ def add_body_center(feature, index_body):
         left_center = [int(feature[21, 0]), int(feature[21, 1])]
     new_feature[:, :3] = feature
     if index_body != 2:
-        print(new_feature[:, 0].shape)
-        print(np.full((feature.shape[0], 1), center[0]).shape)
-        new_feature[:, 3] = new_feature[:, 0] - np.full((feature.shape[0]), center[0])
-        new_feature[:, 4] = new_feature[:, 1] - np.full((feature.shape[0]), center[1])
+        new_feature[:, 3] = new_feature[:, 0] - np.full((feature.shape[0],), center[0])
+        new_feature[:, 4] = new_feature[:, 1] - np.full((feature.shape[0],), center[1])
     else:
-        new_feature[:21, 3] = new_feature[:21, 0] - np.full((feature.shape[0]), right_center[0])
-        new_feature[:21, 4] = new_feature[:21, 1] - np.full((feature.shape[0]), right_center[1])
-        new_feature[21:, 3] = new_feature[21:, 0] - np.full((feature.shape[0]), left_center[0])
-        new_feature[21:, 4] = new_feature[21:, 1] - np.full((feature.shape[0]), left_center[1])
+        new_feature[:21, 3] = new_feature[:21, 0] - np.full((21,), right_center[0])
+        new_feature[:21, 4] = new_feature[:21, 1] - np.full((21,), right_center[1])
+        new_feature[21:, 3] = new_feature[21:, 0] - np.full((21,), left_center[0])
+        new_feature[21:, 4] = new_feature[21:, 1] - np.full((21,), left_center[1])
     return new_feature
 
 
