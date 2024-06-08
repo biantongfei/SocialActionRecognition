@@ -153,7 +153,7 @@ def get_l_pair(is_coco, body_part):
 
 
 def add_body_center(feature, index_body):
-    new_feature = torch.zeros((feature.shape[0], 5))
+    new_feature = np.zeros((feature.shape[0], 5))
     if index_body == 0:
         center = [(feature[5:0] + feature[6:0]) / 2, (feature[5:1] + feature[6:1]) / 2]
     elif index_body == 1:
@@ -163,13 +163,13 @@ def add_body_center(feature, index_body):
         left_center = [feature[21:0], feature[21:1]]
     new_feature[:, :3] = feature
     if index_body != 2:
-        new_feature[:, 3] = new_feature[:, 0] - torch.full((feature.shape[0], 1), center[0])
-        new_feature[:, 4] = new_feature[:, 1] - torch.full((feature.shape[0], 1), center[1])
+        new_feature[:, 3] = new_feature[:, 0] - np.full((feature.shape[0], 1), center[0])
+        new_feature[:, 4] = new_feature[:, 1] - np.full((feature.shape[0], 1), center[1])
     else:
-        new_feature[:21, 3] = new_feature[:21, 0] - torch.full((feature.shape[0], 1), right_center[0])
-        new_feature[:21, 4] = new_feature[:21, 1] - torch.full((feature.shape[0], 1), right_center[1])
-        new_feature[21:, 3] = new_feature[21:, 0] - torch.full((feature.shape[0], 1), left_center[0])
-        new_feature[21:, 4] = new_feature[21:, 1] - torch.full((feature.shape[0], 1), left_center[1])
+        new_feature[:21, 3] = new_feature[:21, 0] - np.full((feature.shape[0], 1), right_center[0])
+        new_feature[:21, 4] = new_feature[:21, 1] - np.full((feature.shape[0], 1), right_center[1])
+        new_feature[21:, 3] = new_feature[21:, 0] - np.full((feature.shape[0], 1), left_center[0])
+        new_feature[21:, 4] = new_feature[21:, 1] - np.full((feature.shape[0], 1), left_center[1])
     return new_feature
 
 
