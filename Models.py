@@ -563,7 +563,8 @@ class GNN(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            return y1, y2, y3, attention_weights
+            return y1, y2, y3
+            # return y1, y2, y3, attention_weights
 
 
 def zero(x):
