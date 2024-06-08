@@ -329,7 +329,7 @@ class Transformer(nn.Module):
                                              )
 
     def forward(self, src):
-        src = self.embedding(src) + self.positional_encoding[:, :src.size(1), :]
+        src = self.embedding(src.to(torch.long)) + self.positional_encoding[:, :src.size(1), :]
         src = src.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
 
         transformer_output = self.transformer_encoder(src)
