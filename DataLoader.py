@@ -59,9 +59,9 @@ class JPLDataLoader(DataLoader):
             torch.zeros(
                 (
                     len(data) * self.sequence_length * (coco_body_point_num if self.is_coco else halpe_body_point_num),
-                    3)),
-            torch.zeros((len(data) * self.sequence_length * head_point_num, 3)),
-            torch.zeros((len(data) * self.sequence_length * hands_point_num, 3))], [
+                    5)),
+            torch.zeros((len(data) * self.sequence_length * head_point_num, 5)),
+            torch.zeros((len(data) * self.sequence_length * hands_point_num, 5))], [
             torch.zeros((2, len(data) * self.sequence_length * (
                     2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
                 coco_body_point_num if self.is_coco else halpe_body_point_num)))).to(
@@ -115,7 +115,7 @@ class JPLDataLoader(DataLoader):
             if index == 0:
                 for i in range(len(d[0])):
                     if type(d[0][i]) != int:
-                        input.append(torch.zeros((len(data), 3, d[0][i].shape[1], d[0][i].shape[2], 1)))
+                        input.append(torch.zeros((len(data), 5, d[0][i].shape[1], d[0][i].shape[2], 1)))
                         input[i][0] = torch.Tensor(d[0][i])
             else:
                 for i in range(len(d[0])):

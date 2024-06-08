@@ -155,12 +155,12 @@ def get_l_pair(is_coco, body_part):
 def add_body_center(feature, index_body):
     new_feature = np.zeros((feature.shape[0], 5))
     if index_body == 0:
-        center = [(feature[5:0] + feature[6:0]) / 2, (feature[5:1] + feature[6:1]) / 2]
+        center = [(feature[5, 0] + feature[6, 0]) / 2, (feature[5, 1] + feature[6, 1]) / 2]
     elif index_body == 1:
-        center = [feature[30:0], feature[30:1]]
+        center = [feature[30, 0], feature[30, 1]]
     elif index_body == 2:
-        right_center = [feature[0:0], feature[0:1]]
-        left_center = [feature[21:0], feature[21:1]]
+        right_center = [feature[0, 0], feature[0, 1]]
+        left_center = [feature[21, 0], feature[21, 1]]
     new_feature[:, :3] = feature
     if index_body != 2:
         new_feature[:, 3] = new_feature[:, 0] - np.full((feature.shape[0], 1), center[0])
