@@ -372,23 +372,23 @@ class GNN(nn.Module):
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         if body_part[0]:
-            self.GCN_body = GCN(in_channels=5, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[1]:
-            self.GCN_head = GCN(in_channels=5, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_head = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         if body_part[2]:
-            self.GCN_hand = GCN(in_channels=5, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
+            self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
-        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 5), 1)
+        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         if self.model == 'gcn_lstm':
             # self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
             #                           hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 5) * self.keypoint_hidden_dim,
+            self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
             self.fc_input_size = 128 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)

@@ -129,8 +129,7 @@ def get_inputs_size(is_coco, body_part):
         input_size += head_point_num
     if body_part[2]:
         input_size += hands_point_num
-    # return 3 * input_size
-    return 5 * input_size
+    return 3 * input_size
 
 
 def get_l_pair(is_coco, body_part):
@@ -150,27 +149,6 @@ def get_l_pair(is_coco, body_part):
         if body_part[2]:
             l_pair += halpe_hand_l_pair
     return l_pair
-
-
-def add_body_center(feature, index_body):
-    new_feature = np.zeros((feature.shape[0], 5))
-    if index_body == 0:
-        center = [int((feature[5, 0] + feature[6, 0]) / 2), int((feature[5, 1] + feature[6, 1]) / 2)]
-    elif index_body == 1:
-        center = [int(feature[30, 0]), int(feature[30, 1])]
-    elif index_body == 2:
-        right_center = [int(feature[0, 0]), int(feature[0, 1])]
-        left_center = [int(feature[21, 0]), int(feature[21, 1])]
-    new_feature[:, :3] = feature
-    if index_body != 2:
-        new_feature[:, 3] = new_feature[:, 0] - np.full((feature.shape[0],), center[0])
-        new_feature[:, 4] = new_feature[:, 1] - np.full((feature.shape[0],), center[1])
-    else:
-        new_feature[:21, 3] = new_feature[:21, 0] - np.full((21,), right_center[0])
-        new_feature[:21, 4] = new_feature[:21, 1] - np.full((21,), right_center[1])
-        new_feature[21:, 3] = new_feature[21:, 0] - np.full((21,), left_center[0])
-        new_feature[21:, 4] = new_feature[21:, 1] - np.full((21,), left_center[1])
-    return new_feature
 
 
 class Dataset(Dataset):
@@ -282,8 +260,7 @@ class Dataset(Dataset):
                 b_p = [False, False, False]
                 b_p[index_body] = True
                 input_size = get_inputs_size(self.is_coco, b_p)
-                # x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 3), 3))
-                x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 5), 5))
+                x_tensor = torch.zeros((int(self.sequence_length / self.frame_sample_hop), int(input_size / 3), 3))
                 frame_num = 0
                 while frame_num < int(self.sequence_length / self.frame_sample_hop):
                     if index == video_frame_num:
@@ -303,7 +280,6 @@ class Dataset(Dataset):
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
                                 frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
                                 frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                                frame_feature = add_body_center(frame_feature, index_body)
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
