@@ -172,7 +172,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     elif model == 'conv1d':
         net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif model == 'tran':
-        net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
                   sequence_length=sequence_length)
