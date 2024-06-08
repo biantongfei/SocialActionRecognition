@@ -285,7 +285,7 @@ class Transformer(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         model_dim, num_heads, num_layers, num_classes = 512, 8, 3, 16
-        self.embedding = nn.Embedding(self.input_size, model_dim)
+        self.embedding = nn.Linear(self.input_size, model_dim)
         self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
