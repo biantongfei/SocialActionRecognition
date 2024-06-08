@@ -329,7 +329,6 @@ class Transformer(nn.Module):
                                              )
 
     def forward(self, src):
-        print(src.shape)
         src = self.embedding(src) + self.positional_encoding
         src = src.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
 
@@ -418,6 +417,15 @@ class GNN(nn.Module):
                 nn.ReLU(),
                 nn.Dropout(0.5))
             self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
+        elif model == 'gcn_tran':
+            model_dim, num_heads, num_layers, num_classes = 512, 8, 3, 16
+            self.embedding = nn.Linear(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                                       model_dim)
+            self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
+
+            encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
+            self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+            self.fc_input_size = model_dim
         else:
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
@@ -516,6 +524,12 @@ class GNN(nn.Module):
             x = torch.transpose(x, 1, 2)
             x = self.time_model(x)
             x = x.flatten(1)
+        elif self.model == 'gcn_tran':
+            x = self.embedding(x) + self.positional_encoding
+            x = x.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
+
+            x = self.transformer_encoder(x)
+            x = x.mean(dim=0)  # Global average pooling
         else:
             time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
                                            dtype=torch.int32, device=device).t().contiguous()
