@@ -567,6 +567,7 @@ class GNN(nn.Module):
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             # return y1, y2, y3
+            print(attention_weights.shape)
             return y1, y2, y3, attention_weights
 
 

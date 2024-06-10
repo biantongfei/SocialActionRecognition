@@ -438,7 +438,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     # draw_training_process(trainging_process)
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(attention_weight.tolist())
+        for i in range(attention_weight.shape[0]):
+            writer.writerow(attention_weight[i].tolist())
+        file.close()
     return performance_model
 
 
