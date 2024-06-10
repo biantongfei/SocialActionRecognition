@@ -517,7 +517,8 @@ class GNN(nn.Module):
         x = x.permute(0, 2, 1)
         gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * gcn_attention_weights
-        print(x.shape)
+        gcn_attention_weights = gcn_attention_weights.view(x.shape[0], self.keypoint_hidden_dim, -1).mean(dim=0).mean(
+            dim=0)
         print(gcn_attention_weights.shape)
         x = x.permute(0, 2, 1)
         if self.model == 'gcn_lstm':
