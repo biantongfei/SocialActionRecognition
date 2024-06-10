@@ -519,7 +519,6 @@ class GNN(nn.Module):
         x = x * gcn_attention_weights
         gcn_attention_weights = gcn_attention_weights.view(x.shape[0], self.keypoint_hidden_dim, -1).mean(dim=0).mean(
             dim=0)
-        print(gcn_attention_weights.shape)
         x = x.permute(0, 2, 1)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
