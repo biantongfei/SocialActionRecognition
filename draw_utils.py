@@ -167,16 +167,16 @@ def draw_attention_weight():
 
 
 def draw_pie_chart():
-    sizes = [156, 47, 87]
-    labels = ['Interacting', 'Interested', 'Not Interested']
-    colors = ['yellowgreen', 'gold', 'lightskyblue']
+    sizes = [28, 25, 12, 30, 30, 31, 23, 24, 17, 70]
+    labels = ['Hand Shake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Point-Converse', 'Gaze', 'Leave', 'No Response']
+    colors = [(np.random.random(), np.random.random(), np.random.random()) for _ in labels]
 
     def make_autopct(values):
         def my_autopct(pct):
             total = sum(values)
             val = int(round(pct * total / 100.0))
             # 同时显示数值和占比的饼图
-            return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
+            return '{p:.1f}%  ({v:d})'.format(p=pct, v=val)
 
         return my_autopct
 
