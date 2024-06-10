@@ -90,7 +90,7 @@ def get_tra_test_files_generalisation():
     for file in files:
         with open(data_path + file, 'r') as f:
             feature_json = json.load(f)
-            if feature_json['action_class'] in [2, 4, 7, 8]:
+            if feature_json['action_class'] in [1,2, 4, 7, 8]:
                 if '-ori_' in file:
                     test_files.append(file)
             else:

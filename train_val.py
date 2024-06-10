@@ -105,7 +105,7 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
 def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_true, augment_method):
     indexes = []
     for i in range(action_y_true.shape[0]):
-        if action_y_true[i] in [2, 4, 7, 8]:
+        if action_y_true[i] in [1, 2, 4, 7, 8]:
             indexes.append(i)
     indexes = torch.Tensor(indexes).to(torch.int64)
     int_y_true = torch.index_select(int_y_true, 0, indexes)
