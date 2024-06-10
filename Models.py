@@ -517,7 +517,7 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         x = x.permute(1, 0, 2)
-        x, gxn_attention_weights = self.gcn_attention(x, x, x)
+        x, gcn_attention_weights = self.gcn_attention(x, x, x)
         x = x.permute(1, 0, 2)
         # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * gcn_attention_weights
