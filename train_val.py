@@ -325,7 +325,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
@@ -433,10 +433,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
-    with open(csv_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(attention_weight.tolist())
-        file.close()
+    # with open(csv_file, mode='a', newline='') as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow(attention_weight.tolist())
+    #     file.close()
     return performance_model
 
 
