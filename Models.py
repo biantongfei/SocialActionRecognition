@@ -516,9 +516,10 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        print(x.shape)
         x = x.permute(1, 0, 2)
+        print(x.shape)
         x, gcn_attention_weights = self.gcn_attention(x, x, x)
+        print(gcn_attention_weights.shape)
         x = x.permute(1, 0, 2)
         # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * gcn_attention_weights
@@ -572,7 +573,6 @@ class GNN(nn.Module):
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             # return y1, y2, y3
-            print(gcn_attention_weights.shape)
             return y1, y2, y3, gcn_attention_weights
 
 
