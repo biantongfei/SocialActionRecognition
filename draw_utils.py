@@ -166,6 +166,25 @@ def draw_attention_weight():
     plt.show()
 
 
+def draw_pie_chart():
+    sizes = [156, 47, 87]
+    labels = ['Interacting', 'Interested', 'Not Interested']
+    colors = ['yellowgreen', 'gold', 'lightskyblue']
+
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct * total / 100.0))
+            # 同时显示数值和占比的饼图
+            return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
+
+        return my_autopct
+
+    plt.pie(sizes, labels=labels, colors=colors, startangle=90, autopct=make_autopct(sizes))
+    plt.show()
+
+
 if __name__ == '__main__':
     # draw_observe_window_plots()
-    draw_attention_weight()
+    # draw_attention_weight()
+    draw_pie_chart()
