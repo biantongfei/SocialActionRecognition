@@ -420,7 +420,7 @@ class GNN(nn.Module):
                 nn.Dropout(0.5))
             self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
         elif model == 'gcn_tran':
-            model_dim, num_heads, num_layers, num_classes = 512, 8, 3, 16
+            model_dim, num_heads, num_layers, num_classes = 128, 8, 3, 16
             self.embedding = nn.Linear(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                        model_dim)
             self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
