@@ -327,9 +327,11 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             epoch += 1
             print('------------------------------------------')
             # break
+
+    print('Testing')
+    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
+                                batch_size=batch_size, drop_last=False, num_workers=num_workers)
     if oneshot:
-        test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
-                                    batch_size=batch_size, drop_last=False, num_workers=num_workers)
         net.train()
         print('Oneshot')
         progress_bar = tqdm(total=len(test_loader), desc='Progress')
@@ -367,10 +369,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
-
-    print('Testing')
-    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
-                                batch_size=batch_size, drop_last=False, num_workers=num_workers)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
     process_time = 0
     start_time = time.time()
