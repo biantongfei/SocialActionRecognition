@@ -30,9 +30,9 @@ def get_data_path(augment_method, is_coco):
     return data_path
 
 
-def get_tra_test_files(augment_method, is_coco, ori_videos=False, oneshot=False):
+def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     if augment_method.split('+')[0] not in ['mixed', 'crop', 'noise']:
-        return get_tra_test_files_generalisation(oneshot)
+        return get_tra_test_files_generalisation()
     data_path = get_data_path(augment_method, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
@@ -83,7 +83,7 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False, oneshot=False)
     return tra_files, val_files, test_files
 
 
-def get_tra_test_files_generalisation(oneshot):
+def get_tra_test_files_generalisation():
     tra_files, val_files, oneshot_files, test_files = [], [], [], []
     data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
@@ -91,23 +91,14 @@ def get_tra_test_files_generalisation(oneshot):
         with open(data_path + file, 'r') as f:
             feature_json = json.load(f)
             if feature_json['action_class'] in [1, 2, 4, 7, 8]:
-                if oneshot:
-                    if '-ori_' in file and index % 2 == 0:
-                        test_files.append(file)
-                    else:
-                        oneshot_files.append(file)
-                else:
-                    if '-ori_' in file:
-                        test_files.append(file)
+                if '-ori_' in file:
+                    test_files.append(file)
             else:
                 tra_files.append(file)
     random.shuffle(tra_files)
     val_files = tra_files[:int(valset_rate * len(tra_files))]
     tra_files = tra_files[int(valset_rate * len(tra_files)):]
-    if oneshot:
-        return tra_files, val_files, (oneshot_files, test_files)
-    else:
-        return tra_files, val_files, test_files
+    return tra_files, val_files, test_files
 
 
 def get_body_part(feature, is_coco, body_part):

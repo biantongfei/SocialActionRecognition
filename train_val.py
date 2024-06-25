@@ -163,9 +163,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                        model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    testset = Dataset(data_files=test_files[1] if oneshot else test_files, augment_method=augment_method,
-                      is_coco=is_coco, body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                      sequence_length=sequence_length)
+    testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
@@ -329,16 +328,12 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             print('------------------------------------------')
             # break
     if oneshot:
-        oneshotset = Dataset(data_files=test_files[0], augment_method=augment_method, is_coco=is_coco,
-                             body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                             sequence_length=sequence_length)
-        oneshot_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=oneshotset, batch_size=batch_size,
-                                       sequence_length=sequence_length, drop_last=True, shuffle=True,
-                                       num_workers=num_workers)
+        test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
+                                    batch_size=batch_size, drop_last=False, num_workers=num_workers)
         net.train()
         print('Oneshot')
-        progress_bar = tqdm(total=len(oneshot_loader), desc='Progress')
-        for data in oneshot_loader:
+        progress_bar = tqdm(total=len(test_loader), desc='Progress')
+        for data in test_loader:
             progress_bar.update(1)
             if model in ['avg', 'perframe', 'conv1d', 'tran']:
                 inputs, (int_labels, att_labels, act_labels) = data
