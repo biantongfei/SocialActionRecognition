@@ -158,7 +158,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     augment_method = dataset.split('+')[0]
     is_coco = True if 'coco' in dataset else False
     tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
-                                                          ori_videos=ori_videos)
+                                                          ori_videos=ori_videos, oneshot=oneshot)
     trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                        model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
@@ -333,8 +333,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                              body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
                              sequence_length=sequence_length)
         oneshot_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=oneshotset, batch_size=batch_size,
-                                     sequence_length=sequence_length, drop_last=True, shuffle=True,
-                                     num_workers=num_workers)
+                                       sequence_length=sequence_length, drop_last=True, shuffle=True,
+                                       num_workers=num_workers)
         net.train()
         print('Oneshot')
         progress_bar = tqdm(total=len(oneshot_loader), desc='Progress')

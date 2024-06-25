@@ -30,9 +30,9 @@ def get_data_path(augment_method, is_coco):
     return data_path
 
 
-def get_tra_test_files(augment_method, is_coco, ori_videos=False):
+def get_tra_test_files(augment_method, is_coco, ori_videos=False, oneshot=False):
     if augment_method.split('+')[0] not in ['mixed', 'crop', 'noise']:
-        return get_tra_test_files_generalisation()
+        return get_tra_test_files_generalisation(oneshot)
     data_path = get_data_path(augment_method, is_coco)
     files = os.listdir(data_path)
     ori_videos_dict = {}
