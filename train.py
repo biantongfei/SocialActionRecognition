@@ -7,14 +7,15 @@ model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
-framework = 'parallel'
+# framework = 'parallel'
 # framework = 'tree'
-# framework = 'chain'
+framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
-for model in ['gcn_trans']:
+oneshot = True
+for model in ['gcn_lstm']:
     # for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
     performance_model = []
     i = 0
@@ -23,10 +24,10 @@ for model in ['gcn_trans']:
         # try:
         if sequence_length:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, sequence_length=sequence_length, dataset=dataset)
+                        ori_videos=ori_video, sequence_length=sequence_length, dataset=dataset, oneshot=oneshot)
         else:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, dataset=dataset)
+                        ori_videos=ori_video, dataset=dataset, oneshot=oneshot)
         # except ValueError:
         #     continue
         performance_model.append(p_m)

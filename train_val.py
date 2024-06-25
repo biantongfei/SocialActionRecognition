@@ -119,7 +119,8 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
-def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False, dataset='mixed+coco'):
+def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False, dataset='mixed+coco',
+          oneshot=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -162,8 +163,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                        model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+    testset = Dataset(data_files=test_files[1] if oneshot else test_files, augment_method=augment_method,
+                      is_coco=is_coco, body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
+                      sequence_length=sequence_length)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
@@ -326,6 +328,50 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             epoch += 1
             print('------------------------------------------')
             # break
+    if oneshot:
+        oneshotset = Dataset(data_files=test_files[0], augment_method=augment_method, is_coco=is_coco,
+                             body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
+                             sequence_length=sequence_length)
+        oneshot_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=oneshotset, batch_size=batch_size,
+                                     sequence_length=sequence_length, drop_last=True, shuffle=True,
+                                     num_workers=num_workers)
+        net.train()
+        print('Oneshot')
+        progress_bar = tqdm(total=len(oneshot_loader), desc='Progress')
+        for data in oneshot_loader:
+            progress_bar.update(1)
+            if model in ['avg', 'perframe', 'conv1d', 'tran']:
+                inputs, (int_labels, att_labels, act_labels) = data
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif model == 'lstm':
+                (inputs, (int_labels, att_labels, act_labels)), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif 'gcn' in model:
+                inputs, (int_labels, att_labels, act_labels) = data
+            int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
+                dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
+            if framework == 'intention':
+                int_outputs = net(inputs)
+                total_loss = functional.cross_entropy(int_outputs, int_labels)
+            elif framework == 'attitude':
+                att_outputs = net(inputs)
+                total_loss = functional.cross_entropy(att_outputs, att_labels)
+            elif framework == 'action':
+                act_outputs = net(inputs)
+                total_loss = functional.cross_entropy(act_outputs, act_labels)
+            else:
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                total_loss = loss_1 + loss_2 + loss_3
+            optimizer.zero_grad()
+            total_loss.backward()
+            optimizer.step()
+            torch.cuda.empty_cache()
+        scheduler.step()
+        progress_bar.close()
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
