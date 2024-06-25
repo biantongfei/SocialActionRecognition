@@ -88,7 +88,6 @@ def get_tra_test_files_generalisation(oneshot):
     data_path = get_data_path('mixed', True)
     files = os.listdir(data_path)
     for index, file in enumerate(files):
-        print(file)
         with open(data_path + file, 'r') as f:
             feature_json = json.load(f)
             if feature_json['action_class'] in [1, 2, 4, 7, 8]:
@@ -106,7 +105,6 @@ def get_tra_test_files_generalisation(oneshot):
     val_files = tra_files[:int(valset_rate * len(tra_files))]
     tra_files = tra_files[int(valset_rate * len(tra_files)):]
     if oneshot:
-        print(len(tra_files), len(val_files), len(oneshot_files), len(test_files))
         return tra_files, val_files, (oneshot_files, test_files)
     else:
         return tra_files, val_files, test_files
