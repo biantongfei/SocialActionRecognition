@@ -519,7 +519,9 @@ class GNN(nn.Module):
         # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * gcn_attention_weights
         attn_output, gcn_attention_weights = self.gcn_attention(x, x, x)
+        print(x.shape, gcn_attention_weights.shape)
         x = attn_output.mean(dim=1)
+        print(x.shape)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
