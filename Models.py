@@ -518,7 +518,7 @@ class GNN(nn.Module):
         x = torch.cat(x_list, dim=2)
         # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * gcn_attention_weights
-        attn_output, gcn_attention_weights = self.attention(x, x, x)
+        attn_output, gcn_attention_weights = self.gcn_attention(x, x, x)
         x = attn_output.mean(dim=1)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
