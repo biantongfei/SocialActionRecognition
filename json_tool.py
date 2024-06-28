@@ -53,8 +53,8 @@ def summarize_features(feature_path):
     for c in action_dict.keys():
         if action_dict[c]['count'] != 0:
             print('action: %s: {count:%d, avg_frames:%s}' % (
-            action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
-                action_dict[c]['total_frames'] / action_dict[c]['count'])))
+                action_class_list[c], action_dict[c]['count'], '{:.2f}'.format(
+                    action_dict[c]['total_frames'] / action_dict[c]['count'])))
         # print('action: %s: {count:%d}' % (action_class_list[c], action_dict[c]['count']))
 
 
@@ -370,7 +370,7 @@ def add_attitude_class():
 
 
 def draw_keypoints(part):
-    frame_width, frame_height = 640, 480
+    frame_width, frame_height = 320, 240
     pair = []
     if part in ['body', 'both']:
         pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
@@ -404,7 +404,7 @@ def draw_keypoints(part):
         keypoint_range = [i for i in range(94, 136)]
     if part == 'both':
         keypoint_range = [i for i in range(136)]
-    with open('alphapose-results1.json', 'r') as f:
+    with open('examples/photos/1/alphapose-results.json', 'r') as f:
         json_file = json.load(f)
         f.close()
     for id, person in enumerate(json_file):
@@ -421,10 +421,12 @@ def draw_keypoints(part):
         # cv2.imshow('image', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        # if id == 0:
+        if id != 0:
+            continue
         plt.figure()
         x, y = [], []
         for index in range(len(person['keypoints'])):
+            print(index)
             if index % 3 == 0 and int(index / 3) in keypoint_range:
                 x.append(person['keypoints'][index])
                 y.append(frame_height - person['keypoints'][index + 1])
@@ -434,8 +436,8 @@ def draw_keypoints(part):
                      (frame_height - person['keypoints'][p[0] * 3 + 1],
                       frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
                      color='black')
-        plt.xlim((270, 310))
-        plt.ylim((240, 270))
+        # plt.xlim((270, 310))
+        # plt.ylim((240, 270))
         plt.tight_layout()
         frame = plt.gca()
         frame.axes.get_xaxis().set_visible(False)
@@ -448,8 +450,8 @@ def draw_keypoints(part):
 if __name__ == '__main__':
     # add_attitude_class()
     # refactor_jsons()
-    feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
-    summarize_features(feature_path)
+    # feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
+    # summarize_features(feature_path)
     # gaussion_augment()
     # files = os.listdir(feature_path)
     # files.sort()
@@ -463,4 +465,4 @@ if __name__ == '__main__':
     #     pre_video = file.split('p')[0]
     # mixed_augment()
     # add_attitude_class()
-    # draw_keypoints('head')
+    draw_keypoints('both')
