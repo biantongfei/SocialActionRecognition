@@ -277,10 +277,10 @@ class Dataset(Dataset):
                             elif frame['frame_id'] % self.frame_sample_hop == 0:
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
-                                # frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                                # frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                                frame_feature[:, 0] = frame_feature[:, 0] / frame_width
-                                frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                                frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
+                                frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width
+                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
