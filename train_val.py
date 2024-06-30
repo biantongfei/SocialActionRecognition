@@ -269,7 +269,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             elif framework == 'action':
                 act_outputs = net(inputs)
             else:
-                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs, _ = net(inputs)
             if 'intention' in tasks:
                 int_outputs = torch.softmax(int_outputs, dim=1)
                 score, pred = torch.max(int_outputs, dim=1)
@@ -359,6 +360,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs, _ = net(inputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -370,6 +372,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         scheduler.step()
         progress_bar.close()
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
+    attn_weight = []
     process_time = 0
     start_time = time.time()
     net.eval()
@@ -395,8 +398,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 act_outputs = net(inputs)
         else:
-            int_outputs, att_outputs, act_outputs = net(inputs)
-            # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
+            # int_outputs, att_outputs, act_outputs = net(inputs)
+            int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
+            attn_weight.append(attention_weight)
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -473,10 +477,12 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
-    # with open(csv_file, mode='a', newline='') as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow(attention_weight.tolist())
-    #     file.close()
+    attn_weight = torch.cat(attn_weight, dim=0)
+    print(attn_weight.shape)
+    with open(csv_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(attn_weight.tolist())
+        file.close()
     return performance_model
 
 

@@ -521,15 +521,18 @@ class GNN(nn.Module):
         # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         # x = x * gcn_attention_weights
 
-        print(x.shape)
         x = x.reshape(-1, (
             coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num,
                       self.keypoint_hidden_dim)
         x, gcn_attention_weights = self.gcn_attention(x, x, x)
-        print(x.shape, gcn_attention_weights.shape)
         x = x.reshape(-1, self.sequence_length, (
             coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num,
                       self.keypoint_hidden_dim)
+        x = x.reshape(-1, self.sequence_length, self.keypoint_hidden_dim * (
+                (coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num))
+        gcn_attention_weights = gcn_attention_weights.sum(axis=1).reshape(-1, (
+            coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num)
+        print(x.shape, gcn_attention_weights.shape)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
@@ -579,8 +582,8 @@ class GNN(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            return y1, y2, y3
-            # return y1, y2, y3, gcn_attention_weights
+            # return y1, y2, y3
+            return y1, y2, y3, gcn_attention_weights
 
 
 def zero(x):
