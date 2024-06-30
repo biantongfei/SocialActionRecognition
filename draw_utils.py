@@ -89,7 +89,7 @@ def draw_observe_window_plots():
     # att_f1 = [0.757, 0.795, 0.804, 0.810]
     # act_f1 = [0.558, 0.603, 0.652, 0.682]
 
-    l1 = plt.plot(windows, int_f1, 'r--', label='Interest')
+    l1 = plt.plot(windows, int_f1, 'r--', label='Intent')
     l2 = plt.plot(windows, att_f1, 'g--', label='Attitude')
     l3 = plt.plot(windows, act_f1, 'b--', label='Action')
     plt.plot(windows, int_f1, 'ro-', windows, att_f1, 'g+-', windows, act_f1, 'b^-')
@@ -185,6 +185,6 @@ def draw_pie_chart():
 
 
 if __name__ == '__main__':
-    # draw_observe_window_plots()
+    draw_observe_window_plots()
     # draw_attention_weight()
-    draw_pie_chart()
+    # draw_pie_chart()

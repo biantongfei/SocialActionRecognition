@@ -383,8 +383,8 @@ class GNN(nn.Module):
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-        # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
-        self.gcn_attention = nn.MultiheadAttention(embed_dim=sequence_length, num_heads=1, batch_first=True)
+        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
+        # self.gcn_attention = nn.MultiheadAttention(embed_dim=sequence_length, num_heads=1, batch_first=True)
         if self.model == 'gcn_lstm':
             # self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
             #                           hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
@@ -515,12 +515,12 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
-        # x = x * gcn_attention_weights
-        x = x.permute(0, 2, 1)
-        attn_output, gcn_attention_weights = self.gcn_attention(x, x, x)
-        print(x.shape, gcn_attention_weights.shape)
-        x = x.permute(0, 2, 1)
+        gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        x = x * gcn_attention_weights
+        # x = x.permute(0, 2, 1)
+        # attn_output, gcn_attention_weights = self.gcn_attention(x, x, x)
+        # print(x.shape, gcn_attention_weights.shape)
+        # x = x.permute(0, 2, 1)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
@@ -570,8 +570,8 @@ class GNN(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            # return y1, y2, y3
-            return y1, y2, y3, gcn_attention_weights
+            return y1, y2, y3
+            # return y1, y2, y3, gcn_attention_weights
 
 
 def zero(x):
