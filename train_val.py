@@ -395,8 +395,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 act_outputs = net(inputs)
         else:
-            # int_outputs, att_outputs, act_outputs = net(inputs)
-            int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
+            int_outputs, att_outputs, act_outputs = net(inputs)
+            # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -473,10 +473,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
-    with open(csv_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(attention_weight.tolist())
-        file.close()
+    # with open(csv_file, mode='a', newline='') as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow(attention_weight.tolist())
+    #     file.close()
     return performance_model
 
 
