@@ -528,7 +528,6 @@ class GNN(nn.Module):
         gcn_attention_weights = gcn_attention_weights.reshape(-1, self.sequence_length, int(self.input_size / 3),
                                                               int(self.input_size / 3))
         gcn_attention_weights = torch.mean(gcn_attention_weights, dim=(0, 1, 3))
-        print(x.shape, gcn_attention_weights.shape)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
