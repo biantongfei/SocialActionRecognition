@@ -222,7 +222,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
-                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs = net(inputs)
+                int_outputs, att_outputs, act_outputs, _ = net(inputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -359,7 +360,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
-                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs = net(inputs)
                 int_outputs, att_outputs, act_outputs, _ = net(inputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
