@@ -384,7 +384,7 @@ class GNN(nn.Module):
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
         # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
-        self.gcn_attention = nn.MultiheadAttention(embed_dim=self.keypoint_hidden_dim, num_heads=8, batch_first=True)
+        self.gcn_attention = nn.MultiheadAttention(embed_dim=self.keypoint_hidden_dim, num_heads=1, batch_first=True)
         if self.model == 'gcn_lstm':
             # self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
             #                           hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
