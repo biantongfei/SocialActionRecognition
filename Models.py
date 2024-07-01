@@ -542,6 +542,8 @@ class GNN(nn.Module):
 
         x = x.reshape(-1, int(self.input_size / 3), self.keypoint_hidden_dim)
         x, gcn_attention_weights = self.gcn_attention(x, x, x)
+        print(gcn_attention_weights[0, 0, :])
+        print(gcn_attention_weights[0, :, 0])
         x = x.reshape(-1, self.sequence_length, int(self.input_size / 3), self.keypoint_hidden_dim)
         x = x.reshape(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
         gcn_attention_weights = gcn_attention_weights.reshape(-1, self.sequence_length, int(self.input_size / 3),
