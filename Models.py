@@ -388,8 +388,8 @@ class GNN(nn.Module):
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             self.other_parameters += self.GCN_hand.parameters()
-        # self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
-        self.gcn_attention = nn.MultiheadAttention(embed_dim=self.keypoint_hidden_dim, num_heads=1, batch_first=True)
+        self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
+        # self.gcn_attention = nn.MultiheadAttention(embed_dim=self.keypoint_hidden_dim, num_heads=1, batch_first=True)
         self.attn_parameters += self.gcn_attention.parameters()
         if self.model == 'gcn_lstm':
             # self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
@@ -535,16 +535,16 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
 
-        # x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
-        #         (coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num))
-        # gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
-        # x = x * gcn_attention_weights
+        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
+                (coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num))
+        gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
+        x = x * gcn_attention_weights
 
-        x = x.reshape(-1, int(self.input_size / 3), self.keypoint_hidden_dim)
-        x, gcn_attention_weights = self.gcn_attention(x, x, x)
-        x = x.reshape(-1, self.sequence_length, int(self.input_size / 3), self.keypoint_hidden_dim)
-        x = x.reshape(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
-        gcn_attention_weights = torch.mean(gcn_attention_weights, dim=(0, 1))
+        # x = x.reshape(-1, int(self.input_size / 3), self.keypoint_hidden_dim)
+        # x, gcn_attention_weights = self.gcn_attention(x, x, x)
+        # x = x.reshape(-1, self.sequence_length, int(self.input_size / 3), self.keypoint_hidden_dim)
+        # x = x.reshape(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
+        # gcn_attention_weights = torch.mean(gcn_attention_weights, dim=(0, 1))
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
@@ -594,8 +594,8 @@ class GNN(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            # return y1, y2, y3
-            return y1, y2, y3, gcn_attention_weights
+            return y1, y2, y3
+            # return y1, y2, y3, gcn_attention_weights
 
 
 def zero(x):

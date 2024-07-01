@@ -283,10 +283,10 @@ class Dataset(Dataset):
                                     frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
-                                frame_feature[:, 0] = frame_feature[:, 0] / frame_width
-                                frame_feature[:, 1] = frame_feature[:, 1] / frame_height
-                                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width
+                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1

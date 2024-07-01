@@ -238,8 +238,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
-                # int_outputs, att_outputs, act_outputs = net(inputs)
-                int_outputs, att_outputs, act_outputs, _ = net(inputs)
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs, _ = net(inputs)
                 # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
@@ -287,8 +287,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             elif framework == 'action':
                 act_outputs = net(inputs)
             else:
-                # int_outputs, att_outputs, act_outputs = net(inputs)
-                int_outputs, att_outputs, act_outputs, _ = net(inputs)
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             if 'intention' in tasks:
                 int_outputs = torch.softmax(int_outputs, dim=1)
                 score, pred = torch.max(int_outputs, dim=1)
@@ -379,8 +379,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_outputs = net(inputs)
                 total_loss = functional.cross_entropy(act_outputs, act_labels)
             else:
-                # int_outputs, att_outputs, act_outputs = net(inputs)
-                int_outputs, att_outputs, act_outputs, _ = net(inputs)
+                int_outputs, att_outputs, act_outputs = net(inputs)
+                # int_outputs, att_outputs, act_outputs, _ = net(inputs)
                 # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
@@ -419,9 +419,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 act_outputs = net(inputs)
         else:
-            # int_outputs, att_outputs, act_outputs = net(inputs)
-            int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
-            attn_weight.append(attention_weight)
+            int_outputs, att_outputs, act_outputs = net(inputs)
+            # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
+            # attn_weight.append(attention_weight)
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -499,12 +499,12 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
-    attn_weight = torch.cat(attn_weight, dim=0)
-    print(attn_weight.shape)
-    with open(csv_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(attn_weight.tolist())
-        file.close()
+    # attn_weight = torch.cat(attn_weight, dim=0)
+    # print(attn_weight.shape)
+    # with open(csv_file, mode='a', newline='') as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow(attn_weight.tolist())
+    #     file.close()
     return performance_model
 
 
