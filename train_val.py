@@ -194,13 +194,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     if 'gcn_' not in model:
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     else:
-        para_list = []
-        for i in net.parameters():
-            if i not in net.gcn_attention.parameters():
-                para_list.append(i)
         optimizer = torch.optim.Adam([
-            {'params': para_list, 'lr': learning_rate},
-            {'params': net.gcn_attention.parameters(), 'lr': attn_learning_rate}
+            {'params': net.other_parameters, 'lr': learning_rate},
+            {'params': net.attn_parameters, 'lr': attn_learning_rate}
         ])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
