@@ -103,11 +103,8 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
 
 def filter_not_interacting_sample(att_y_true, att_y_output):
     mask = att_y_true != 2
-    print(att_y_true[mask])
     att_y_true = att_y_true[mask]
     att_y_output = att_y_output[mask].reshape(-1, att_y_output.size(1))
-    print(att_y_true)
-    print(att_y_output)
     return att_y_true, att_y_output
 
 
@@ -298,9 +295,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 int_y_score += score.tolist()
             if 'attitude' in tasks:
                 att_outputs = torch.softmax(att_outputs, dim=1)
+                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 score, pred = torch.max(att_outputs, dim=1)
                 # att_pred = att_outputs.argmax(dim=1)
-                att_labels, pred = filter_not_interacting_sample(att_labels, pred)
                 att_y_true += att_labels.tolist()
                 att_y_pred += pred.tolist()
                 att_y_score += score.tolist()
@@ -431,8 +428,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             int_y_score += score.tolist()
         if 'attitude' in tasks:
             att_outputs = torch.softmax(att_outputs, dim=1)
+            att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
             score, pred = torch.max(att_outputs, dim=1)
-            att_labels, pred = filter_not_interacting_sample(att_labels, pred)
             # att_pred = att_outputs.argmax(dim=1)
             att_y_true += att_labels.tolist()
             att_y_pred += pred.tolist()
