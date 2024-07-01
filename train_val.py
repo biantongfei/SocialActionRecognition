@@ -103,6 +103,9 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
 
 def filter_not_interacting_sample(att_y_true, att_y_output):
     mask = att_y_true != 2
+    print(att_y_true.shape)
+    print(mask)
+    print(att_y_true)
     att_y_true = att_y_true[mask].reshape(-1, att_y_true.size(1))
     att_y_output = att_y_output[mask].reshape(-1, att_y_output.size(1))
     print(mask)
