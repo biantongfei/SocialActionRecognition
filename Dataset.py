@@ -220,10 +220,14 @@ class Dataset(Dataset):
                     if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                         break
                     elif frame['frame_id'] % self.frame_sample_hop == 0:
+                        box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                            frame['box'][3]
                         frame_feature = np.array(frame['keypoints'])
                         frame_feature = get_body_part(frame_feature, self.is_coco, self.body_part)
-                        frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                        frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                        # frame_feature[:, 0] = frame_feature[:, 0] / frame_width
+                        # frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                        frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                        frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                         frame_feature = frame_feature.reshape(1, frame_feature.size)[0]
                         features.append(frame_feature)
         if len(features) == 0:
@@ -275,12 +279,14 @@ class Dataset(Dataset):
                             if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
                             elif frame['frame_id'] % self.frame_sample_hop == 0:
+                                box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                                    frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
-                                frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                                frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
-                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width
-                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                                frame_feature[:, 0] = frame_feature[:, 0] / frame_width
+                                frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
@@ -325,10 +331,14 @@ class Dataset(Dataset):
                             if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
                             elif frame['frame_id'] % self.frame_sample_hop == 0:
+                                box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
+                                    frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, bp)
-                                frame_feature[:, 0] = (2 * frame_feature[:, 0] / frame_width) - 1
-                                frame_feature[:, 1] = (2 * frame_feature[:, 1] / frame_height) - 1
+                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width
+                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height
+                                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                                 x_l[:, frame_num, :, 0] = frame_feature.T
                                 frame_num += 1
                 x_list[index_body] = x_l
