@@ -232,7 +232,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 total_loss = functional.cross_entropy(int_outputs, int_labels)
             elif framework == 'attitude':
                 att_outputs = net(inputs)
-                # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 total_loss = functional.cross_entropy(att_outputs, att_labels)
             elif framework == 'action':
                 act_outputs = net(inputs)
@@ -240,7 +240,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
                 # int_outputs, att_outputs, act_outputs, _ = net(inputs)
-                # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -300,7 +300,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 att_outputs = torch.softmax(att_outputs, dim=1)
                 score, pred = torch.max(att_outputs, dim=1)
                 # att_pred = att_outputs.argmax(dim=1)
-                # att_labels, pred = filter_not_interacting_sample(att_labels, pred)
+                att_labels, pred = filter_not_interacting_sample(att_labels, pred)
                 att_y_true += att_labels.tolist()
                 att_y_pred += pred.tolist()
                 att_y_score += score.tolist()
@@ -373,7 +373,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 total_loss = functional.cross_entropy(int_outputs, int_labels)
             elif framework == 'attitude':
                 att_outputs = net(inputs)
-                # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 total_loss = functional.cross_entropy(att_outputs, att_labels)
             elif framework == 'action':
                 act_outputs = net(inputs)
@@ -381,7 +381,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
                 # int_outputs, att_outputs, act_outputs, _ = net(inputs)
-                # att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
@@ -432,7 +432,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         if 'attitude' in tasks:
             att_outputs = torch.softmax(att_outputs, dim=1)
             score, pred = torch.max(att_outputs, dim=1)
-            # att_labels, pred = filter_not_interacting_sample(att_labels, pred)
+            att_labels, pred = filter_not_interacting_sample(att_labels, pred)
             # att_pred = att_outputs.argmax(dim=1)
             att_y_true += att_labels.tolist()
             att_y_pred += pred.tolist()

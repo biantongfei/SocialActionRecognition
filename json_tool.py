@@ -370,7 +370,7 @@ def add_attitude_class():
 
 
 def draw_keypoints(part):
-    frame_width, frame_height = 320, 240
+    frame_width, frame_height = 3200, 2400
     pair = []
     if part in ['body', 'both']:
         pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
