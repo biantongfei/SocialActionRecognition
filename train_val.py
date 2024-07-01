@@ -3,7 +3,7 @@ from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
-    gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, attn_learning_rate, tran_batch_size
+    gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size
 
 import torch
 from torch.nn import functional
@@ -181,8 +181,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     elif model == 'msgcn':
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
-    optimizer = torch.optim.Adam([{'params': net.parameters(), 'lr': learning_rate},
-                                  {'params': [net.gcn_attention.parameters()], 'lr': attn_learning_rate}])
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     csv_file = 'plots/attention_weight_log.csv'
