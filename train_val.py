@@ -182,7 +182,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam([{'params': net.parameters(), 'lr': learning_rate},
-                                  {'params': [net.gcn_attention], 'lr': attn_learning_rate}])
+                                  {'params': [net.gcn_attention.parameters()], 'lr': attn_learning_rate}])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     csv_file = 'plots/attention_weight_log.csv'
