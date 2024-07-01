@@ -464,6 +464,7 @@ class GNN(nn.Module):
         self.intention_head = nn.Sequential(nn.ReLU(),
                                             nn.Linear(16, intention_class_num)
                                             )
+        self.other_parameters += self.intention_head[1].parameters()
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
@@ -471,6 +472,7 @@ class GNN(nn.Module):
             self.action_head = nn.Sequential(nn.ReLU(),
                                              nn.Linear(16, action_class_num)
                                              )
+            self.other_parameters += self.attitude_head[1].parameters() + self.action_head[1].parameters()
         elif self.framework == 'tree':
             self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
@@ -480,6 +482,7 @@ class GNN(nn.Module):
                                              nn.ReLU(),
                                              nn.Linear(16 + intention_class_num, action_class_num)
                                              )
+            self.other_parameters += self.attitude_head[2].parameters() + self.action_head[2].parameters()
         elif self.framework == 'chain':
             self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
@@ -489,7 +492,7 @@ class GNN(nn.Module):
                                              nn.ReLU(),
                                              nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
                                              )
-        self.other_parameters += self.intention_head.parameters() + self.attitude_head.parameters() + self.action_head.parameters()
+            self.other_parameters += self.attitude_head[2].parameters() + self.action_head[2].parameters()
 
     def forward(self, data):
         x_list = []
