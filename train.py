@@ -15,7 +15,7 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['avg', 'lstm', 'conv1d']:
+for model in ['trans', 'gcn_lstm', 'gcn_conv1d', 'gcn_trans', 'gcn_gcn', 'stgcn']:
     # for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
     performance_model = []
     i = 0
