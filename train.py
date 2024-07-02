@@ -7,15 +7,15 @@ model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
-# framework = 'parallel'
+framework = 'parallel'
 # framework = 'tree'
-framework = 'chain'
+# framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['gcn_lstm']:
+for model in ['avg', 'lstm', 'conv1d']:
     # for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
     performance_model = []
     i = 0
