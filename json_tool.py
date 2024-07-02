@@ -370,41 +370,42 @@ def add_attitude_class():
 
 
 def draw_keypoints(part):
-    frame_width, frame_height = 3200, 2400
+    zoom_in = 1
+    frame_width, frame_height = 1084 * zoom_in, 1968 * zoom_in
+    plt.rcParams['figure.figsize'] = (frame_width/100, frame_height/100)
     pair = []
     if part in ['body', 'both']:
         pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
-                 [5, 18], [6, 18], [5, 7], [7, 9], [6, 8], [8, 10],  # Body
-                 [17, 18], [18, 19], [19, 11], [19, 12],
+                 [5, 7], [7, 9], [6, 8], [8, 10],  # Body
+                 [5, 6], [11, 12], [5, 11], [6, 12],
                  [11, 13], [12, 14], [13, 15], [14, 16],
-                 [20, 24], [21, 25], [23, 25], [22, 24], [15, 24], [16, 25]]  # Foot
-        keypoint_range = [i for i in range(26)]
+                 [15, 17], [15, 18], [15, 19], [16, 20], [16, 21], [16, 22]]
+        keypoint_range = [i for i in range(23)]
     if part in ['head', 'both']:
-        pair += [[26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32], [32, 33], [33, 34], [34, 35],
-                 [35, 36], [36, 37], [37, 38],  # Face
-                 [38, 39], [39, 40], [40, 41], [41, 42], [43, 44], [44, 45], [45, 46], [46, 47], [48, 49],
-                 [49, 50], [50, 51], [51, 52],  # Face
-                 [53, 54], [54, 55], [55, 56], [57, 58], [58, 59], [59, 60], [60, 61], [62, 63], [63, 64],
-                 [64, 65], [65, 66], [66, 67],  # Face
-                 [68, 69], [69, 70], [70, 71], [71, 72], [72, 73], [74, 75], [75, 76], [76, 77], [77, 78],
-                 [78, 79], [79, 80], [80, 81],  # Face
-                 [81, 82], [82, 83], [83, 84], [84, 85], [85, 86], [86, 87], [87, 88], [88, 89], [89, 90],
-                 [90, 91], [91, 92], [92, 93]]  # Face
-        keypoint_range = [i for i in range(26, 94)]
+        pair += [[23, 24], [24, 25], [25, 26], [26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32],
+                 [32, 33], [33, 34], [34, 35],
+                 [35, 36], [36, 37], [37, 38], [38, 39], [40, 41], [41, 42], [42, 43], [43, 44], [45, 46],
+                 [46, 47], [47, 48], [48, 49],
+                 [50, 51], [51, 52], [52, 53], [54, 55], [55, 56], [56, 57], [57, 58], [59, 60], [60, 61],
+                 [61, 62], [62, 63], [63, 64],
+                 [65, 66], [66, 67], [67, 68], [68, 69], [69, 70], [71, 72], [72, 73], [73, 74], [74, 75],
+                 [75, 76], [76, 77], [77, 78],
+                 [78, 79], [79, 80], [80, 81], [81, 82], [82, 83], [83, 84], [84, 85], [85, 86], [86, 87],
+                 [87, 88], [88, 89], [89, 90]]
+        keypoint_range = [i for i in range(23, 91)]
     if part in ['hand', 'both']:
-        pair += [[94, 95], [95, 96], [96, 97], [97, 98], [94, 99], [99, 100], [100, 101], [101, 102], [94, 103],
-                 [103, 104], [104, 105],  # LeftHand
-                 [105, 106], [94, 107], [107, 108], [108, 109], [109, 110], [94, 111], [111, 112], [112, 113],
-                 [113, 114],  # LeftHand
-                 [115, 116], [116, 117], [117, 118], [118, 119], [115, 120], [120, 121], [121, 122], [122, 123],
-                 [115, 124], [124, 125],  # RightHand
-                 [125, 126], [126, 127], [115, 128], [128, 129], [129, 130], [130, 131], [115, 132], [132, 133],
-                 [133, 134], [134, 135]  # RightHand
-                 ]
-        keypoint_range = [i for i in range(94, 136)]
+        pair += [[91, 92], [92, 93], [93, 94], [94, 95], [91, 96], [96, 97], [97, 98], [98, 99], [91, 100],
+                 [100, 101], [101, 102],
+                 [102, 103], [91, 104], [104, 105], [105, 106], [106, 107], [91, 108], [108, 109], [109, 110],
+                 [110, 111], [112, 113],
+                 [113, 114], [114, 115], [115, 116], [112, 117], [117, 118], [118, 119], [119, 120], [112, 121],
+                 [121, 122], [122, 123],
+                 [123, 124], [112, 125], [125, 126], [126, 127], [127, 128], [112, 129], [129, 130], [130, 131],
+                 [131, 132]]
+        keypoint_range = [i for i in range(91, 133)]
     if part == 'both':
-        keypoint_range = [i for i in range(136)]
-    with open('examples/photos/1/alphapose-results.json', 'r') as f:
+        keypoint_range = [i for i in range(133)]
+    with open('alphapose-results.json', 'r') as f:
         json_file = json.load(f)
         f.close()
     for id, person in enumerate(json_file):
@@ -424,27 +425,48 @@ def draw_keypoints(part):
         if id != 0:
             continue
         plt.figure()
-        x, y = [], []
+        x_body, y_body, x_face, y_face, x_hand, y_hand = [], [], [], [], [], []
         for index in range(len(person['keypoints'])):
-            print(index)
             if index % 3 == 0 and int(index / 3) in keypoint_range:
-                x.append(person['keypoints'][index])
-                y.append(frame_height - person['keypoints'][index + 1])
-        plt.scatter(x, y, marker='.', color='black')
+                if int(index / 3) in range(0, 23):
+                    x_body.append(person['keypoints'][index] * zoom_in)
+                    y_body.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+                elif int(index / 3) in range(23, 91):
+                    x_face.append(person['keypoints'][index] * zoom_in)
+                    y_face.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+                else:
+                    x_hand.append(person['keypoints'][index] * zoom_in)
+                    y_hand.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+        plt.scatter(x_body, y_body, marker='.', color='green')
+        plt.scatter(x_face, y_face, marker='.', color='orange')
+        plt.scatter(x_hand, y_hand, marker='.', color='red')
         for index, p in enumerate(pair):
-            plt.plot((person['keypoints'][p[0] * 3], person['keypoints'][p[1] * 3]),
-                     (frame_height - person['keypoints'][p[0] * 3 + 1],
-                      frame_height - person['keypoints'][p[1] * 3 + 1]), linewidth=2,
-                     color='black')
-        # plt.xlim((270, 310))
-        # plt.ylim((240, 270))
-        plt.tight_layout()
-        frame = plt.gca()
-        frame.axes.get_xaxis().set_visible(False)
-        frame.axes.get_yaxis().set_visible(False)
+            if index < 22:
+                plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                         (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                          frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                         color='green')
+            elif index < 82:
+                plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                         (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                          frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                         color='orange')
+            else:
+                plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                         (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                          frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                         color='red')
+        # plt.xlim((0, 1084 * zoom_in))
+        # plt.ylim((0, 1968 * zoom_in))
+        # plt.tight_layout()
+        # frame = plt.gca()
+        # frame.axes.get_xaxis().set_visible(False)
+        # frame.axes.get_yaxis().set_visible(False)
+        plt.axis('equal')
         plt.axis('off')
+        # plt.figure(figsize=(10, 20))
         plt.show()
-        # plt.savefig('%d.png' % id)
+        plt.savefig('pose.png')
 
 
 if __name__ == '__main__':
