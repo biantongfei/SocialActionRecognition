@@ -345,14 +345,6 @@ class Dataset(Dataset):
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         return x_list, label
 
-    def feature_transform(self, features, frame_width, frame_height):
-        l_pair = get_l_pair(self.is_coco, self.body_part)
-        frame_feature = np.zeros((len(l_pair), 2))
-        for index, pair in enumerate(l_pair):
-            frame_feature[index][0] = (features[pair[0]][0] - features[pair[1]][0]) / frame_width
-            frame_feature[index][1] = (features[pair[0]][1] - features[pair[1]][1]) / frame_height
-        return frame_feature
-
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
 
