@@ -372,12 +372,12 @@ def add_attitude_class():
 def draw_keypoints(part):
     zoom_in = 1
     frame_width, frame_height = 1084 * zoom_in, 1968 * zoom_in
-    plt.rcParams['figure.figsize'] = (frame_width/100, frame_height/100)
+    plt.rcParams['figure.figsize'] = (frame_width / 100, frame_height / 100)
     pair = []
     if part in ['body', 'both']:
         pair += [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
                  [5, 7], [7, 9], [6, 8], [8, 10],  # Body
-                 [5, 6], [11, 12], [5, 11], [6, 12],
+                 [5, 6], [11, 12], [5, 11], [6, 12], [0, 5], [0, 6], [1, 2],
                  [11, 13], [12, 14], [13, 15], [14, 16],
                  [15, 17], [15, 18], [15, 19], [16, 20], [16, 21], [16, 22]]
         keypoint_range = [i for i in range(23)]
@@ -405,7 +405,7 @@ def draw_keypoints(part):
         keypoint_range = [i for i in range(91, 133)]
     if part == 'both':
         keypoint_range = [i for i in range(133)]
-    with open('alphapose-results.json', 'r') as f:
+    with open('photos/0016/alphapose-results.json', 'r') as f:
         json_file = json.load(f)
         f.close()
     for id, person in enumerate(json_file):
@@ -428,30 +428,60 @@ def draw_keypoints(part):
         x_body, y_body, x_face, y_face, x_hand, y_hand = [], [], [], [], [], []
         for index in range(len(person['keypoints'])):
             if index % 3 == 0 and int(index / 3) in keypoint_range:
-                if int(index / 3) in range(0, 23):
+                if part == 'both':
+                    if int(index / 3) in range(0, 23):
+                        x_body.append(person['keypoints'][index] * zoom_in)
+                        y_body.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+                    elif int(index / 3) in range(23, 91):
+                        x_face.append(person['keypoints'][index] * zoom_in)
+                        y_face.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+                    else:
+                        x_hand.append(person['keypoints'][index] * zoom_in)
+                        y_hand.append(frame_height - person['keypoints'][index + 1] * zoom_in)
+                elif part == 'body':
                     x_body.append(person['keypoints'][index] * zoom_in)
                     y_body.append(frame_height - person['keypoints'][index + 1] * zoom_in)
-                elif int(index / 3) in range(23, 91):
+                elif part == 'head':
                     x_face.append(person['keypoints'][index] * zoom_in)
                     y_face.append(frame_height - person['keypoints'][index + 1] * zoom_in)
-                else:
+                elif part == 'hand':
                     x_hand.append(person['keypoints'][index] * zoom_in)
                     y_hand.append(frame_height - person['keypoints'][index + 1] * zoom_in)
-        plt.scatter(x_body, y_body, marker='.', color='green')
-        plt.scatter(x_face, y_face, marker='.', color='orange')
-        plt.scatter(x_hand, y_hand, marker='.', color='red')
+
+        if part in ['both', 'body']:
+            plt.scatter(x_body, y_body, marker='.', color='green')
+        if part in ['both', 'head']:
+            plt.scatter(x_face, y_face, marker='.', color='orange')
+        if part in ['both', 'hand']:
+            plt.scatter(x_hand, y_hand, marker='.', color='red')
         for index, p in enumerate(pair):
-            if index < 22:
+            if part == 'both':
+                if index < 22:
+                    plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                             (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                              frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                             color='green')
+                elif index < 82:
+                    plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                             (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                              frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                             color='orange')
+                else:
+                    plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
+                             (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
+                              frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
+                             color='red')
+            elif part == 'body':
                 plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
                          (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
                           frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
                          color='green')
-            elif index < 82:
+            elif part == 'head':
                 plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
                          (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
                           frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
                          color='orange')
-            else:
+            elif part == 'hand':
                 plt.plot((person['keypoints'][p[0] * 3] * zoom_in, person['keypoints'][p[1] * 3] * zoom_in),
                          (frame_height - person['keypoints'][p[0] * 3 + 1] * zoom_in,
                           frame_height - person['keypoints'][p[1] * 3 + 1] * zoom_in), linewidth=1,
@@ -466,7 +496,7 @@ def draw_keypoints(part):
         plt.axis('off')
         # plt.figure(figsize=(10, 20))
         plt.show()
-        plt.savefig('pose.png')
+        # plt.savefig('pose.png')
 
 
 if __name__ == '__main__':
@@ -487,4 +517,4 @@ if __name__ == '__main__':
     #     pre_video = file.split('p')[0]
     # mixed_augment()
     # add_attitude_class()
-    draw_keypoints('both')
+    draw_keypoints('hand')
