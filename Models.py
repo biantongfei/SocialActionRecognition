@@ -397,7 +397,7 @@ class GNN(nn.Module):
             #                           hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
             self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                       hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            self.other_parameters += self.time_model.parameters()
+            # self.other_parameters += self.time_model.parameters()
             self.fc_input_size = 128 * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
             # self.attn_parameters += self.lstm_attention.parameters()
@@ -468,7 +468,7 @@ class GNN(nn.Module):
         self.intention_head = nn.Sequential(nn.ReLU(),
                                             nn.Linear(16, intention_class_num)
                                             )
-        self.other_parameters += self.intention_head.parameters()
+        # self.other_parameters += self.intention_head.parameters()
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
                                                nn.Linear(16, attitude_class_num)
