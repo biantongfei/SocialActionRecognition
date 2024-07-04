@@ -7,12 +7,15 @@ from mmcv.cnn import MODELS as MMCV_MODELS
 from mmcv.utils import Registry
 from mmcv.runner import load_checkpoint
 
+from Dataset import get_inputs_size
+
 BACKBONES = Registry('models', parent=MMCV_MODELS)
 EPS = 1e-4
 
+
 class DGBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels, A, stride=1, residual=True, **kwargs):
+    def __init__(self, is_coco, body, in_channels, out_channels, A, stride=1, residual=True, **kwargs):
         super().__init__()
         # prepare kwargs for gcn and tcn
         common_args = ['act', 'norm', 'g1x1']
@@ -28,7 +31,10 @@ class DGBlock(nn.Module):
         assert len(kwargs) == 0
 
         self.gcn = dggcn(in_channels, out_channels, A, **gcn_kwargs)
-        self.tcn = dgmstcn(out_channels, out_channels, stride=stride, **tcn_kwargs)
+        body_part = [False, False, False]
+        body_part[body] = True
+        self.tcn = dgmstcn(out_channels, out_channels, stride=stride, num_joints=get_inputs_size(is_coco, body_part),
+                           **tcn_kwargs)
 
         self.relu = nn.ReLU()
 
@@ -66,9 +72,7 @@ class Model(nn.Module):
         self.is_coco = is_coco
         self.body = body
 
-
-
-        self.graph = Graph(is_coco,body)
+        self.graph = Graph(is_coco, body)
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.data_bn_type = data_bn_type
         self.kwargs = kwargs
@@ -96,7 +100,8 @@ class Model(nn.Module):
         self.down_stages = down_stages
         modules = []
         if self.in_channels != self.base_channels:
-            modules = [DGBlock(in_channels, base_channels, A.clone(), 1, residual=False, **lw_kwargs[0])]
+            modules = [DGBlock(self.is_coco, self.body, in_channels, base_channels, A.clone(), 1, residual=False,
+                               **lw_kwargs[0])]
 
         inflate_times = 0
         down_times = 0
@@ -107,7 +112,8 @@ class Model(nn.Module):
                 inflate_times += 1
             out_channels = int(self.base_channels * self.ch_ratio ** inflate_times + EPS)
             base_channels = out_channels
-            modules.append(DGBlock(in_channels, out_channels, A.clone(), stride, **lw_kwargs[i - 1]))
+            modules.append(
+                DGBlock(self.is_coco, self.body, in_channels, out_channels, A.clone(), stride, **lw_kwargs[i - 1]))
             down_times += (i in down_stages)
 
         if self.in_channels == self.base_channels:
@@ -117,7 +123,7 @@ class Model(nn.Module):
         self.gcn = nn.ModuleList(modules)
         self.pretrained = pretrained
 
-        fc_input=64
+        fc_input = 64
         self.fc = nn.Linear(fc_input, num_class)
 
     def init_weights(self):
