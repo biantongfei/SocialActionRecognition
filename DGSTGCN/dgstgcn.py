@@ -46,11 +46,12 @@ class DGBlock(nn.Module):
         return self.relu(x)
 
 
-class DGSTGCN(nn.Module):
+class Model(nn.Module):
 
     def __init__(self,
                  is_coco,
                  body,
+                 num_class,
                  in_channels=3,
                  base_channels=64,
                  ch_ratio=2,
@@ -116,6 +117,9 @@ class DGSTGCN(nn.Module):
         self.gcn = nn.ModuleList(modules)
         self.pretrained = pretrained
 
+        fc_input=64
+        self.fc = nn.Linear(fc_input, num_class)
+
     def init_weights(self):
         if isinstance(self.pretrained, str):
             self.pretrained = cache_checkpoint(self.pretrained)
@@ -134,4 +138,5 @@ class DGSTGCN(nn.Module):
             x = self.gcn[i](x)
 
         x = x.reshape((N, M) + x.shape[1:])
+        print(x.shape)
         return x

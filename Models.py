@@ -11,7 +11,7 @@ from torch_geometric.utils import add_self_loops
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
 from MSG3D.msg3d import Model as MsG3d
-from DGSTGCN.dgstgcn import DGSTGCN
+from DGSTGCN.dgstgcn import Model as DG_Model
 from constants import intention_class, attitude_classes, action_classes, device, dtype
 
 intention_class_num = len(intention_class)
@@ -984,11 +984,11 @@ class DGSTGCN(nn.Module):
         self.input_size = get_inputs_size(is_coco, body_part)
         self.framework = framework
         if self.body_part[0]:
-            self.DGSTGCN_body = DGSTGCN(is_coco, 0, 16).to(device)
+            self.DGSTGCN_body = DG_Model(is_coco, 0, 16).to(device)
         if self.body_part[1]:
-            self.DGSTGCN_head = DGSTGCN(is_coco, 1, 16).to(device)
+            self.DGSTGCN_head = DG_Model(is_coco, 1, 16).to(device)
         if self.body_part[2]:
-            self.DGSTGCN_hand = DGSTGCN(is_coco, 2, 16).to(device)
+            self.DGSTGCN_hand = DG_Model(is_coco, 2, 16).to(device)
         self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
         self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
                                             nn.ReLU(),
