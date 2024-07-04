@@ -122,7 +122,7 @@ class Model(nn.Module):
         self.gcn = nn.ModuleList(modules)
         self.pretrained = pretrained
 
-        fc_input = get_inputs_size(self.is_coco, self.body)
+        fc_input = get_inputs_size(self.is_coco, self.body_part)
         self.fc = nn.Linear(fc_input, num_class)
 
     def init_weights(self):
