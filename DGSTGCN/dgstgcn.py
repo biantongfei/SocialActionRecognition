@@ -72,7 +72,7 @@ class Model(nn.Module):
         self.body_part[body] = True
         self.num_point = int(get_inputs_size(self.is_coco, self.body_part) / 3)
 
-        self.graph = Graph(is_coco, self.body_part)
+        self.graph = Graph(is_coco, self.body_part, self.num_point)
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.data_bn_type = data_bn_type
         self.kwargs = kwargs
