@@ -92,7 +92,7 @@ class Graph:
         self.is_coco = is_coco
         self.body_part = body_part
         self.num_point = num_point
-        self.get_layout(layout, self.body_part)
+        self.get_layout(layout)
         self.hop_dis = get_hop_distance(self.num_node, self.inward, max_hop)
 
         assert hasattr(self, mode), f'Do Not Exist This Mode: {mode}'
@@ -101,7 +101,7 @@ class Graph:
     def __str__(self):
         return self.A
 
-    def get_layout(self, layout, body_part):
+    def get_layout(self, layout):
         if layout == 'openpose':
             self.num_node = 18
             self.inward = [
@@ -139,12 +139,12 @@ class Graph:
         elif layout == 'coco-wholebody':
             self.num_node = self.num_point
             previous_nodes = 0
-            if self.body != 0:
+            if not self.body_part[0]:
                 previous_nodes += coco_body_point_num if self.is_coco else halpe_body_point_num
-                previous_nodes += head_point_num if self.body == 2 else 0
+                previous_nodes += head_point_num if self.body_part[2] else 0
             self.inward = [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
                            get_l_pair(self.is_coco, self.body_part)]
-            self.center = 0 if self.body != 1 else 27
+            self.center = 27 if self.body_part[1] else 0
         else:
             raise ValueError(f'Do Not Exist This Layout: {layout}')
         self.self_link = [(i, i) for i in range(self.num_node)]
