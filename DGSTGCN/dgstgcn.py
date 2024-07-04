@@ -122,7 +122,7 @@ class Model(nn.Module):
         self.gcn = nn.ModuleList(modules)
         self.pretrained = pretrained
 
-        fc_input = get_inputs_size(self.is_coco, self.body_part)
+        fc_input = self.num_point * 8 * 256
         self.fc = nn.Linear(fc_input, num_class)
 
     def init_weights(self):
@@ -143,5 +143,6 @@ class Model(nn.Module):
             x = self.gcn[i](x)
 
         x = x.reshape((N, M) + x.shape[1:])
-        print(x.shape)
+        x = x.reshape(-1, 256 * 8 * self.num_point)
+        x = self.fc(x)
         return x
