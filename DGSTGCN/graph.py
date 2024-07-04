@@ -69,7 +69,8 @@ class Graph:
 
     def __init__(self,
                  is_coco,
-                 body,
+                 body_part,
+                 num_point,
                  layout='coco-wholebody',
                  mode='spatial',
                  max_hop=1,
@@ -89,9 +90,8 @@ class Graph:
         assert nx_node == 1 or mode == 'random', "nx_node can be > 1 only if mode is 'random'"
         # assert layout in ['openpose', 'nturgb+d', 'coco', 'handmp']
         self.is_coco = is_coco
-        self.body = body
-        self.body_part = [False, False, False]
-        self.body_part[body] = True
+        self.body_part = body_part
+        self.num_point = num_point
         self.get_layout(layout, self.body_part)
         self.hop_dis = get_hop_distance(self.num_node, self.inward, max_hop)
 
@@ -137,7 +137,7 @@ class Graph:
             ]
             self.center = 0
         elif layout == 'coco-wholebody':
-            self.num_node = int(get_inputs_size(self.is_coco, body_part) / 3)
+            self.num_node = self.num_point
             previous_nodes = 0
             if self.body != 0:
                 previous_nodes += coco_body_point_num if self.is_coco else halpe_body_point_num
