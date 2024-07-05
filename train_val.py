@@ -84,8 +84,8 @@ def draw_save(name, performance_model, framework, augment_method=False):
         csvfile.close()
     if 'intention' in tasks:
         plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
-    if 'attitude' in tasks:
-        plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    # if 'attitude' in tasks:
+    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
     if 'action' in tasks:
         plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
