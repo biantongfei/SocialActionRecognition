@@ -5,8 +5,9 @@ import torch
 from torch import nn
 import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
-from torch_geometric.nn import GCN, GAT, GIN, global_mean_pool, TopKPooling, SAGPooling, ASAPooling
+from torch_geometric.nn import GCN, TopKPooling
 from torch_geometric.utils import add_self_loops
+import torchvision.models.video as models
 
 from Dataset import get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num
 from graph import Graph, ConvTemporalGraphical
@@ -1036,6 +1037,71 @@ class DGSTGCN(nn.Module):
             y = self.DGSTGCN_hand(x=x[2].to(dtype=dtype, device=device)).to(dtype=dtype, device=device)
             y_list.append(y)
         y = torch.cat(y_list, dim=1)
+        if self.framework in ['intention', 'attitude', 'action']:
+            if self.framework == 'intention':
+                y = self.intention_head(y)
+            elif self.framework == 'attitude':
+                y = self.attitude_head(y)
+            elif self.framework == 'chain':
+                y = self.action_head(y)
+            return y
+        else:
+            y1 = self.intention_head(y)
+            if self.framework == 'parallel':
+                y2 = self.attitude_head(y)
+                y3 = self.action_head(y)
+            elif self.framework == 'tree':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1), dim=1))
+            elif self.framework == 'chain':
+                y2 = self.attitude_head(torch.cat((y, y1), dim=1))
+                y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
+            return y1, y2, y3
+
+
+class R3D(nn.Module):
+    def __init__(self, framework):
+        super(R3D, self).__init__()
+        num_classes = 16
+        self.framework = framework
+        self.resnet3d = models.r3d_18(pretrained=False)
+        self.resnet3d.fc = nn.Linear(self.resnet3d.fc.in_features, num_classes)
+        self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
+                                            nn.ReLU(),
+                                            nn.Linear(16 * self.body_part.count(True), intention_class_num)
+                                            )
+        if self.framework in ['parallel', 'intention', 'attitude', 'action']:
+            self.attitude_head = nn.Sequential(nn.ReLU(),
+                                               nn.Linear(16 * self.body_part.count(True), attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(16 * self.body_part.count(True), action_class_num)
+                                             )
+        elif self.framework == 'tree':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                                         attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                                       action_class_num)
+                                             )
+        elif self.framework == 'chain':
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+                                               nn.ReLU(),
+                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
+                                                         attitude_class_num)
+                                               )
+            self.action_head = nn.Sequential(
+                nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num + attitude_class_num),
+                nn.ReLU(),
+                nn.Linear(16 * self.body_part.count(True) + intention_class_num + attitude_class_num, action_class_num)
+            )
+
+    def forward(self, x):
+        y = self.resnet3d(x)
         if self.framework in ['intention', 'attitude', 'action']:
             if self.framework == 'intention':
                 y = self.intention_head(y)

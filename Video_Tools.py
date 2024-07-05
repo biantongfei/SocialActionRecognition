@@ -4,6 +4,7 @@ import random
 
 import cv2
 import xlrd
+import matplotlib.pyplot as plt
 
 
 def read_jpl_labels():
@@ -253,7 +254,7 @@ def label_video(video_name, fps):
                             index1 += 1
                         elif int(coco_new_json['persons'][int(answer[1])]['frames'][index1]['image_id'].split('.')[
                                      0]) > int(
-                                coco_persons[person_id][index2]['image_id'].split('.')[0]):
+                            coco_persons[person_id][index2]['image_id'].split('.')[0]):
                             coco_frames.append(coco_persons[person_id][index2])
                             halpe_frames.append(halpe_person[person_id][index2])
                             index2 += 1
@@ -360,6 +361,27 @@ def edit_videos():
                 cv2.destroyAllWindows()
 
 
+def draw_keypoints():
+    with open('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/1_1-resize75-0_p1.json', 'r') as f:
+        json_file = json.load(f)
+        f.close()
+    frame_width, frame_height = json_file['frame_size'][0], json_file['frame_size'][1]
+    print(frame_width, frame_height)
+    for frame in json_file['frames']:
+        x, y = [], []
+        for point in frame['keypoints']:
+            x.append(point[0])
+            y.append(point[1])
+        bx, by, w, h = frame['box']
+        plt.scatter(x, y, marker='.', color='green')
+        plt.plot((bx, by), (bx + w, by), linewidth=1, color='black')
+        plt.plot((bx, by), (bx, by + h), linewidth=1, color='black')
+        plt.axis('equal')
+        plt.axis('off')
+        plt.show()
+        break
+
+
 if __name__ == "__main__":
     # for i in range(178, 224):
     #     print(i)
@@ -368,7 +390,7 @@ if __name__ == "__main__":
     # del_json_content('12_2', 1, 245, False)
     # select_user_from_jpl()
     # video_augmentation('../JPL_Augmented_Posefeatures/more_video_ori2/', '../JPL_Augmented_Posefeatures/more_video/')
-    label_person_id('Wantest9_2-ori-flip.avi', 1)
+    # label_person_id('Wantest9_2-ori-flip.avi', 1)
     # refactor_jsons()
 
     # video_files = os.listdir('jpl_augmented/videos/')
@@ -393,3 +415,4 @@ if __name__ == "__main__":
     #     if flag:
     #         break
     # edit_videos()
+    draw_keypoints()

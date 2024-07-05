@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import cv2
 
 import numpy as np
 import torch
@@ -9,6 +10,8 @@ from torch.utils.data import Dataset
 from constants import coco_body_point_num, halpe_body_point_num, head_point_num, hands_point_num, valset_rate, \
     testset_rate, coco_body_l_pair, coco_head_l_pair, coco_hand_l_pair, halpe_body_l_pair, halpe_head_l_pair, \
     halpe_hand_l_pair
+
+video_path = '../jpl_augmented_videos/'
 
 
 def get_data_path(augment_method, is_coco):
@@ -355,16 +358,77 @@ class Dataset(Dataset):
             return len(self.features)
 
 
+class ImagesDataset(Dataset):
+    def __init__(self, data_files, frame_sample_hop, sequence_length):
+        self.frame_sample_hop = frame_sample_hop
+        self.json_files = data_files
+        self.sequence_length = sequence_length
+        self.json_data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
+        self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
+        self.get_bboxes_labels_from_file()
+        self.json_files = [item for item in self.json_files if item not in self.null_files]
+        self.r3d_image_size = 112
+
+    def get_bboxes_labels_from_file(self):
+        for file in self.json_files:
+            bboxes = {}
+            with open(self.json_data_path + file, 'r') as f:
+                feature_json = json.load(f)
+                f.close()
+            for frame in feature_json['frames']:
+                if frame['frame_id'] <= self.sequence_length:
+                    bboxes[frame['frame_id']] = frame['box']
+            if len(bboxes.keys()) == 0:
+                self.null_files.append(file)
+                continue
+            self.video_files.append(feature_json['video_name'])
+            self.bboxes.append(bboxes)
+            self.labels.append((feature_json['intention_class'], feature_json['attitude_class'],
+                                feature_json['action_class']))
+
+    def __len__(self):
+        return len(self.json_files)
+
+    def __getitem__(self, item):
+        return self.get_images_from_file(item), self.labels[item]
+
+    def get_images_from_file(self, item):
+        video_file = self.video_files[item]
+        print(video_file)
+        print(self.json_files[item])
+        cap = cv2.VideoCapture(video_path + video_file)
+        bboxes = self.bboxes[item]
+        images = torch.zeros((3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
+        frame_id = -1
+        for index in bboxes.keys():
+            while frame_id < index:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                frame_id += 1
+            print(frame_id)
+            x, y, w, h = bboxes[index]
+            print(x, y, w, h)
+            print(frame.shape)
+            cv2.imshow('Image', frame)
+            cv2.waitKey(0)
+            cropped_frame = frame[int(x):int(x + w), int(y):int(y + h)]
+            cv2.imshow('Image', cropped_frame)
+            cv2.waitKey(0)
+            cropped_frame = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB)
+            print(cropped_frame.shape)
+            images[:, index, :, :] = cropped_frame
+        return images
+
+
 if __name__ == '__main__':
-    augment_method = 'crop'
+    augment_method = 'mixed'
     is_coco = True
     tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco)
     print(len(tra_files), len(val_files), len(test_files))
-    # dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
-    #                   augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
-    #                   sample_fps=30)
-    # features, labels = dataset.__getitem__(9)
-    # print(features.shape, labels)
+    dataset = ImagesDataset(tra_files[:10], 1, 30)
+    features, labels = dataset.__getitem__(2)
+    print(features.shape, labels)
     # dataset = Dataset(data_files=tra_files[int(len(tra_files) * 0.2):], action_recognition=1,
     #                   augment_method=augment_method, is_coco=is_coco, body_part=[True, True, True], model='lstm',
     #                   sample_fps=30)

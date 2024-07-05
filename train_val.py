@@ -1,10 +1,10 @@
-from Dataset import Dataset, get_tra_test_files
-from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer,DGSTGCN
+from Dataset import Dataset, get_tra_test_files, ImagesDataset
+from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
-    intention_class, attitude_classes, action_classes,dgstgcn_batch_size
+    intention_class, attitude_classes, action_classes, dgstgcn_batch_size
 
 import torch
 from torch.nn import functional
@@ -167,14 +167,23 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     print('loading data for %s' % dataset)
     augment_method = dataset.split('+')[0]
     is_coco = True if 'coco' in dataset else False
-    tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
-                                                          ori_videos=ori_videos)
-    trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                       model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                     model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-    testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                      model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+    if model != 'r3d':
+        tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
+                                                              ori_videos=ori_videos)
+        trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                           model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                         model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                          model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+    else:
+        tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', is_coco=is_coco,
+                                                              ori_videos=ori_videos)
+        trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
+                                 sequence_length=sequence_length)
+        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
+                                sequence_length=sequence_length)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
         net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
@@ -191,7 +200,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'msgcn':
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
-    elif model=='dgstgcn':
+    elif model == 'dgstgcn':
         net = DGSTGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)

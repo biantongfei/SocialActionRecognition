@@ -501,7 +501,7 @@ def draw_keypoints(part):
 
 if __name__ == '__main__':
     # add_attitude_class()
-    # refactor_jsons()
+    refactor_jsons()
     # feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
     # summarize_features(feature_path)
     # gaussion_augment()
