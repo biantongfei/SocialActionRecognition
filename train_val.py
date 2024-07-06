@@ -1,10 +1,10 @@
 from Dataset import Dataset, get_tra_test_files, ImagesDataset
-from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN
+from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import JPLDataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
-    intention_class, attitude_classes, action_classes, dgstgcn_batch_size
+    intention_class, attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
 
 import torch
 from torch.nn import functional
@@ -163,6 +163,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     elif model == 'dgstgcn':
         batch_size = dgstgcn_batch_size
         num_workers = 1
+    elif model == 'r3d':
+        batch_size = r3d_batch_size
 
     print('loading data for %s' % dataset)
     augment_method = dataset.split('+')[0]
@@ -202,6 +204,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'dgstgcn':
         net = DGSTGCN(is_coco=is_coco, body_part=body_part, framework=framework)
+    elif model == 'r3d':
+        net = R3D(framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     # if 'gcn_' not in model:
@@ -229,7 +233,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
-            if model in ['avg', 'perframe', 'conv1d', 'tran']:
+            if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model == 'lstm':
@@ -282,7 +286,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
         net.eval()
         for data in val_loader:
-            if model in ['avg', 'perframe', 'conv1d', 'tran']:
+            if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model == 'lstm':
@@ -370,7 +374,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         progress_bar = tqdm(total=len(test_loader), desc='Progress')
         for data in test_loader:
             progress_bar.update(1)
-            if model in ['avg', 'perframe', 'conv1d', 'tran']:
+            if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
                 inputs, (int_labels, att_labels, act_labels) = data
                 inputs = inputs.to(dtype=dtype, device=device)
             elif model == 'lstm':
@@ -411,7 +415,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     start_time = time.time()
     net.eval()
     for index, data in enumerate(test_loader):
-        if model in ['avg', 'perframe', 'conv1d', 'tran']:
+        if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
             inputs, (int_labels, att_labels, act_labels) = data
             inputs = inputs.to(dtype=dtype, device=device)
         elif model == 'lstm':
@@ -528,37 +532,39 @@ if __name__ == '__main__':
     # model = 'lstm'
     # model = 'gcn_conv1d'
     # model = 'gcn_lstm'
-    model = 'gcn_tran'
+    # model = 'gcn_tran'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     # model = 'msgcn'
+    model = 'r3d'
     body_part = [True, True, True]
 
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
-    # framework = 'parallel'
+    framework = 'parallel'
     # framework = 'tree'
-    framework = 'chain'
+    # framework = 'chain'
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
     performance_model = []
     i = 0
+    dataset = 'crop_coco'
     while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, sequence_length=sequence_length)
+                        ori_videos=ori_video, sequence_length=sequence_length, dataset=dataset)
         else:
             p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video)
+                        ori_videos=ori_video, dataset=dataset)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework, 'mixed')
+    # draw_save(model, performance_model, framework, 'mixed')
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)

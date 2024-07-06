@@ -363,7 +363,8 @@ class ImagesDataset(Dataset):
         self.frame_sample_hop = frame_sample_hop
         self.json_files = data_files
         self.sequence_length = sequence_length
-        self.json_data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
+        self.json_data_path = '../JPL_Augmented_Posefeatures/new_crop/coco_wholebody/'
+        # self.json_data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
         self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
         self.get_bboxes_labels_from_file()
         self.json_files = [item for item in self.json_files if item not in self.null_files]
@@ -390,39 +391,36 @@ class ImagesDataset(Dataset):
         return len(self.json_files)
 
     def __getitem__(self, item):
-        return self.get_images_from_file(item), self.labels[item]
+        return self.get_images_from_file(item), (self.labels[item][0], self.labels[item][1], self.labels[item][2])
 
     def get_images_from_file(self, item):
         video_file = self.video_files[item]
-        print(video_file)
-        print(self.json_files[item])
         cap = cv2.VideoCapture(video_path + video_file)
         bboxes = self.bboxes[item]
         images = torch.zeros((3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
         frame_id = -1
         for index in bboxes.keys():
+            if index >= self.sequence_length:
+                break
             while frame_id < index:
                 ret, frame = cap.read()
                 if not ret:
                     break
                 frame_id += 1
-            print(frame_id)
             x, y, w, h = bboxes[index]
-            print(x, y, w, h)
-            print(frame.shape)
-            cv2.imshow('Image', frame)
-            cv2.waitKey(0)
-            cropped_frame = frame[int(x):int(x + w), int(y):int(y + h)]
-            cv2.imshow('Image', cropped_frame)
-            cv2.waitKey(0)
-            cropped_frame = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB)
-            print(cropped_frame.shape)
+            cropped_frame = frame[int(y):int(y + h), int(x):int(x + w)]
+            if cropped_frame is None or cropped_frame.size == 0:
+                continue
+            cropped_frame = cv2.resize(cropped_frame, (self.r3d_image_size, self.r3d_image_size),
+                                       interpolation=cv2.INTER_CUBIC)
+            cropped_frame = torch.Tensor(cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB))
+            cropped_frame = cropped_frame.permute(2, 0, 1)
             images[:, index, :, :] = cropped_frame
         return images
 
 
 if __name__ == '__main__':
-    augment_method = 'mixed'
+    augment_method = 'crop'
     is_coco = True
     tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco)
     print(len(tra_files), len(val_files), len(test_files))

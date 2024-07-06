@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 
 
 def summarize_features(feature_path):
@@ -499,9 +500,40 @@ def draw_keypoints(part):
         # plt.savefig('pose.png')
 
 
+def find_box(a):
+    data_path = '../JPL_Augmented_Posefeatures/mixed/%s/' % a
+    alphapose_path = '../JPL_Augmented_Posefeatures/alphapose/%s/' % a
+    save_path = '../JPL_Augmented_Posefeatures/new_mixed/%s/' % a
+    files = os.listdir(data_path)
+    files.sort()
+    for file in files:
+        if 'json' not in file:
+            continue
+        print(file)
+        with open(data_path + file, 'r') as f:
+            json_file = json.load(f)
+            f.close()
+        alphapose_file = json_file['video_name'].split('.')[0] + '.json'
+        with open(alphapose_path + alphapose_file, 'r') as f:
+            alpha_json = json.load(f)
+            f.close()
+        boxes = {}
+        for pose in alpha_json:
+            if str(pose['box'][2]) + str(pose['box'][3]) not in boxes.keys():
+                boxes[str(pose['box'][2]) + str(pose['box'][3])] = [pose['box'][0], pose['box'][1]]
+            else:
+                print('Exist!!!!!!!!!!!!!!!!!!!!')
+        for frame in json_file['frames']:
+            x, y = boxes[str(frame['box'][2]) + str(frame['box'][3])]
+            frame['box'][0] = x
+            frame['box'][1] = y
+        with open(save_path + file, 'w') as f:
+            json.dump(json_file, f)
+
+
 if __name__ == '__main__':
     # add_attitude_class()
-    refactor_jsons()
+    # refactor_jsons()
     # feature_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
     # summarize_features(feature_path)
     # gaussion_augment()
@@ -517,4 +549,6 @@ if __name__ == '__main__':
     #     pre_video = file.split('p')[0]
     # mixed_augment()
     # add_attitude_class()
-    draw_keypoints('hand')
+    # draw_keypoints('hand')
+    for a in ['coco_wholebody', 'halpe136']:
+        find_box(a)

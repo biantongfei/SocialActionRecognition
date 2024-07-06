@@ -1066,39 +1066,34 @@ class R3D(nn.Module):
         self.framework = framework
         self.resnet3d = models.r3d_18(pretrained=False)
         self.resnet3d.fc = nn.Linear(self.resnet3d.fc.in_features, num_classes)
-        self.intention_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True)),
-                                            nn.ReLU(),
-                                            nn.Linear(16 * self.body_part.count(True), intention_class_num)
+        self.intention_head = nn.Sequential(nn.ReLU(),
+                                            nn.Linear(16, intention_class_num)
                                             )
         if self.framework in ['parallel', 'intention', 'attitude', 'action']:
             self.attitude_head = nn.Sequential(nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True), attitude_class_num)
+                                               nn.Linear(16, attitude_class_num)
                                                )
             self.action_head = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(16 * self.body_part.count(True), action_class_num)
+                                             nn.Linear(16, action_class_num)
                                              )
         elif self.framework == 'tree':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
-                                                         attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                              nn.ReLU(),
-                                             nn.Linear(16 * self.body_part.count(True) + intention_class_num,
-                                                       action_class_num)
+                                             nn.Linear(16 + intention_class_num, action_class_num)
                                              )
         elif self.framework == 'chain':
-            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num),
+            self.attitude_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num),
                                                nn.ReLU(),
-                                               nn.Linear(16 * self.body_part.count(True) + intention_class_num,
-                                                         attitude_class_num)
+                                               nn.Linear(16 + intention_class_num, attitude_class_num)
                                                )
-            self.action_head = nn.Sequential(
-                nn.BatchNorm1d(16 * self.body_part.count(True) + intention_class_num + attitude_class_num),
-                nn.ReLU(),
-                nn.Linear(16 * self.body_part.count(True) + intention_class_num + attitude_class_num, action_class_num)
-            )
+            self.action_head = nn.Sequential(nn.BatchNorm1d(16 + intention_class_num + attitude_class_num),
+                                             nn.ReLU(),
+                                             nn.Linear(16 + intention_class_num + attitude_class_num, action_class_num)
+                                             )
 
     def forward(self, x):
         y = self.resnet3d(x)
