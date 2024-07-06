@@ -1064,7 +1064,7 @@ class R3D(nn.Module):
         super(R3D, self).__init__()
         num_classes = 16
         self.framework = framework
-        self.resnet3d = models.r3d_18(pretrained=False)
+        self.resnet3d = models.r3d_18(weights=None)
         self.resnet3d.fc = nn.Linear(self.resnet3d.fc.in_features, num_classes)
         self.intention_head = nn.Sequential(nn.ReLU(),
                                             nn.Linear(16, intention_class_num)
