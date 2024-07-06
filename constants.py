@@ -32,7 +32,7 @@ gcn_batch_size = 128
 stgcn_batch_size = 32
 msgcn_batch_size = 16
 dgstgcn_batch_size = 16
-r3d_batch_size = 64
+r3d_batch_size = 32
 learning_rate = 1e-3
 attn_learning_rate = 1e-2
 
