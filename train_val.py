@@ -550,7 +550,7 @@ if __name__ == '__main__':
     sequence_length = 30
     performance_model = []
     i = 0
-    dataset = 'crop_coco'
+    dataset = 'crop+coco'
     while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
