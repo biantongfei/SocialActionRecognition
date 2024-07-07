@@ -127,6 +127,24 @@ def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_t
     return int_y_true, int_y_pred, att_y_true, att_y_pred
 
 
+def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files):
+    different_indices_int = torch.nonzero(torch.ne(int_y_true, int_y_pred)).squeeze()
+    different_indices_att = torch.nonzero(torch.ne(att_y_true, att_y_pred)).squeeze()
+    different_indices_act = torch.nonzero(torch.ne(act_y_true, act_y_pred)).squeeze()
+    print('Intention:')
+    for i in different_indices_int.shape:
+        index = different_indices_int[i]
+        print(test_files[index], int_y_true[index], int_y_pred[index])
+    print('Attitude:')
+    for i in different_indices_att.shape:
+        index = different_indices_att[i]
+        print(test_files[index], att_y_true[index], att_y_pred[index])
+    print('Action:')
+    for i in different_indices_act.shape:
+        index = different_indices_act[i]
+        print(test_files[index], act_y_true[index], act_y_pred[index])
+
+
 def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False, dataset='mixed+coco',
           oneshot=False):
     """
@@ -512,6 +530,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
         att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
         result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
+    find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
