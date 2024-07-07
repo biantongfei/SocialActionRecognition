@@ -133,16 +133,15 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
     different_indices_act = torch.nonzero(torch.ne(act_y_true, act_y_pred)).squeeze()
     print('Intention:')
     print(different_indices_int.shape)
-    for i in different_indices_int.shape:
-        print(i)
+    for i in range(different_indices_int.shape):
         index = different_indices_int[i]
         print(test_files[index], int_y_true[index], int_y_pred[index])
     print('Attitude:')
-    for i in different_indices_att.shape:
+    for i in range(different_indices_att.shape):
         index = different_indices_att[i]
         print(test_files[index], att_y_true[index], att_y_pred[index])
     print('Action:')
-    for i in different_indices_act.shape:
+    for i in range(different_indices_act.shape):
         index = different_indices_act[i]
         print(test_files[index], act_y_true[index], act_y_pred[index])
 
