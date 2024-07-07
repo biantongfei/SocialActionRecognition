@@ -19,7 +19,7 @@ for model in ['gcn_lstm', 'gcn_tran']:
     # for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
