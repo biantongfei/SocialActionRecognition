@@ -103,7 +103,8 @@ def transform_preframe_result(y_true, y_pred, sequence_length):
 
 
 def filter_not_interacting_sample(att_y_true, att_y_output):
-    mask = (att_y_true == 2) | (att_y_output == 2)
+    _, pred = torch.max(att_y_output, dim=1)
+    mask = (att_y_true == 2) | (pred == 2)
     att_y_true = att_y_true[mask]
     att_y_output = att_y_output[mask].reshape(-1, att_y_output.size(1))
     return att_y_true, att_y_output
