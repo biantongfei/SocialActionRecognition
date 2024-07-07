@@ -132,6 +132,7 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
     different_indices_att = torch.nonzero(torch.ne(att_y_true, att_y_pred)).squeeze()
     different_indices_act = torch.nonzero(torch.ne(act_y_true, act_y_pred)).squeeze()
     print('Intention:')
+    print(different_indices_int.shape)
     for i in different_indices_int.shape:
         index = different_indices_int[i]
         print(test_files[index], int_y_true[index], int_y_pred[index])
@@ -382,7 +383,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
@@ -530,9 +531,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
         att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
         result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
-    find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print(result_str + 'Model Size: %.2f MB, process_time_pre_frame: %.3f ms' % (
         (MFlops, process_time * 1000 / len(testset))))
+    find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
@@ -551,20 +552,20 @@ if __name__ == '__main__':
     # model = 'tran'
     # model = 'lstm'
     # model = 'gcn_conv1d'
-    # model = 'gcn_lstm'
+    model = 'gcn_lstm'
     # model = 'gcn_tran'
     # model = 'gcn_gcn'
     # model = 'stgcn'
     # model = 'msgcn'
-    model = 'r3d'
+    # model = 'r3d'
     body_part = [True, True, True]
 
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
-    framework = 'parallel'
+    # framework = 'parallel'
     # framework = 'tree'
-    # framework = 'chain'
+    framework = 'chain'
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
