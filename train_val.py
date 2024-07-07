@@ -277,7 +277,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             else:
                 int_outputs, att_outputs, act_outputs = net(inputs)
                 # int_outputs, att_outputs, act_outputs, _ = net(inputs)
-                att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
