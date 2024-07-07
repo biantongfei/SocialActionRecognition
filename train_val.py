@@ -359,7 +359,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
                 act_acc * 100, act_f1, act_score)
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        if epoch == 50:
+        if epoch == 40:
             break
         else:
             epoch += 1
