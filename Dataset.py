@@ -286,10 +286,10 @@ class Dataset(Dataset):
                                     frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, b_p)
-                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width-0.5
-                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height-0.5
-                                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+                                frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+                                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
@@ -338,10 +338,10 @@ class Dataset(Dataset):
                                     frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, self.is_coco, bp)
-                                # frame_feature[:, 0] = frame_feature[:, 0] / frame_width-0.5
-                                # frame_feature[:, 1] = frame_feature[:, 1] / frame_height-0.5
-                                frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                                frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+                                frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+                                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
                                 x_l[:, frame_num, :, 0] = frame_feature.T
                                 frame_num += 1
                 x_list[index_body] = x_l
@@ -392,30 +392,31 @@ class ImagesDataset(Dataset):
     def __getitem__(self, item):
         return self.get_images_from_file(item), (self.labels[item][0], self.labels[item][1], self.labels[item][2])
 
-    def get_images_from_file(self, item):
-        video_file = self.video_files[item]
-        cap = cv2.VideoCapture(video_path + video_file)
-        bboxes = self.bboxes[item]
-        images = torch.zeros((3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
-        frame_id = -1
-        for index in bboxes.keys():
-            if index >= self.sequence_length:
-                break
-            while frame_id < index:
-                ret, frame = cap.read()
-                if not ret:
+    def get_images_from_file(self):
+        self.videos = torch.Tensor((len(self.files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
+        for index, file in enumerate(self.video_files):
+            cap = cv2.VideoCapture(video_path + file)
+            bboxes = self.bboxes[index]
+            images = torch.zeros((3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
+            frame_id = -1
+            for i in bboxes.keys():
+                if i >= self.sequence_length:
                     break
-                frame_id += 1
-            x, y, w, h = bboxes[index]
-            cropped_frame = frame[int(y):int(y + h), int(x):int(x + w)]
-            if cropped_frame is None or cropped_frame.size == 0:
-                continue
-            cropped_frame = cv2.resize(cropped_frame, (self.r3d_image_size, self.r3d_image_size),
-                                       interpolation=cv2.INTER_CUBIC)
-            cropped_frame = torch.Tensor(cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB))
-            cropped_frame = cropped_frame.permute(2, 0, 1)
-            images[:, index, :, :] = cropped_frame
-        return images
+                while frame_id < i:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    frame_id += 1
+                x, y, w, h = bboxes[i]
+                cropped_frame = frame[int(y):int(y + h), int(x):int(x + w)]
+                if cropped_frame is None or cropped_frame.size == 0:
+                    continue
+                cropped_frame = cv2.resize(cropped_frame, (self.r3d_image_size, self.r3d_image_size),
+                                           interpolation=cv2.INTER_CUBIC)
+                cropped_frame = torch.Tensor(cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB))
+                cropped_frame = cropped_frame.permute(2, 0, 1)
+                images[:, i, :, :] = cropped_frame
+            self.videos[index] = images
 
 
 if __name__ == '__main__':
