@@ -134,7 +134,7 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
     print('Intention:')
     print(different_indices_int.shape)
     for i in different_indices_int.shape:
-        print(index)
+        print(i)
         index = different_indices_int[i]
         print(test_files[index], int_y_true[index], int_y_pred[index])
     print('Attitude:')
