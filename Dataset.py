@@ -394,7 +394,7 @@ class ImagesDataset(Dataset):
         return self.videos[item], (self.labels[item][0], self.labels[item][1], self.labels[item][2])
 
     def get_images_from_file(self):
-        self.videos = torch.Tensor((len(self.files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
+        self.videos = torch.Tensor((len(self.json_files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
         for index, file in enumerate(self.video_files):
             cap = cv2.VideoCapture(video_path + file)
             bboxes = self.bboxes[index]
