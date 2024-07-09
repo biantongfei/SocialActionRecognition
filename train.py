@@ -1,6 +1,6 @@
 from train_val import train, draw_save, send_email
 
-body_part = [True, False, False]
+body_part = [True, True, True]
 
 model = 'gcn_lstm'
 # model = 'gcn_tran'
@@ -15,7 +15,7 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'crop+coco'
 oneshot = False
-for model in ['stgcn', 'msgcn', 'dgstgcn', 'gcn_lstm', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
+for model in ['gcn_lstm', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
     # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
     # for framework in ['parallel','tree','chain']:
     performance_model = []

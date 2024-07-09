@@ -432,7 +432,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     attn_weight = []
     process_time = 0
     net.eval()
-    progress_bar = tqdm(total=len(train_loader), desc='Progress')
+    progress_bar = tqdm(total=len(test_loader), desc='Progress')
     for index, data in enumerate(test_loader):
         progress_bar.update(1)
         if index == 0:
