@@ -13,9 +13,9 @@ framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-dataset = 'mixed+coco'
+dataset = 'crop+coco'
 oneshot = False
-for model in ['r3d']:
+for model in ['stgcn', 'msgcn', 'dgstgcn', 'gcn_lstm', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
     # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
     # for framework in ['parallel','tree','chain']:
     performance_model = []

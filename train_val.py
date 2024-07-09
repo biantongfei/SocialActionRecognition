@@ -382,7 +382,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
@@ -432,7 +432,9 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     attn_weight = []
     process_time = 0
     net.eval()
+    progress_bar = tqdm(total=len(train_loader), desc='Progress')
     for index, data in enumerate(test_loader):
+        progress_bar.update(1)
         if index == 0:
             total_params = sum(p.numel() for p in net.parameters())
         start_time = time.time()
@@ -481,6 +483,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             act_y_pred += pred.tolist()
             act_y_score += score.tolist()
         torch.cuda.empty_cache()
+    progress_bar.close()
     result_str = ''
     if 'intention' in tasks:
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
@@ -552,10 +555,10 @@ if __name__ == '__main__':
     # model = 'gcn_lstm'
     # model = 'gcn_tran'
     # model = 'gcn_gcn'
-    # model = 'stgcn'
+    model = 'stgcn'
     # model = 'msgcn'
     # model = 'dgstgcn'
-    model = 'r3d'
+    # model = 'r3d'
     body_part = [True, True, True]
 
     # framework = 'intention'
