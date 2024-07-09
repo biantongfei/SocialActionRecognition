@@ -370,7 +370,6 @@ class ImagesDataset(Dataset):
         self.get_images_from_file()
         self.json_files = [item for item in self.json_files if item not in self.null_files]
 
-
     def get_bboxes_labels_from_file(self):
         for file in self.json_files:
             bboxes = {}
@@ -395,7 +394,8 @@ class ImagesDataset(Dataset):
         return self.videos[item], (self.labels[item][0], self.labels[item][1], self.labels[item][2])
 
     def get_images_from_file(self):
-        self.videos = torch.Tensor((len(self.json_files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
+        self.videos = torch.zeros(
+            (len(self.json_files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
         for index, file in enumerate(self.video_files):
             cap = cv2.VideoCapture(video_path + file)
             bboxes = self.bboxes[index]
@@ -418,6 +418,7 @@ class ImagesDataset(Dataset):
                 cropped_frame = torch.Tensor(cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB))
                 cropped_frame = cropped_frame.permute(2, 0, 1)
                 images[:, i, :, :] = cropped_frame
+
             self.videos[index] = images
 
 
