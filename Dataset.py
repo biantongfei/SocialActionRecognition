@@ -363,12 +363,13 @@ class ImagesDataset(Dataset):
         self.frame_sample_hop = frame_sample_hop
         self.json_files = data_files
         self.sequence_length = sequence_length
+        self.r3d_image_size = 112
         self.json_data_path = get_data_path(augment_method='crop', is_coco=True)
         self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
         self.get_bboxes_labels_from_file()
         self.get_images_from_file()
         self.json_files = [item for item in self.json_files if item not in self.null_files]
-        self.r3d_image_size = 112
+
 
     def get_bboxes_labels_from_file(self):
         for file in self.json_files:
