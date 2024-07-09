@@ -365,6 +365,7 @@ class ImagesDataset(Dataset):
         self.sequence_length = sequence_length
         self.json_data_path = get_data_path(augment_method='crop', is_coco=True)
         self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
+        self.videos = None
         self.get_bboxes_labels_from_file()
         self.json_files = [item for item in self.json_files if item not in self.null_files]
         self.r3d_image_size = 112
