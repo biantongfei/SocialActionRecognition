@@ -15,8 +15,8 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['stgcn', 'msgcn', 'dgstgcn', 'r3d']:
-    # for dataset in ['0+coco', '1+coco', '2+coco', '3+coco', '4+coco', '5+coco', '6+coco', '7+coco', '8+coco', '9+coco']:
+# for model in ['stgcn', 'msgcn', 'dgstgcn', 'r3d']:
+for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
     performance_model = []
     i = 0
     while i < 5:
@@ -32,7 +32,7 @@ for model in ['stgcn', 'msgcn', 'dgstgcn', 'r3d']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save(body_part, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
