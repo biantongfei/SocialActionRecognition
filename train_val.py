@@ -554,8 +554,8 @@ if __name__ == '__main__':
     # model = 'gcn_gcn'
     # model = 'stgcn'
     # model = 'msgcn'
-    model = 'dgstgcn'
-    # model = 'r3d'
+    # model = 'dgstgcn'
+    model = 'r3d'
     body_part = [True, True, True]
 
     # framework = 'intention'
