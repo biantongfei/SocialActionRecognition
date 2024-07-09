@@ -1,6 +1,6 @@
 from train_val import train, draw_save, send_email
 
-body_part = [True, True, True]
+body_part = [True, False, False]
 
 model = 'gcn_lstm'
 # model = 'gcn_tran'

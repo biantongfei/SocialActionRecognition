@@ -431,7 +431,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
     attn_weight = []
     process_time = 0
-    start_time = time.time()
     net.eval()
     for index, data in enumerate(test_loader):
         if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
@@ -447,6 +446,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         if index == 0:
             macs, _ = profile(net, inputs=(inputs,), verbose=False)
             MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
+        start_time = time.time()
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
                 int_outputs = net(inputs)
@@ -458,6 +458,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             int_outputs, att_outputs, act_outputs = net(inputs)
             # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
             # attn_weight.append(attention_weight)
+        process_time += time.time() - start_time
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -481,8 +482,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             act_y_pred += pred.tolist()
             act_y_score += score.tolist()
         torch.cuda.empty_cache()
-    end_time = time.time()
-    process_time += end_time - start_time
     result_str = ''
     if 'intention' in tasks:
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
