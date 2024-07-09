@@ -15,7 +15,7 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['dgstgcn', 'r3d']:
+for model in ['r3d']:
     # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
     # for framework in ['parallel','tree','chain']:
     performance_model = []
