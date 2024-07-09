@@ -537,8 +537,7 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
 
-        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
-                (coco_body_point_num if self.is_coco else halpe_body_point_num) + head_point_num + hands_point_num))
+        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size/3))
         gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * gcn_attention_weights
 
