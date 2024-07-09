@@ -433,6 +433,10 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     process_time = 0
     net.eval()
     for index, data in enumerate(test_loader):
+        if index == 0:
+            macs, _ = profile(net, inputs=(inputs,), verbose=False)
+            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
+        start_time = time.time()
         if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
             inputs, (int_labels, att_labels, act_labels) = data
             inputs = inputs.to(dtype=dtype, device=device)
@@ -443,10 +447,6 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         elif 'gcn' in model:
             inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
-        if index == 0:
-            macs, _ = profile(net, inputs=(inputs,), verbose=False)
-            MFlops = 1000 * macs * 2.0 / pow(10, 9) / batch_size / sequence_length
-        start_time = time.time()
         if framework in ['intention', 'attitude', 'action']:
             if framework == 'intention':
                 int_outputs = net(inputs)

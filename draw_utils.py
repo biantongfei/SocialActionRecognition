@@ -71,10 +71,11 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            if int(cm[i, j] * 100 + 0.5) > 0:
-                ax.text(j, i, format(int(cm[i, j] * 100 + 0.5), fmt) + '%',
-                        ha="center", va="center",
-                        color="white" if cm[i, j] > thresh else "black")
+            if i == j:
+                if int(cm[i, j] * 100 + 0.5) > 0:
+                    ax.text(j, i, format(int(cm[i, j] * 100 + 0.5), fmt) + '%',
+                            ha="center", va="center",
+                            color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
     plt.savefig('plots/%s.jpg' % sub_name, dpi=300)
 
@@ -222,6 +223,7 @@ def draw_pie_chart():
 
     plt.pie(sizes, labels=labels, colors=colors, startangle=90, autopct=make_autopct(sizes))
     plt.show()
+
 
 if __name__ == '__main__':
     # draw_observe_window_plots()
