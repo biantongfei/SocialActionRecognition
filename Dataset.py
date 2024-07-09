@@ -390,7 +390,7 @@ class ImagesDataset(Dataset):
         return len(self.json_files)
 
     def __getitem__(self, item):
-        return self.get_images_from_file(item), (self.labels[item][0], self.labels[item][1], self.labels[item][2])
+        return self.videos[item], (self.labels[item][0], self.labels[item][1], self.labels[item][2])
 
     def get_images_from_file(self):
         self.videos = torch.Tensor((len(self.files), 3, self.sequence_length, self.r3d_image_size, self.r3d_image_size))
