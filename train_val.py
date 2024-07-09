@@ -382,7 +382,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         else:
             epoch += 1
             print('------------------------------------------')
-            break
+            # break
 
     print('Testing')
     test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
@@ -528,7 +528,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
         att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
         result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
-    print(result_str + 'Params: %.2f MB, process_time_pre_sample: %.2f ms' % (
+    print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
         (total_params, process_time * 1000 / len(testset))))
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
