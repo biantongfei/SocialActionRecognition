@@ -13,7 +13,7 @@ framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-dataset = 'crop+coco'
+dataset = 'mixed+coco'
 oneshot = False
 for model in ['gcn_lstm']:
 # for body_part in [[False, True, False], [False, False, True], [False, True, True]]:
@@ -35,7 +35,7 @@ for model in ['gcn_lstm']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(sequence_length, performance_model, framework)
+    draw_save(model, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
