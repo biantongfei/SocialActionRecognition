@@ -77,15 +77,15 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                             ha="center", va="center",
                             color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    plt.savefig('plots/%s.jpg' % sub_name, dpi=300)
+    plt.savefig('plots/%s.jpg' % str(sub_name), dpi=300)
 
 
 def draw_observe_window_plots():
     windows = [5, 10, 15, 20, 25, 30, 35, 40]
     # windows = [5, 10, 15, 20]
-    int_f1 = [0.858, 0.890, 0.892, 0.901, 0.913, 0.919, 0.911, 0.923]
-    att_f1 = [0.733, 0.783, 0.812, 0.834, 0.843, 0.867, 0.878, 0.883]
-    act_f1 = [0.558, 0.611, 0.646, 0.681, 0.686, 0.749, 0.762, 0.761]
+    int_f1 = [0.8634, 0.8975, 0.8996, 0.9089, 0.9202, 0.9265, 0.9185, 0.9305]
+    att_f1 = [0.7826, 0.8225, 0.8608, 0.8832, 0.8934, 0.9161, 0.9276, 0.9332]
+    act_f1 = [0.5422, 0.5949, 0.6303, 0.6658, 0.6904, 0.7333, 0.7461, 0.7457]
     # int_f1 = [0.868, 0.889, 0.894, 0.904]
     # att_f1 = [0.757, 0.795, 0.804, 0.810]
     # act_f1 = [0.558, 0.603, 0.652, 0.682]
@@ -226,6 +226,6 @@ def draw_pie_chart():
 
 
 if __name__ == '__main__':
-    # draw_observe_window_plots()
-    draw_attention_weight()
+    draw_observe_window_plots()
+    # draw_attention_weight()
     # draw_pie_chart()
