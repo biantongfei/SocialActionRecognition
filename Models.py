@@ -540,7 +540,6 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-
         x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
         gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * gcn_attention_weights
@@ -563,7 +562,6 @@ class GNN(nn.Module):
         elif self.model == 'gcn_tran':
             x = self.embedding(x) + self.positional_encoding
             x = x.permute(1, 0, 2)  # (seq_len, batch_size, model_dim)
-
             x = self.transformer_encoder(x)
             x = x.mean(dim=0)  # Global average pooling
         else:
