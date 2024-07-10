@@ -442,6 +442,10 @@ class GNN(nn.Module):
             # self.other_parameters += self.embedding.parameters() + self.positional_encoding + self.transformer_encoder.parameters()
             self.fc_input_size = model_dim
         else:
+            self.time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
+                                                dtype=torch.int32, device=device).t().contiguous()
+            self.time_edge_index = torch.cat([self.time_edge_index, self.time_edge_index.flip([0])], dim=1)
+            self.time_edge_index, _ = add_self_loops(self.time_edge_index, num_nodes=self.sequence_length)
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                 hidden_channels=self.time_hidden_dim, num_layers=2)
@@ -563,17 +567,13 @@ class GNN(nn.Module):
             x = self.transformer_encoder(x)
             x = x.mean(dim=0)  # Global average pooling
         else:
-            time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
-                                           dtype=torch.int32, device=device).t().contiguous()
-            time_edge_index = torch.cat([time_edge_index, time_edge_index.flip([0])], dim=1)
-            time_edge_index, _ = add_self_loops(time_edge_index, num_nodes=self.sequence_length)
             x_time = torch.zeros((x.shape[0], x.shape[1] * self.time_hidden_dim), dtype=dtype, device=device)
             for i in range(x.shape[0]):
                 x_t = x[i]
-                x_t = self.GCN_time(x=x_t, edge_index=time_edge_index).to(dtype=dtype, device=device)
+                x_t = self.GCN_time(x=x_t, edge_index=self.time_edge_index).to(dtype=dtype, device=device)
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 if self.pooling:
-                    x_t, _, _, _, _, _ = self.pool(x_t, time_edge_index)
+                    x_t, _, _, _, _, _ = self.pool(x_t, self.time_edge_index)
                 x_time[i] = x_t.view(1, -1)[0]
             x = x_time.flatten(1)
         y = self.fc(x)

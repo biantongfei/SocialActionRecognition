@@ -13,15 +13,15 @@ framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-dataset = 'mixed+coco'
+dataset = 'crop+coco'
 oneshot = False
-for model in ['gcn_gcn', 'gcn_tran']:
+for model in ['gcn_gcn']:
     # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
     # for framework in ['parallel', 'tree', 'chain']:
     # for model in ['msgcn', 'dgstgcn']:
     performance_model = []
     i = 0
-    while i < 3:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
