@@ -370,7 +370,7 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.keypoint_hidden_dim = 16
-        self.time_hidden_dim = self.keypoint_hidden_dim * 64
+        self.time_hidden_dim = self.keypoint_hidden_dim * 32
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
@@ -432,7 +432,7 @@ class GNN(nn.Module):
             # self.other_parameters += self.time_model.parameters()
             self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
         elif model == 'gcn_tran':
-            model_dim, num_heads, num_layers, num_classes = 128, 8, 3, 16
+            model_dim, num_heads, num_layers, num_classes = 256, 8, 3, 16
             self.embedding = nn.Linear(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                        model_dim)
             self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
@@ -537,7 +537,7 @@ class GNN(nn.Module):
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
 
-        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size/3))
+        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
         gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * gcn_attention_weights
 
@@ -565,6 +565,7 @@ class GNN(nn.Module):
         else:
             time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
                                            dtype=torch.int32, device=device).t().contiguous()
+            time_edge_index = torch.cat([time_edge_index, time_edge_index.flip([0])], dim=1)
             time_edge_index, _ = add_self_loops(time_edge_index, num_nodes=self.sequence_length)
             x_time = torch.zeros((x.shape[0], x.shape[1] * self.time_hidden_dim), dtype=dtype, device=device)
             for i in range(x.shape[0]):
