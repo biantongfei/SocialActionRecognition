@@ -75,7 +75,11 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                 if cm[i, j] >= 0:
                     ax.text(j, i, '%.1f' % (cm[i, j] * 100), ha="center", va="center",
                             color="white" if cm[i, j] > thresh else "black")
-    pl.axis('off')
+    frame = plt.gca()
+    # y 轴不可见
+    frame.axes.get_yaxis().set_visible(False)
+    # x 轴不可见
+    frame.axes.get_xaxis().set_visible(False)
     fig.tight_layout()
     plt.savefig('plots/%s.jpg' % str(sub_name), dpi=300)
 
