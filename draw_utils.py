@@ -65,12 +65,11 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            if i == j:
-                if cm[i, j] >= 0:
-                    ax.text(j, i, '%.1f' % (cm[i, j] * 100), ha="center", va="center",
-                            color="white" if cm[i, j] > thresh else "black")
+            if cm[i, j] >= 0:
+                ax.text(j, i, '%.1f' % (cm[i, j] * 100), ha="center", va="center",
+                        color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    plt.savefig('plots/%s.jpg' % str(sub_name), dpi=300)
+    plt.savefig('plots/%s.png' % str(sub_name), dpi=300)
 
 
 def draw_observe_window_plots():
@@ -82,7 +81,7 @@ def draw_observe_window_plots():
     # int_f1 = [0.868, 0.889, 0.894, 0.904]
     # att_f1 = [0.757, 0.795, 0.804, 0.810]
     # act_f1 = [0.558, 0.603, 0.652, 0.682]
-
+    plt.figure(dpi=300)
     l1 = plt.plot(windows, int_f1, 'r--', label='Intent')
     l2 = plt.plot(windows, att_f1, 'g--', label='Attitude')
     l3 = plt.plot(windows, act_f1, 'b--', label='Action')
@@ -93,7 +92,9 @@ def draw_observe_window_plots():
     x_major_locator = plt.MultipleLocator(5)
     ax.xaxis.set_major_locator(x_major_locator)
     plt.legend()
+    plt.savefig('plots/observation_window.png')
     plt.show()
+    plt.close()
 
 
 def draw_attention_weight():
