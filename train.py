@@ -15,10 +15,10 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['gcn_tran']:
-# for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
-# for framework in ['parallel', 'tree', 'chain']:
-# for model in ['msgcn', 'dgstgcn']:
+for model in ['gcn_gcn', 'gcn_tran']:
+    # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
+    # for framework in ['parallel', 'tree', 'chain']:
+    # for model in ['msgcn', 'dgstgcn']:
     performance_model = []
     i = 0
     while i < 3:

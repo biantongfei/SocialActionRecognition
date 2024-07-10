@@ -370,7 +370,7 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.keypoint_hidden_dim = 16
-        self.time_hidden_dim = self.keypoint_hidden_dim * 32
+        self.time_hidden_dim = self.keypoint_hidden_dim * 16
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
