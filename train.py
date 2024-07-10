@@ -17,8 +17,8 @@ dataset = 'crop+coco'
 oneshot = False
 # for model in ['gcn_gcn', 'gcn_tran']:
 # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
-# for framework in ['parallel', 'tree', 'chain']:
-for model in ['msgcn', 'dgstgcn']:
+for framework in ['parallel', 'tree', 'chain']:
+# for model in ['msgcn', 'dgstgcn']:
     performance_model = []
     i = 0
     while i < 1:
@@ -34,7 +34,7 @@ for model in ['msgcn', 'dgstgcn']:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework)
+    draw_save(framework, performance_model, framework)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
