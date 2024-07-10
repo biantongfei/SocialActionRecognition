@@ -18,10 +18,10 @@ oneshot = False
 # for model in ['gcn_gcn', 'gcn_tran']:
 # for body_part in [[True, False, False], [True, True, False], [True, False, True]]:
 # for framework in ['parallel', 'tree', 'chain']:
-for model in ['stgcn', 'msgcn', 'dgstgcn']:
+for model in ['msgcn', 'dgstgcn']:
     performance_model = []
     i = 0
-    while i < 3:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
