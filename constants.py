@@ -49,10 +49,10 @@ else:
     print('Using CPU for training')
     device = torch.device('cpu')
 dtype = torch.float32
-intention_class = ['Interacting', 'Interested', 'NotInterested']
-attitude_classes = ['Positive', 'Negative', 'NoInteracting']
+intention_class = ['Interacting', 'Interested', 'Not_Interested']
+attitude_classes = ['Positive', 'Negative', 'Not_Interacting']
 action_classes = ['Handshake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Point', 'Gaze', 'Leave',
-                  'NoResponse']
+                  'No_Response']
 
 coco_body_point_num = 23
 halpe_body_point_num = 26

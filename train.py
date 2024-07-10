@@ -13,10 +13,10 @@ framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-dataset = 'mixed+coco'
+dataset = 'crop+coco'
 oneshot = False
-# for model in ['gcn_gcn']:
-for body_part in [[False, True, False], [False, False, True], [False, True, True]]:
+for model in ['gcn_lstm']:
+# for body_part in [[False, True, False], [False, False, True], [False, True, True]]:
     # for framework in ['parallel', 'tree', 'chain']:
     # for model in ['msgcn', 'dgstgcn']:
 # for sequence_length in [5,10,15,20,25,35,40]:

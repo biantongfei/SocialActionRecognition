@@ -1,3 +1,4 @@
+import pylab as pl
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -67,15 +68,14 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
              rotation_mode="anchor")
 
     # 标注百分比信息
-    fmt = 'd'
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
             if i == j:
-                if int(cm[i, j] * 100 + 0.5) > 0:
-                    ax.text(j, i, format(int(cm[i, j] * 100 + 0.5), fmt) + '%',
-                            ha="center", va="center",
+                if cm[i, j] >= 0:
+                    ax.text(j, i, '%.1f' % (cm[i, j] * 100), ha="center", va="center",
                             color="white" if cm[i, j] > thresh else "black")
+    pl.axis('off')
     fig.tight_layout()
     plt.savefig('plots/%s.jpg' % str(sub_name), dpi=300)
 
