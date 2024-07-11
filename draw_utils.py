@@ -69,7 +69,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
                 ax.text(j, i, '%.1f' % (cm[i, j] * 100), ha="center", va="center",
                         color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    plt.savefig('plots/%s.png' % str(sub_name), dpi=300)
+    plt.savefig('plots/%s.png' % str(sub_name), dpi=300, transparent=True, bbox_inches="tight", pad_inches=0)
 
 
 def draw_observe_window_plots():
@@ -92,7 +92,7 @@ def draw_observe_window_plots():
     x_major_locator = plt.MultipleLocator(5)
     ax.xaxis.set_major_locator(x_major_locator)
     plt.legend()
-    plt.savefig('plots/observation_window.png')
+    plt.savefig('plots/observation_window.png', transparent=True, bbox_inches="tight", pad_inches=0)
     plt.show()
     plt.close()
 

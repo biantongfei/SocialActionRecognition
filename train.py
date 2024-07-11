@@ -15,14 +15,14 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for model in ['stgcn']:
+for model in ['gcn_lstm']:
 # for body_part in [[False, True, False], [False, False, True], [False, True, True]]:
     # for framework in ['parallel', 'tree', 'chain']:
     # for model in ['msgcn', 'dgstgcn']:
 # for sequence_length in [5,10,15,20,25,35,40]:
     performance_model = []
     i = 0
-    while i < 10:
+    while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
