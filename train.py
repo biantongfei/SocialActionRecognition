@@ -15,7 +15,7 @@ frame_sample_hop = 1
 sequence_length = 30
 dataset = 'mixed+coco'
 oneshot = False
-for framework in ['intention', 'attitude', 'action']:
+for model in ['stgcn']:
     # for body_part in [[False, True, False], [False, False, True], [False, True, True]]:
     # for framework in ['parallel', 'tree', 'chain']:
     # for model in ['msgcn', 'dgstgcn']:
