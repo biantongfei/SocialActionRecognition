@@ -17,7 +17,6 @@ import csv
 import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
-from thop import profile
 import time
 
 
