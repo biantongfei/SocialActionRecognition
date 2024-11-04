@@ -535,6 +535,7 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
         (total_params, process_time * 1000 / len(testset))))
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    torch.save(net, 'models/jpl_%s.pt' % model)
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
     # attn_weight = torch.cat(attn_weight, dim=0)
