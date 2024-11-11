@@ -891,7 +891,7 @@ if __name__ == '__main__':
     sequence_length = 10
     body_part = [True, True, True]
     pretrained = False
-    new_classifier = True
+    new_classifier = False
     performance_model = []
     i = 0
     while i < 5:
