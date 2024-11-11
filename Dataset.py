@@ -474,6 +474,7 @@ class HARPER_Dataset(Dataset):
                 frame = feature_json['frames'][index]
                 frame_feature = np.array(frame['keypoints'])
                 frame_feature.reshape((133, 3))
+                print(frame_feature.shape)
                 for index_body, body in enumerate(self.body_part):
                     if body:
                         index = 0
