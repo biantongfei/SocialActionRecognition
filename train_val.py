@@ -749,7 +749,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
 
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        if epoch == 50:
+        if epoch == 5:
             break
         else:
             epoch += 1
@@ -776,9 +776,14 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
             inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
             inputs = inputs.to(dtype=dtype, device=device)
         elif 'gcn' in model:
-            inputs, (int_labels, att_labels, act_labels, contact_labels) = data
-        int_labels, att_labels, act_labels, contact_labels = int_labels.to(device), att_labels.to(
-            device), act_labels.to(device), contact_labels.to(device)
+            if pretrained or new_classifier:
+                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+                int_labels, att_labels, act_labels, contact_labels = int_labels.to(device), att_labels.to(
+                    device), act_labels.to(device), contact_labels.to(device)
+            else:
+                inputs, (int_labels, att_labels, act_labels) = data
+                int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
+
         if pretrained:
             int_outputs, att_outputs, _ = net(inputs)
         else:
