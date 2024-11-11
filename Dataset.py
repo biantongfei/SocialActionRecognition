@@ -154,7 +154,7 @@ def get_l_pair(is_coco, body_part):
     return l_pair
 
 
-class Dataset(Dataset):
+class JPL_Dataset(Dataset):
     def __init__(self, data_files, augment_method, is_coco, body_part, model, frame_sample_hop, sequence_length=99999):
         super(Dataset, self).__init__()
         self.files = data_files
@@ -420,6 +420,70 @@ class ImagesDataset(Dataset):
                 images[:, i, :, :] = cropped_frame
 
             self.videos[index] = images
+
+
+def split_harper_subsets(data_path):
+    # 12+5
+    files = os.listdir(data_path)
+    names = []
+    for file in files:
+        if file.split('_')[0] in names:
+            continue
+        else:
+            names.append(file.split('_')[0])
+    random.shuffle(names)
+    train_files = []
+    val_files = []
+    test_files = []
+    for file in files:
+        if file.split('_')[0] in names[:8]:
+            train_files.append(file)
+        elif file.split('_')[0] in names[15:]:
+            val_files.append(file)
+        else:
+            test_files.append(file)
+    return train_files, val_files, test_files
+
+
+class HARPER_Dataset(Dataset):
+    def __init__(self, files, sequence_length, train=False):
+        self.files = files
+        self.sequence_length = sequence_length
+        self.get_pose_sequences()
+        self.train = train
+
+    def __getitem__(self, item):
+        return self.pose_sequences[item], self.labels[item]
+
+    def __len__(self):
+        return len(self.files) * 2 if self.train else len(self.files)
+
+    def get_pose_sequences(self):
+        input_size = get_inputs_size(is_coco=True)
+        self.pose_sequences = torch.zeros(
+            (len(self.files) * 2, self.sequence_length, int(input_size / 3), 3)) if self.train else torch.zeros(
+            (len(self.files), self.sequence_length, int(input_size / 3), 3))
+        self.labels = torch.zeros((len(self.files) * 2, 4)) if self.train else torch.zeros((len(self.files), 4))
+        for i, file in enumerate(self.files):
+            with open(self.data_path + file, 'r') as f:
+                pose_json = json.load(f)
+                ii = 0
+                self.labels[i][0] = pose_json['intention_class']
+                self.labels[i][1] = pose_json['attitude_class']
+                self.labels[i][2] = pose_json['action_class']
+                self.labels[i][3] = pose_json['will_contact']
+                frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
+                while ii < self.sequence_length and ii < pose_json['detected_frames']:
+                    frame_feature = np.array(pose_json['frames']['keypoints'])
+                    frame_feature[:, 0] = 2 * (pose_json['frames'][:, 0] / frame_width - 0.5)
+                    frame_feature[:, 1] = 2 * (pose_json['frames'][:, 1] / frame_height - 0.5)
+                    self.pose_sequences[i][ii] = torch.tensor(frame_feature)
+                    if self.train:
+                        frame_feature = np.array(pose_json['frames']['keypoints'])
+                        frame_feature[:, 0] = 2 * (0.5 - pose_json['frames'][:, 0] / frame_width)
+                        frame_feature[:, 1] = 2 * (0.5 - pose_json['frames'][:, 1] / frame_height)
+                        self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
+                    ii += 1
 
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
-from Dataset import Dataset, get_tra_test_files, ImagesDataset
-from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D
+import os
+
+from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets
+from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
 from draw_utils import draw_training_process, plot_confusion_matrix
-from DataLoader import JPLDataLoader
+from DataLoader import Pose_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
     intention_class, attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
@@ -145,8 +147,9 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
         print(test_files[index], act_y_true[index], act_y_pred[index])
 
 
-def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False, dataset='mixed+coco',
-          oneshot=False):
+def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False,
+              dataset='mixed+coco',
+              oneshot=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -191,12 +194,14 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     if model != 'r3d':
         tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
                                                               ori_videos=ori_videos)
-        trainset = Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                           model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-        valset = Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                         model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-        testset = Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                          model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco,
+                               body_part=body_part,
+                               model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
+                             model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco,
+                              body_part=body_part,
+                              model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
     else:
         tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', is_coco=is_coco,
                                                               ori_videos=ori_videos)
@@ -242,11 +247,11 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     #     writer.writerow(['Attentions'])
     #     file.close()
     while True:
-        train_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                     sequence_length=sequence_length, drop_last=True, shuffle=True,
-                                     num_workers=num_workers)
-        val_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
-                                   drop_last=True, batch_size=batch_size, num_workers=num_workers)
+        train_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
+                                       sequence_length=sequence_length, drop_last=True, shuffle=True,
+                                       num_workers=num_workers)
+        val_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
+                                     drop_last=True, batch_size=batch_size, num_workers=num_workers)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -384,8 +389,8 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
             # break
 
     print('Testing')
-    test_loader = JPLDataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
-                                batch_size=batch_size, drop_last=False, num_workers=num_workers)
+    test_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
+                                  batch_size=batch_size, drop_last=False, num_workers=num_workers)
     if oneshot:
         net.train()
         print('Oneshot')
@@ -546,48 +551,314 @@ def train(model, body_part, framework, frame_sample_hop, sequence_length=99999, 
     return performance_model
 
 
-if __name__ == '__main__':
-    # model = 'avg'
-    # model = 'conv1d'
-    # model = 'tran'
-    # model = 'lstm'
-    # model = 'gcn_conv1d'
-    model = 'gcn_lstm'
-    # model = 'gcn_tran'
-    # model = 'gcn_gcn'
-    # model = 'stgcn'
-    # model = 'msgcn'
-    # model = 'dgstgcn'
-    # model = 'r3d'
-    body_part = [True, True, True]
+def train_harper(model, sequence_length, pretrained=True, new_classifier=False):
+    data_path = '../HARPER/pose_features/'
+    tasks = ['intention', 'attitude'] if pretrained else ['intention', 'attitude', 'action', 'will_contact']
+    for t in tasks:
+        performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
+                             '%s_y_true' % t: None, '%s_y_pred' % t: None}
+    train_files, val_files, test_files = split_harper_subsets(data_path)
+    train_dataset = HARPER_Dataset(train_files, sequence_length=10, train=True)
+    val_dataset = HARPER_Dataset(val_files, sequence_length=10)
+    test_dataset = HARPER_Dataset(test_files, sequence_length=10)
+    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
+        len(train_dataset), len(val_dataset), len(test_dataset)))
 
-    # framework = 'intention'
-    # framework = 'attitude'
-    # framework = 'action'
-    # framework = 'parallel'
-    # framework = 'tree'
-    framework = 'chain'
-    ori_video = False
-    frame_sample_hop = 1
-    sequence_length = 30
+    if pretrained:
+        net = torch.load('models/' + model)
+    elif model in ['avg', 'perframe']:
+        net = DNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+    elif model == 'lstm':
+        net = RNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+    elif model == 'conv1d':
+        net = Cnn1D(is_coco=True, body_part=[True, True, True], framework='chain+contact',
+                    sequence_length=sequence_length)
+    elif model == 'tran':
+        net = Transformer(is_coco=True, body_part=[True, True, True], framework='chain+contact',
+                          sequence_length=sequence_length)
+    elif 'gcn_' in model:
+        net = GNN(is_coco=True, body_part=[True, True, True], framework='chain+contact', model=model,
+                  sequence_length=sequence_length, train_classifier=not new_classifier)
+    elif model == 'stgcn':
+        net = STGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+    elif model == 'msgcn':
+        net = MSGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+    elif model == 'dgstgcn':
+        net = DGSTGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+    elif model == 'r3d':
+        net = R3D(framework='chain+contact')
+    net.to(device)
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+    epoch = 1
+    while True:
+        train_loader = Pose_DataLoader(is_coco=True, model=model, dataset=train_dataset, batch_size=16,
+                                       sequence_length=sequence_length, drop_last=True, shuffle=True, num_workers=1,
+                                       contact=True)
+        val_loader = Pose_DataLoader(is_coco=True, model=model, dataset=val_dataset, sequence_length=sequence_length,
+                                     drop_last=True, batch_size=16, num_workers=1, contact=True)
+        net.train()
+        print('Training')
+        progress_bar = tqdm(total=len(train_loader), desc='Progress')
+        for data in train_loader:
+            progress_bar.update(1)
+            if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
+                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif model == 'lstm':
+                (inputs, (int_labels, att_labels, act_labels, contact_labels)), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif 'gcn' in model:
+                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+            int_labels, att_labels, act_labels, contact_labels = int_labels.to(dtype=torch.long,
+                                                                               device=device), att_labels.to(
+                dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device), contact_labels.to(
+                dtype=torch.long, device=device)
+            if pretrained:
+                if new_classifier:
+                    Hierarchical_Classifier = Classifier(framework='chain+contact')
+                    int_outputs, att_outputs, act_outputs, contact_outputs = Hierarchical_Classifier(net(inputs))
+                    loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                    loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                    loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                    loss_4 = functional.cross_entropy(contact_outputs, contact_labels)
+                    total_loss = loss_1 + loss_2 + loss_3 + loss_4
+                else:
+                    int_outputs, att_outputs, _ = net(inputs)
+                    # int_outputs, att_outputs, act_outputs, _ = net(inputs)
+                    loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                    loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                    # loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                    total_loss = loss_1 + loss_2
+
+                    # losses = [loss_1, loss_2, loss_3]
+                    # Compute inverse loss weights
+                    # weights = [1.0 / (loss.item() + epsilon) for loss in losses]
+                    # weight_sum = sum(weights)
+                    # weights = [w / weight_sum for w in weights]
+                    # # Compute weighted loss
+                    # total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
+            else:
+                int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(int_outputs, int_labels)
+                loss_2 = functional.cross_entropy(att_outputs, att_labels)
+                loss_3 = functional.cross_entropy(act_outputs, act_labels)
+                loss_4 = functional.cross_entropy(contact_outputs, contact_labels)
+                total_loss = loss_1 + loss_2 + loss_3 + loss_4
+
+            # if epoch == 1:
+            #     initial_losses = [loss.item() for loss in losses]
+            # gradnorm_loss = compute_gradnorm(losses, initial_losses).to(device=device, dtype=dtype)
+            # weights = torch.softmax(net.task_weights, dim=0).to(device=device, dtype=dtype)
+            # total_loss = sum(weight * loss for weight, loss in zip(weights, losses)) + gradnorm_loss
+            optimizer.zero_grad()
+            total_loss.backward()
+            optimizer.step()
+            torch.cuda.empty_cache()
+        scheduler.step()
+        progress_bar.close()
+        print('Validating')
+        int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
+        net.eval()
+        for data in val_loader:
+            if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
+                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif model == 'lstm':
+                (inputs, (int_labels, att_labels, act_labels, contact_labels)), data_length = data
+                inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+                inputs = inputs.to(dtype=dtype, device=device)
+            elif 'gcn' in model:
+                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+            int_labels, att_labels, act_labels, contact_labels = int_labels.to(dtype=torch.int64,
+                                                                               device=device), att_labels.to(
+                dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
+                dtype=torch.int64, device=device)
+            if pretrained:
+                int_outputs, att_outputs, _ = net(inputs)
+                # int_outputs, att_outputs, act_outputs, _ = net(inputs)
+            else:
+                int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
+        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
+        int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+        if model == 'perframe':
+            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
+        int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+        int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+        int_score = np.mean(int_y_score)
+        result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
+            int_acc * 100, int_f1, int_score)
+        att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+        if model == 'perframe':
+            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
+        att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+        att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+        att_score = np.mean(att_y_score)
+        result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (
+            att_acc * 100, att_f1, att_score)
+        if not pretrained:
+            act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+            if model == 'perframe':
+                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
+            act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+            act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+            act_score = np.mean(act_y_score)
+            result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
+                act_acc * 100, act_f1, act_score)
+            contact_y_true, contact_y_pred = torch.Tensor(contact_y_true), torch.Tensor(contact_y_pred)
+            if model == 'perframe':
+                contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred,
+                                                                           sequence_length)
+            contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
+            contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
+            contact_score = np.mean(contact_y_score)
+            result_str += 'contact_acc: %.2f%%, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
+                contact_acc * 100, contact_f1, contact_score)
+        print(result_str + 'loss: %.4f' % total_loss)
+        torch.cuda.empty_cache()
+        if epoch == 50:
+            break
+        else:
+            epoch += 1
+            print('------------------------------------------')
+            # break
+
+    print('Testing')
+    test_loader = Pose_DataLoader(is_coco=True, model=model, dataset=test_dataset, sequence_length=sequence_length,
+                                  batch_size=16, drop_last=False, num_workers=1)
+    int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
+    process_time = 0
+    net.eval()
+    progress_bar = tqdm(total=len(test_loader), desc='Progress')
+    for index, data in enumerate(test_loader):
+        progress_bar.update(1)
+        if index == 0:
+            total_params = sum(p.numel() for p in net.parameters())
+        start_time = time.time()
+        if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
+            inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+            inputs = inputs.to(dtype=dtype, device=device)
+        elif model == 'lstm':
+            (inputs, (int_labels, att_labels, act_labels, contact_labels)), data_length = data
+            inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
+            inputs = inputs.to(dtype=dtype, device=device)
+        elif 'gcn' in model:
+            inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+        int_labels, att_labels, act_labels, contact_labels = int_labels.to(device), att_labels.to(
+            device), act_labels.to(device), contact_labels.to(device)
+        if pretrained:
+            int_outputs, att_outputs, _ = net(inputs)
+        else:
+            int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
+            # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
+            # attn_weight.append(attention_weight)
+        process_time += time.time() - start_time
+        int_outputs = torch.softmax(int_outputs, dim=1)
+        score, pred = torch.max(int_outputs, dim=1)
+        # int_pred = int_outputs.argmax(dim=1)
+        int_y_true += int_labels.tolist()
+        int_y_pred += pred.tolist()
+        int_y_score += score.tolist()
+        att_outputs = torch.softmax(att_outputs, dim=1)
+        att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+        score, pred = torch.max(att_outputs, dim=1)
+        # att_pred = att_outputs.argmax(dim=1)
+        att_y_true += att_labels.tolist()
+        att_y_pred += pred.tolist()
+        att_y_score += score.tolist()
+        if not pretrained:
+            act_outputs = torch.softmax(act_outputs, dim=1)
+            score, pred = torch.max(act_outputs, dim=1)
+            # act_pred = act_outputs.argmax(dim=1)
+            act_y_true += act_labels.tolist()
+            act_y_pred += pred.tolist()
+            act_y_score += score.tolist()
+            contact_outputs = torch.softmax(contact_outputs, dim=1)
+            score, pred = torch.max(contact_outputs, dim=1)
+            # contact_pred = contact_outputs.argmax(dim=1)
+            contact_y_true += contact_labels.tolist()
+            contact_y_pred += pred.tolist()
+            contact_y_score += score.tolist()
+        torch.cuda.empty_cache()
+    progress_bar.close()
+    result_str = ''
+    int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+    if model == 'perframe':
+        int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
+    int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+    int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+    int_score = np.mean(int_y_score)
+    performance_model['intention_accuracy'] = int_acc
+    performance_model['intention_f1'] = int_f1
+    performance_model['intention_confidence_score'] = int_score
+    performance_model['intention_y_true'] = int_y_true
+    performance_model['intention_y_pred'] = int_y_pred
+    result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score :%.4f, ' % (int_acc * 100, int_f1, int_score)
+    att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+    if model == 'perframe':
+        att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
+    att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+    att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+    att_score = np.mean(att_y_score)
+    performance_model['attitude_accuracy'] = att_acc
+    performance_model['attitude_f1'] = att_f1
+    performance_model['attitude_confidence_score'] = att_score
+    performance_model['attitude_y_true'] = att_y_true
+    performance_model['attitude_y_pred'] = att_y_pred
+    result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (att_acc * 100, att_f1, att_score)
+    if not pretrained:
+        act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+        if model == 'perframe':
+            act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
+        act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+        act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+        act_score = np.mean(act_y_score)
+        performance_model['action_accuracy'] = act_acc
+        performance_model['action_f1'] = act_f1
+        performance_model['action_confidence_score'] = act_score
+        performance_model['action_y_true'] = act_y_true
+        performance_model['action_y_pred'] = act_y_pred
+        result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (act_acc * 100, act_f1, act_score)
+
+        contact_y_true, contact_y_pred = torch.Tensor(contact_y_true), torch.Tensor(contact_y_pred)
+        if model == 'perframe':
+            contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred, sequence_length)
+        contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
+        contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
+        contact_score = np.mean(contact_y_score)
+        performance_model['contaction_accuracy'] = contact_acc
+        performance_model['contaction_f1'] = contact_f1
+        performance_model['contaction_confidence_score'] = contact_score
+        performance_model['contaction_y_true'] = contact_y_true
+        performance_model['contaction_y_pred'] = contact_y_pred
+        result_str += 'contact_acc: %.2f, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
+            contact_acc * 100, contact_f1, contact_score)
+    print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
+        (total_params, process_time * 1000 / len(test_dataset))))
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    torch.save(net, 'models/harper_%s_%s_%s.pt' % (
+        model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else ''))
+    return performance_model
+
+
+if __name__ == '__main__':
+    model = 'gcn_lstm'
+    sequence_length = 10
+    pretrained = True
+    new_classifier = False
     performance_model = []
     i = 0
-    dataset = 'mixed+coco'
-    while i < 1:
+    while i < 5:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
-        if sequence_length:
-            p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, sequence_length=sequence_length, dataset=dataset)
-        else:
-            p_m = train(model=model, body_part=body_part, framework=framework, frame_sample_hop=frame_sample_hop,
-                        ori_videos=ori_video, dataset=dataset)
+        p_m = train_harper(model=model, sequence_length=sequence_length, pretrained=pretrained,
+                           new_classifier=new_classifier)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
         i += 1
-    draw_save(model, performance_model, framework, 'mixed')
-    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
-        model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
+    result_str = 'model: %s, sequence_length: %d, pretrained: %b, new_classifier: %b' % (
+        model, sequence_length, pretrained, new_classifier)
     print(result_str)
-    # send_email(result_str)
+    send_email(result_str)

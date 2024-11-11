@@ -21,11 +21,11 @@ def rnn_collate_fn(data):
         x, (torch.Tensor(intention_labels), torch.Tensor(attitude_labels), torch.Tensor(action_labels))), data_length
 
 
-class JPLDataLoader(DataLoader):
+class Pose_DataLoader(DataLoader):
     def __init__(self, is_coco, model, dataset, batch_size, sequence_length, drop_last=True, shuffle=False,
-                 num_workers=1):
-        super(JPLDataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                            drop_last=drop_last, num_workers=num_workers)
+                 num_workers=1, contact=False):
+        super(Pose_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                              drop_last=drop_last, num_workers=num_workers)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model in ['conv1d', 'tran']:
@@ -40,9 +40,10 @@ class JPLDataLoader(DataLoader):
         self.halpe_body_l_pair_num = len(halpe_body_l_pair)
         self.head_l_pair_num = len(coco_head_l_pair)
         self.hand_l_pair_num = len(coco_hand_l_pair)
+        self.contact = contact
 
     def conv1d_collate_fn(self, data):
-        input, int_label, att_label, act_label = None, [], [], []
+        input, int_label, att_label, act_label, contact_label = None, [], [], [], []
         for index, d in enumerate(data):
             x = d[0]
             while x.shape[0] < self.sequence_length:
@@ -52,7 +53,10 @@ class JPLDataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-        return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+            if self.contact:
+                contact_label.append(d[1][3])
+        return input, (
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
 
     def gcn_collate_fn(self, data):
         x_tensors_list, edge_index_list, batch = [
@@ -78,7 +82,7 @@ class JPLDataLoader(DataLoader):
             2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
                 coco_body_point_num if self.is_coco else halpe_body_point_num),
             2 * self.head_l_pair_num + head_point_num, 2 * self.hand_l_pair_num + hands_point_num]
-        int_label, att_label, act_label = [], [], []
+        int_label, att_label, act_label, contact_label = [], [], [], []
         frame_num = 0
         for d in data:
             for ii in range(self.sequence_length):
@@ -106,11 +110,13 @@ class JPLDataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
+            if self.contact:
+                contact_label.append(d[1][0])
         return (x_tensors_list, edge_index_list, batch), (
-            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
 
     def stgcn_collate_fn(self, data):
-        input, int_label, att_label, act_label = [], [], [], []
+        input, int_label, att_label, act_label, contact_label = [], [], [], [], []
         for index, d in enumerate(data):
             if index == 0:
                 for i in range(len(d[0])):
@@ -124,4 +130,25 @@ class JPLDataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-        return input, (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+            if self.contact:
+                contact_label.append(d[1][2])
+        return input, (
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
+
+
+class Harper_Dataloader(DataLoader):
+    def __init__(self, model, dataset, batch_size, sequence_length, drop_last=True, shuffle=False, num_workers=1):
+        super(Harper_Dataloader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                                drop_last=drop_last, num_workers=num_workers)
+        if model in ['lstm', 'gru']:
+            self.collate_fn = rnn_collate_fn
+        elif model in ['conv1d', 'tran']:
+            self.collate_fn = self.conv1d_collate_fn
+        elif 'gcn_' in model:
+            self.collate_fn = self.gcn_collate_fn
+        elif model in ['stgcn', 'msgcn', 'dgstgcn']:
+            self.collate_fn = self.stgcn_collate_fn
+        self.sequence_length = sequence_length
+        self.coco_body_l_pair_num = len(coco_body_l_pair)
+        self.head_l_pair_num = len(coco_head_l_pair)
+        self.hand_l_pair_num = len(coco_hand_l_pair)
