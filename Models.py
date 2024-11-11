@@ -449,6 +449,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.sequence_length = sequence_length
+        print(self.sequence_length)
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 16
         self.pooling = False
