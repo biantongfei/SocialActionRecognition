@@ -12,7 +12,7 @@ framework = 'tree'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-dataset = 'crop+coco'
+dataset = 'mized+coco'
 oneshot = False
 for model in ['gcn_lstm']:
     # for body_part in [[False, True, False], [False, False, True], [False, True, True]]:

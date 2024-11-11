@@ -80,7 +80,7 @@ class Classifier(nn.Module):
             elif self.framework == 'chain':
                 y = self.action_head(y)
             return y
-        elif self.framework in ['parallel,tree,chain']:
+        elif self.framework in ['parallel', 'tree', 'chain']:
             y1 = self.intention_head(y)
             if self.framework == 'parallel':
                 y2 = self.attitude_head(y)
@@ -452,7 +452,6 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.sequence_length = sequence_length
-        print(self.sequence_length)
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 16
         self.pooling = False
