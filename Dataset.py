@@ -483,7 +483,6 @@ class HARPER_Dataset(Dataset):
                         frame_feature = frame_feature.reshape((133, 3))
                         index += 1
                         frame_feature = get_body_part(frame_feature, True, b_p)
-                        print(frame_feature.shape)
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                         # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
@@ -520,7 +519,6 @@ class HARPER_Dataset(Dataset):
                             frame_feature = frame_feature.reshape((133, 3))
                             index += 1
                             frame_feature = get_body_part(frame_feature, True, b_p)
-                            print(frame_feature.shape)
                             frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
                             frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
                             # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
