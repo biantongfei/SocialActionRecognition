@@ -749,7 +749,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
 
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        if epoch == 5:
+        if epoch == 10:
             break
         else:
             epoch += 1
@@ -896,7 +896,7 @@ if __name__ == '__main__':
         #     continue
         performance_model.append(p_m)
         i += 1
-    result_str = 'model: %s, sequence_length: %d, pretrained: %b, new_classifier: %b' % (
-        model, sequence_length, pretrained, new_classifier)
+    result_str = 'model: %s, sequence_length: %d, pretrained: %s, new_classifier: %s' % (
+        model, sequence_length, 'pretarined' if pretrained else 'no', 'new' if new_classifier else 'old')
     print(result_str)
     send_email(result_str)
