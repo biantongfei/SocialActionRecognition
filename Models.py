@@ -597,6 +597,7 @@ class GNN(nn.Module):
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
+            print(x_body.shape)
             x_body = x_body.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
