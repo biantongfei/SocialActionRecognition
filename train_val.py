@@ -626,6 +626,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                 dtype=torch.long, device=device)
             if pretrained:
                 if new_classifier:
+                    print(int_labels.shape)
                     print(contact_labels.shape)
                     int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
