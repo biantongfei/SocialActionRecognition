@@ -567,6 +567,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
 
     if pretrained:
         net = torch.load('models/jpl_gcn_lstm.pt')
+        net.sequence_length = sequence_length
     elif model in ['avg', 'perframe']:
         net = DNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
     elif model == 'lstm':
