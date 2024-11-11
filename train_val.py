@@ -553,7 +553,8 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
 
 def train_harper(model, sequence_length, body_part, pretrained=True, new_classifier=False):
     data_path = '../HARPER/pose_sequences/'
-    tasks = ['intention', 'attitude'] if pretrained else ['intention', 'attitude', 'action', 'will_contact']
+    tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
+                                                                                 'will_contact']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
                              '%s_y_true' % t: None, '%s_y_pred' % t: None}
@@ -683,31 +684,59 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
             else:
                 int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
         result_str = 'model: %s, epoch: %d, ' % (model, epoch)
-        int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
-        if model == 'perframe':
-            int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
-        int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
-        int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-        int_score = np.mean(int_y_score)
-        result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
-            int_acc * 100, int_f1, int_score)
-        att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
-        if model == 'perframe':
-            att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
-        att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
-        att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-        att_score = np.mean(att_y_score)
-        result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (
-            att_acc * 100, att_f1, att_score)
-        if not pretrained:
+        if 'intention' in tasks:
+            int_outputs = torch.softmax(int_outputs, dim=1)
+            score, pred = torch.max(int_outputs, dim=1)
+            # int_pred = int_outputs.argmax(dim=1)
+            int_y_true += int_labels.tolist()
+            int_y_pred += pred.tolist()
+            int_y_score += score.tolist()
+            int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+            if model == 'perframe':
+                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
+            int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+            int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+            int_score = np.mean(int_y_score)
+            result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
+                int_acc * 100, int_f1, int_score)
+        if 'attitude' in tasks:
+            att_outputs = torch.softmax(att_outputs, dim=1)
+            att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+            score, pred = torch.max(att_outputs, dim=1)
+            # att_pred = att_outputs.argmax(dim=1)
+            att_y_true += att_labels.tolist()
+            att_y_pred += pred.tolist()
+            att_y_score += score.tolist()
+            att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+            if model == 'perframe':
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
+            att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+            att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+            att_score = np.mean(att_y_score)
+            result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (
+                att_acc * 100, att_f1, att_score)
+        if 'action' in tasks:
+            act_outputs = torch.softmax(act_outputs, dim=1)
+            score, pred = torch.max(act_outputs, dim=1)
+            # act_pred = act_outputs.argmax(dim=1)
+            act_y_true += act_labels.tolist()
+            act_y_pred += pred.tolist()
+            act_y_score += score.tolist()
             act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
                 act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
             act_score = np.mean(act_y_score)
-            result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
+            result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (
                 act_acc * 100, act_f1, act_score)
+        if 'contact' in tasks:
+            contact_outputs = torch.softmax(contact_outputs, dim=1)
+            score, pred = torch.max(contact_outputs, dim=1)
+            # contact_pred = contact_outputs.argmax(dim=1)
+            contact_y_true += contact_labels.tolist()
+            contact_y_pred += pred.tolist()
+            contact_y_score += score.tolist()
             contact_y_true, contact_y_pred = torch.Tensor(contact_y_true), torch.Tensor(contact_y_pred)
             if model == 'perframe':
                 contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred,
@@ -715,8 +744,9 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
             contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
             contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
             contact_score = np.mean(contact_y_score)
-            result_str += 'contact_acc: %.2f%%, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
+            result_str += 'contact_acc: %.2f, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
                 contact_acc * 100, contact_f1, contact_score)
+
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
         if epoch == 50:
@@ -809,7 +839,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
     performance_model['attitude_y_true'] = att_y_true
     performance_model['attitude_y_pred'] = att_y_pred
     result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (att_acc * 100, att_f1, att_score)
-    if not pretrained:
+    if not pretrained or new_classifier:
         act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         if model == 'perframe':
             act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)

@@ -91,9 +91,6 @@ class Classifier(nn.Module):
             elif self.framework == 'chain':
                 y2 = self.attitude_head(torch.cat((y, y1), dim=1))
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
-            print(y1.shape)
-            print(y2.shape)
-            print(y3.shape)
             return y1, y2, y3
         elif self.framework == 'chain+contact':
             y1 = self.intention_head(y)
@@ -681,8 +678,6 @@ class GNN(nn.Module):
         #         y2 = self.attitude_head(torch.cat((y, y1), dim=1))
         #         y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
         #     return y1, y2, y3
-        print(y.shape)
-        print(self.train_classifier)
         return self.classifier(y) if self.train_classifier else y
         # return y1, y2, y3, gcn_attention_weights
 
