@@ -592,8 +592,8 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
         net = R3D(framework='chain+contact')
     net.to(device)
     if new_classifier:
-        New_Classifier = Classifier(framework='chain+contact')
-        optimizer = torch.optim.Adam(New_Classifier.parameters(), lr=learning_rate)
+        H_Classifier = Classifier(framework='chain+contact')
+        optimizer = torch.optim.Adam(H_Classifier.parameters(), lr=learning_rate)
     else:
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
@@ -624,7 +624,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                 dtype=torch.long, device=device)
             if pretrained:
                 if new_classifier:
-                    int_outputs, att_outputs, act_outputs, contact_outputs = Hierarchical_Classifier(net(inputs))
+                    int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
                     loss_2 = functional.cross_entropy(att_outputs, att_labels)
                     loss_3 = functional.cross_entropy(act_outputs, act_labels)
