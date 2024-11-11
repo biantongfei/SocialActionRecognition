@@ -466,25 +466,26 @@ class HARPER_Dataset(Dataset):
             (len(self.files), self.sequence_length, int(input_size / 3), 3))
         self.labels = torch.zeros((len(self.files) * 2, 4)) if self.train else torch.zeros((len(self.files), 4))
         for i, file in enumerate(self.files):
-            with open(self.data_path + file, 'r') as f:
-                pose_json = json.load(f)
-                ii = 0
-                self.labels[i][0] = pose_json['intention_class']
-                self.labels[i][1] = pose_json['attitude_class']
-                self.labels[i][2] = pose_json['action_class']
-                self.labels[i][3] = pose_json['will_touch']
-                frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
-                while ii < self.sequence_length and ii < pose_json['detected_frames_number']:
-                    frame_feature = np.array(pose_json['frames']['keypoints'])
-                    frame_feature[:, 0] = 2 * (pose_json['frames'][:, 0] / frame_width - 0.5)
-                    frame_feature[:, 1] = 2 * (pose_json['frames'][:, 1] / frame_height - 0.5)
-                    self.pose_sequences[i][ii] = torch.tensor(frame_feature)
-                    if self.train:
+            if file.split['.'][1]=='json':
+                with open(self.data_path + file, 'r') as f:
+                    pose_json = json.load(f)
+                    ii = 0
+                    self.labels[i][0] = pose_json['intention_class']
+                    self.labels[i][1] = pose_json['attitude_class']
+                    self.labels[i][2] = pose_json['action_class']
+                    self.labels[i][3] = pose_json['will_touch']
+                    frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
+                    while ii < self.sequence_length and ii < pose_json['detected_frames_number']:
                         frame_feature = np.array(pose_json['frames']['keypoints'])
-                        frame_feature[:, 0] = 2 * (0.5 - pose_json['frames'][:, 0] / frame_width)
-                        frame_feature[:, 1] = 2 * (0.5 - pose_json['frames'][:, 1] / frame_height)
-                        self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
-                    ii += 1
+                        frame_feature[:, 0] = 2 * (pose_json['frames'][:, 0] / frame_width - 0.5)
+                        frame_feature[:, 1] = 2 * (pose_json['frames'][:, 1] / frame_height - 0.5)
+                        self.pose_sequences[i][ii] = torch.tensor(frame_feature)
+                        if self.train:
+                            frame_feature = np.array(pose_json['frames']['keypoints'])
+                            frame_feature[:, 0] = 2 * (0.5 - pose_json['frames'][:, 0] / frame_width)
+                            frame_feature[:, 1] = 2 * (0.5 - pose_json['frames'][:, 1] / frame_height)
+                            self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
+                        ii += 1
 
 
 if __name__ == '__main__':
