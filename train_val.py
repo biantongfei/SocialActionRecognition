@@ -554,7 +554,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
 def train_harper(model, sequence_length, body_part, pretrained=True, new_classifier=False, train=True):
     data_path = '../HARPER/pose_sequences/'
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
-                                                                                 'will_contact']
+                                                                                 'contact']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
                              '%s_y_true' % t: None, '%s_y_pred' % t: None}
@@ -783,13 +783,11 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
             inputs = rnn_utils.pack_padded_sequence(inputs, data_length, batch_first=True)
             inputs = inputs.to(dtype=dtype, device=device)
         elif 'gcn' in model:
-            if not pretrained or new_classifier:
-                inputs, (int_labels, att_labels, act_labels, contact_labels) = data
-                int_labels, att_labels, act_labels, contact_labels = int_labels.to(device), att_labels.to(
-                    device), act_labels.to(device), contact_labels.to(device)
-            else:
-                inputs, (int_labels, att_labels, act_labels) = data
-                int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
+            inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+            int_labels, att_labels, act_labels, contact_labels = int_labels.to(dtype=torch.int64,
+                                                                               device=device), att_labels.to(
+                dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
+                dtype=torch.int64, device=device)
 
         if pretrained:
             if new_classifier:
