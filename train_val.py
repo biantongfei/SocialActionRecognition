@@ -765,7 +765,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
 
     print('Testing')
     test_loader = Pose_DataLoader(is_coco=True, model=model, dataset=test_dataset, sequence_length=sequence_length,
-                                  batch_size=16, drop_last=False, num_workers=1)
+                                  batch_size=16, drop_last=False, num_workers=1, contact=True)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
     process_time = 0
     net.eval()
