@@ -586,7 +586,7 @@ class GNN(nn.Module):
         # self.other_parameters += self.action_head.parameters()
 
     def forward(self, data):
-        print(data[0].shape, data[1].shape, data[2].shape)
+        print(data[0][0].shape, data[0][1].shape, data[0][2].shape)
         x_list = []
         if self.body_part[0]:
             x_body, edge_index_body, batch_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(
