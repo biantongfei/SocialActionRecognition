@@ -446,7 +446,8 @@ def split_harper_subsets(data_path):
 
 
 class HARPER_Dataset(Dataset):
-    def __init__(self, files, sequence_length, train=False):
+    def __init__(self, data_path,files, sequence_length, train=False):
+        self.data_path = data_path
         self.files = files
         self.sequence_length = sequence_length
         self.train = train

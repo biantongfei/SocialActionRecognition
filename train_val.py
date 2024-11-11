@@ -558,9 +558,9 @@ def train_harper(model, sequence_length, pretrained=True, new_classifier=False):
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
                              '%s_y_true' % t: None, '%s_y_pred' % t: None}
     train_files, val_files, test_files = split_harper_subsets(data_path)
-    train_dataset = HARPER_Dataset(train_files, sequence_length=10, train=True)
-    val_dataset = HARPER_Dataset(val_files, sequence_length=10)
-    test_dataset = HARPER_Dataset(test_files, sequence_length=10)
+    train_dataset = HARPER_Dataset(data_path=data_path, files=train_files, sequence_length=10, train=True)
+    val_dataset = HARPER_Dataset(data_path=data_path, files=val_files, sequence_length=10)
+    test_dataset = HARPER_Dataset(data_path=data_path, files=test_files, sequence_length=10)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
         len(train_dataset), len(val_dataset), len(test_dataset)))
 
