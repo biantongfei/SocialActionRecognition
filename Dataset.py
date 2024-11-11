@@ -482,6 +482,7 @@ class HARPER_Dataset(Dataset):
                         index += 1
                         frame_feature = np.array(frame['keypoints'])
                         frame_feature = get_body_part(frame_feature, True, b_p)
+                        print(frame_feature.size)
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                         # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
