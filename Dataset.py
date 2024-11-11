@@ -469,6 +469,9 @@ class HARPER_Dataset(Dataset):
                 f.close()
             x_list = [0, 0, 0]
             frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+            frame = feature_json['frames'][index]
+            frame_feature = np.array(frame['keypoints'])
+            frame_feature.reshape((133, 3))
             for index_body, body in enumerate(self.body_part):
                 if body:
                     index = 0
@@ -478,10 +481,7 @@ class HARPER_Dataset(Dataset):
                     x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
                     frame_num = 0
                     while frame_num < self.sequence_length:
-                        frame = feature_json['frames'][index]
                         index += 1
-                        frame_feature = np.array(frame['keypoints'])
-                        print(frame_feature.size)
                         frame_feature = get_body_part(frame_feature, True, b_p)
                         print(frame_feature.size)
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
