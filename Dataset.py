@@ -446,7 +446,7 @@ def split_harper_subsets(data_path):
 
 
 class HARPER_Dataset(Dataset):
-    def __init__(self, data_path,files, sequence_length, train=False):
+    def __init__(self, data_path, files, sequence_length, train=False):
         self.data_path = data_path
         self.files = files
         self.sequence_length = sequence_length
@@ -472,7 +472,7 @@ class HARPER_Dataset(Dataset):
                 self.labels[i][0] = pose_json['intention_class']
                 self.labels[i][1] = pose_json['attitude_class']
                 self.labels[i][2] = pose_json['action_class']
-                self.labels[i][3] = pose_json['will_contact']
+                self.labels[i][3] = pose_json['will_touch']
                 frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
                 while ii < self.sequence_length and ii < pose_json['detected_frames']:
                     frame_feature = np.array(pose_json['frames']['keypoints'])
