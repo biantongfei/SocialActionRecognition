@@ -21,7 +21,7 @@ for model in ['gcn_lstm']:
     # for sequence_length in [5,10,15,20,25,35,40]:
     performance_model = []
     i = 0
-    while i < 5:
+    while i < 1:
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         if sequence_length:
