@@ -469,32 +469,35 @@ class HARPER_Dataset(Dataset):
                 f.close()
             x_list = [0, 0, 0]
             frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-            frame = feature_json['frames'][index]
-            frame_feature = np.array(frame['keypoints'])
-            frame_feature.reshape((133, 3))
-            for index_body, body in enumerate(self.body_part):
-                if body:
-                    index = 0
-                    b_p = [False, False, False]
-                    b_p[index_body] = True
-                    input_size = get_inputs_size(True, b_p)
-                    x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
-                    frame_num = 0
-                    while frame_num < self.sequence_length:
-                        index += 1
-                        frame_feature = get_body_part(frame_feature, True, b_p)
-                        print(frame_feature.size)
-                        frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
-                        frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
-                        # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                        # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                        x = torch.tensor(frame_feature)
-                        x_tensor[frame_num] = x
-                        frame_num += 1
-                    if frame_num == 0:
-                        return 0, 0
-                    x_list[index_body] = x_tensor
-            label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
+            index = 0
+            while index < self.sequence_length:
+                frame = feature_json['frames'][index]
+                frame_feature = np.array(frame['keypoints'])
+                frame_feature.reshape((133, 3))
+                for index_body, body in enumerate(self.body_part):
+                    if body:
+                        index = 0
+                        b_p = [False, False, False]
+                        b_p[index_body] = True
+                        input_size = get_inputs_size(True, b_p)
+                        x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
+                        frame_num = 0
+                        while frame_num < self.sequence_length:
+                            index += 1
+                            frame_feature = get_body_part(frame_feature, True, b_p)
+                            print(frame_feature.shape)
+                            frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+                            frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+                            # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                            # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                            x = torch.tensor(frame_feature)
+                            x_tensor[frame_num] = x
+                            frame_num += 1
+                        if frame_num == 0:
+                            return 0, 0
+                        x_list[index_body] = x_tensor
+            label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class'], \
+                feature_json['will_contact']
             self.features.append(x_list)
             self.labels.append(label)
 
