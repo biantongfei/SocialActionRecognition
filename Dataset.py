@@ -466,11 +466,11 @@ class HARPER_Dataset(Dataset):
             (len(self.files), self.sequence_length, int(input_size / 3), 3))
         self.labels = torch.zeros((len(self.files) * 2, 4)) if self.train else torch.zeros((len(self.files), 4))
         for i, file in enumerate(self.files):
-            print(file)
-            if file.split['.'][1] == 'json':
+            if 'json' in file:
                 with open(self.data_path + file, 'r') as f:
                     pose_json = json.load(f)
                     ii = 0
+                    print(pose_json.keys())
                     self.labels[i][0] = pose_json['intention_class']
                     self.labels[i][1] = pose_json['attitude_class']
                     self.labels[i][2] = pose_json['action_class']
