@@ -551,7 +551,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
     return performance_model
 
 
-def train_harper(model, sequence_length, body_part, pretrained=True, new_classifier=False):
+def train_harper(model, sequence_length, body_part, pretrained=True, new_classifier=False, train=True):
     data_path = '../HARPER/pose_sequences/'
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'will_contact']
@@ -594,7 +594,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    while True:
+    while train:
         train_loader = Pose_DataLoader(is_coco=True, model=model, dataset=train_dataset, batch_size=16,
                                        sequence_length=sequence_length, drop_last=True, shuffle=True, num_workers=1,
                                        contact=True)
@@ -891,7 +891,7 @@ if __name__ == '__main__':
         print('~~~~~~~~~~~~~~~~~~~%d~~~~~~~~~~~~~~~~~~~~' % i)
         # try:
         p_m = train_harper(model=model, body_part=body_part, sequence_length=sequence_length, pretrained=pretrained,
-                           new_classifier=new_classifier)
+                           new_classifier=new_classifier, train=False)
         # except ValueError:
         #     continue
         performance_model.append(p_m)
