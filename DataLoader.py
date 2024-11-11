@@ -111,7 +111,7 @@ class Pose_DataLoader(DataLoader):
             att_label.append(d[1][1])
             act_label.append(d[1][2])
         if self.contact:
-            contact_label.append(d[1][0])
+            contact_label.append(d[1][3])
         lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
         if self.contact:
             lables = (
