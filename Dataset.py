@@ -476,7 +476,7 @@ class HARPER_Dataset(Dataset):
                     self.labels[i][0] = int(pose_json['intention_class'])
                     self.labels[i][1] = int(pose_json['attitude_class'])
                     self.labels[i][2] = int(pose_json['action_class'])
-                    self.labels[i][3] = int(pose_json['will_touch'])
+                    self.labels[i][3] = int(pose_json['will_contact'])
                     frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
                     while ii < self.sequence_length and ii < pose_json['detected_frames_number']:
                         frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
