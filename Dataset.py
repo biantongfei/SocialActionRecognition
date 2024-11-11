@@ -467,6 +467,7 @@ class HARPER_Dataset(Dataset):
         self.labels = torch.zeros((len(self.files) * 2, 4)) if self.train else torch.zeros((len(self.files), 4))
         for i, file in enumerate(self.files):
             if 'json' in file:
+                print(file)
                 with open(self.data_path + file, 'r') as f:
                     pose_json = json.load(f)
                     ii = 0
@@ -486,8 +487,8 @@ class HARPER_Dataset(Dataset):
                         if self.train:
                             frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
                             frame_feature = frame_feature.reshape((133, 3))
-                            frame_feature[:, 0] = 2 * (0.5 - frame_feature['frames'][:, 0] / frame_width)
-                            frame_feature[:, 1] = 2 * (0.5 - frame_feature['frames'][:, 1] / frame_height)
+                            frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
+                            frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
                             self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
                         ii += 1
 
