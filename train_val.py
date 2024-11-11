@@ -828,11 +828,11 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
         contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
         contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
         contact_score = np.mean(contact_y_score)
-        performance_model['contaction_accuracy'] = contact_acc
-        performance_model['contaction_f1'] = contact_f1
-        performance_model['contaction_confidence_score'] = contact_score
-        performance_model['contaction_y_true'] = contact_y_true
-        performance_model['contaction_y_pred'] = contact_y_pred
+        performance_model['contact_accuracy'] = contact_acc
+        performance_model['contact_f1'] = contact_f1
+        performance_model['contact_confidence_score'] = contact_score
+        performance_model['contact_y_true'] = contact_y_true
+        performance_model['contact_y_pred'] = contact_y_pred
         result_str += 'contact_acc: %.2f, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
             contact_acc * 100, contact_f1, contact_score)
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
