@@ -93,13 +93,10 @@ class Classifier(nn.Module):
                 y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             return y1, y2, y3
         elif self.framework == 'chain+contact':
-            print(y.shape)
             y1 = self.intention_head(y)
             y2 = self.attitude_head(torch.cat((y, y1), dim=1))
             y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             y4 = self.contact_head(y)
-            print(y1.shape)
-            print(y4.shape)
             return y1, y2, y3, y4
 
 

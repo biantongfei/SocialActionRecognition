@@ -626,8 +626,6 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                 dtype=torch.long, device=device)
             if pretrained:
                 if new_classifier:
-                    print(int_labels.shape)
-                    print(contact_labels.shape)
                     int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
                     loss_2 = functional.cross_entropy(att_outputs, att_labels)
@@ -686,8 +684,10 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
                 dtype=torch.int64, device=device)
             if pretrained:
-                int_outputs, att_outputs, _ = net(inputs)
-                # int_outputs, att_outputs, act_outputs, _ = net(inputs)
+                if new_classifier:
+                    int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
+                else:
+                    int_outputs, att_outputs, _ = net(inputs)
             else:
                 int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
         result_str = 'model: %s, epoch: %d, ' % (model, epoch)
@@ -792,7 +792,10 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                 int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
 
         if pretrained:
-            int_outputs, att_outputs, _ = net(inputs)
+            if new_classifier:
+                int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
+            else:
+                int_outputs, att_outputs, _ = net(inputs)
         else:
             int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
             # int_outputs, att_outputs, act_outputs, attention_weight = net(inputs)
