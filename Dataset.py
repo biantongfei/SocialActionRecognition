@@ -471,6 +471,7 @@ class HARPER_Dataset(Dataset):
                     pose_json = json.load(f)
                     ii = 0
                     print(pose_json.keys())
+                    print(pose_json['intention_class'])
                     self.labels[i][0] = pose_json['intention_class']
                     self.labels[i][1] = pose_json['attitude_class']
                     self.labels[i][2] = pose_json['action_class']
