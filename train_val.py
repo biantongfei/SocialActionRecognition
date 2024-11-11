@@ -890,7 +890,7 @@ if __name__ == '__main__':
     model = 'gcn_lstm'
     sequence_length = 10
     body_part = [True, True, True]
-    pretrained = True
+    pretrained = False
     new_classifier = True
     performance_model = []
     i = 0
