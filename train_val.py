@@ -594,6 +594,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
     if new_classifier:
         H_Classifier = Classifier(framework='chain+contact')
         optimizer = torch.optim.Adam(H_Classifier.parameters(), lr=learning_rate)
+        net.train_classifier = False
     else:
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
