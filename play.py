@@ -1,5 +1,4 @@
-import socket
+import numpy as np
 
-hostname = socket.gethostname()
-ip = socket.gethostbyname(hostname)
-print(type(ip))
+a = np.array([1, 2, 3, 4, 5, 6])
+print(a.reshape((2, 3)))

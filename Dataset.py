@@ -478,12 +478,13 @@ class HARPER_Dataset(Dataset):
                     frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
                     while ii < self.sequence_length and ii < pose_json['detected_frames_number']:
                         frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
-                        print(frame_feature.size)
+                        frame_feature = frame_feature.reshape((133, 3))
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                         self.pose_sequences[i][ii] = torch.tensor(frame_feature)
                         if self.train:
                             frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
+                            frame_feature = frame_feature.reshape((133, 3))
                             frame_feature[:, 0] = 2 * (0.5 - frame_feature['frames'][:, 0] / frame_width)
                             frame_feature[:, 1] = 2 * (0.5 - frame_feature['frames'][:, 1] / frame_height)
                             self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
