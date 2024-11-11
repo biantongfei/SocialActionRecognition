@@ -449,8 +449,8 @@ class HARPER_Dataset(Dataset):
     def __init__(self, files, sequence_length, train=False):
         self.files = files
         self.sequence_length = sequence_length
-        self.get_pose_sequences()
         self.train = train
+        self.get_pose_sequences()
 
     def __getitem__(self, item):
         return self.pose_sequences[item], self.labels[item]
