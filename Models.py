@@ -587,7 +587,6 @@ class GNN(nn.Module):
         # self.other_parameters += self.action_head.parameters()
 
     def forward(self, data):
-        print(data[0][0].shape, data[0][1].shape, data[0][2].shape)
         x_list = []
         if self.body_part[0]:
             x_body, edge_index_body, batch_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(
@@ -598,7 +597,6 @@ class GNN(nn.Module):
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
-            print(x_body.shape)
             print(self.sequence_length)
             x_body = x_body.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
