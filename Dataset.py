@@ -446,54 +446,62 @@ def split_harper_subsets(data_path):
 
 
 class HARPER_Dataset(Dataset):
-    def __init__(self, data_path, files, sequence_length, train=False):
+    def __init__(self, data_path, files, body_part, sequence_length, train=False):
         self.data_path = data_path
         self.files = files
         self.sequence_length = sequence_length
+        self.body_part = body_part
         self.train = train
+        self.features = []
+        self.labels = []
         self.get_pose_sequences()
 
     def __getitem__(self, item):
-        return self.pose_sequences[item], self.labels[item]
+        return self.features[item], self.labels[item]
 
     def __len__(self):
         return len(self.files) * 2 if self.train else len(self.files)
 
     def get_pose_sequences(self):
-        input_size = get_inputs_size(is_coco=True, body_part=[True, True, True])
-        self.pose_sequences = torch.zeros(
-            (len(self.files) * 2, self.sequence_length, int(input_size / 3), 3)) if self.train else torch.zeros(
-            (len(self.files), self.sequence_length, int(input_size / 3), 3))
-        self.labels = torch.zeros((len(self.files) * 2, 4)) if self.train else torch.zeros((len(self.files), 4))
-        for i, file in enumerate(self.files):
-            if 'json' in file:
-                with open(self.data_path + file, 'r') as f:
-                    pose_json = json.load(f)
-                    ii = 0
-                    self.labels[i][0] = int(pose_json['intention_class'])
-                    self.labels[i][1] = int(pose_json['attitude_class'])
-                    self.labels[i][2] = int(pose_json['action_class'])
-                    self.labels[i][3] = int(pose_json['will_contact'])
-                    frame_width, frame_height = pose_json['frame_size'][0], pose_json['frame_size'][1]
-                    while ii < self.sequence_length and ii < pose_json['detected_frames_number']:
-                        frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
-                        frame_feature = frame_feature.reshape((133, 3))
+        for file in self.files:
+            with open(self.data_path + file, 'r') as f:
+                feature_json = json.load(f)
+                f.close()
+            x_list = [0, 0, 0]
+            frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+            for index_body, body in enumerate(self.body_part):
+                if body:
+                    index = 0
+                    b_p = [False, False, False]
+                    b_p[index_body] = True
+                    input_size = get_inputs_size(True, b_p)
+                    x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
+                    frame_num = 0
+                    while frame_num < self.sequence_length:
+                        frame = feature_json['frames'][index]
+                        index += 1
+                        frame_feature = np.array(frame['keypoints'])
+                        frame_feature = get_body_part(frame_feature, True, b_p)
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
-                        self.pose_sequences[i][ii] = torch.tensor(frame_feature)
-                        if self.train:
-                            frame_feature = np.array(pose_json['frames'][ii]['keypoints'])
-                            frame_feature = frame_feature.reshape((133, 3))
-                            frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
-                            frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
-                            self.pose_sequences[i + len(self.files)][ii] = torch.tensor(frame_feature)
-                        ii += 1
+                        # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                        # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                        x = torch.tensor(frame_feature)
+                        x_tensor[frame_num] = x
+                        frame_num += 1
+                    if frame_num == 0:
+                        return 0, 0
+                    x_list[index_body] = x_tensor
+            label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
+            self.features.append(x_list)
+            self.labels.append(label)
 
 
 if __name__ == '__main__':
     augment_method = 'crop'
     is_coco = True
-    tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco)
+    tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method,
+                                                          is_coco=is_coco)
     print(len(tra_files), len(val_files), len(test_files))
     dataset = ImagesDataset(tra_files[:10], 1, 30)
     features, labels = dataset.__getitem__(2)
