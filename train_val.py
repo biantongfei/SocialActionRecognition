@@ -788,7 +788,6 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
                                                                                device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
                 dtype=torch.int64, device=device)
-
         if pretrained:
             if new_classifier:
                 int_outputs, att_outputs, act_outputs, contact_outputs = H_Classifier(net(inputs))
@@ -812,7 +811,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
         att_y_true += att_labels.tolist()
         att_y_pred += pred.tolist()
         att_y_score += score.tolist()
-        if not pretrained:
+        if not pretrained or new_classifier:
             act_outputs = torch.softmax(act_outputs, dim=1)
             score, pred = torch.max(act_outputs, dim=1)
             # act_pred = act_outputs.argmax(dim=1)
