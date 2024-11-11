@@ -552,7 +552,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
 
 
 def train_harper(model, sequence_length, pretrained=True, new_classifier=False):
-    data_path = '../HARPER/pose_features/'
+    data_path = '../HARPER/pose_sequences/'
     tasks = ['intention', 'attitude'] if pretrained else ['intention', 'attitude', 'action', 'will_contact']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
