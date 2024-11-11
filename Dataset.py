@@ -459,7 +459,7 @@ class HARPER_Dataset(Dataset):
         return len(self.files) * 2 if self.train else len(self.files)
 
     def get_pose_sequences(self):
-        input_size = get_inputs_size(is_coco=True)
+        input_size = get_inputs_size(is_coco=True, body_part=[True, True, True])
         self.pose_sequences = torch.zeros(
             (len(self.files) * 2, self.sequence_length, int(input_size / 3), 3)) if self.train else torch.zeros(
             (len(self.files), self.sequence_length, int(input_size / 3), 3))
