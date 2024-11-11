@@ -683,6 +683,7 @@ class GNN(nn.Module):
         #         y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
         #     return y1, y2, y3
         print(y.shape)
+        print(self.train_classifier)
         return self.classifier(y) if self.train_classifier else y
         # return y1, y2, y3, gcn_attention_weights
 
