@@ -539,7 +539,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
         (total_params, process_time * 1000 / len(testset))))
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    torch.save(net, 'models/jpl_%s.pt' % model)
+    torch.save(net, 'models/jpl_%s_fps10.pt' % model)
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
     # attn_weight = torch.cat(attn_weight, dim=0)
@@ -567,7 +567,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
         len(train_dataset), len(val_dataset), len(test_dataset)))
 
     if pretrained:
-        net = torch.load('models/jpl_gcn_lstm.pt')
+        net = torch.load('models/jpl_gcn_lstm_fps10.pt')
         net.sequence_length = sequence_length
     elif model in ['avg', 'perframe']:
         net = DNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
