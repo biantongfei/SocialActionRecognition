@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
@@ -20,6 +21,8 @@ import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
 import time
+
+import wandb
 
 
 def send_email(body):
@@ -148,8 +151,7 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
 
 
 def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False,
-              dataset='mixed+coco',
-              oneshot=False):
+              dataset='mixed+coco', oneshot=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -159,6 +161,16 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
     # dataset = '0+coco'
+    train_epochs = 50
+    config = {
+        'model': model,
+        'body_part': body_part,
+        'framework': framework,
+        'epochs': train_epochs,
+    }
+    wandb.init(project='SocialEgoNet', name='jpl_%s_%s' % (model, datetime.now().strftime("%Y-%m-%d_%H:%M")),
+               config=config)
+
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -248,10 +260,11 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
     #     file.close()
     while True:
         train_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                       sequence_length=sequence_length, drop_last=True, shuffle=True,
-                                       num_workers=num_workers)
+                                       sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
+                                       drop_last=True, shuffle=True, num_workers=num_workers)
         val_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
-                                     drop_last=True, batch_size=batch_size, num_workers=num_workers)
+                                     frame_sample_hop=frame_sample_hop, drop_last=True, batch_size=batch_size,
+                                     num_workers=num_workers)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -381,7 +394,9 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
                 act_acc * 100, act_f1, act_score)
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        if epoch == 50:
+        wandb.log({'train_int_acc': int_acc, 'train_int_f1': int_f1, 'train_att_acc': att_acc, 'train_att_f1': att_f1,
+                   'train_act_acc': act_acc,'train_act_f1': act_f1})
+        if epoch == train_epochs:
             break
         else:
             epoch += 1
@@ -390,7 +405,8 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
 
     print('Testing')
     test_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
-                                  batch_size=batch_size, drop_last=False, num_workers=num_workers)
+                                  frame_sample_hop=frame_sample_hop, batch_size=batch_size, drop_last=False,
+                                  num_workers=num_workers)
     if oneshot:
         net.train()
         print('Oneshot')
@@ -539,6 +555,8 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
         (total_params, process_time * 1000 / len(testset))))
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    wandb.log({'test_int_acc': int_acc, 'test_int_f1': int_f1, 'test_att_acc': att_acc, 'test_att_f1': att_f1,
+               'test_act_acc': act_acc, 'test_act_f1': act_f1})
     torch.save(net, 'models/jpl_%s_fps10.pt' % model)
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
@@ -602,10 +620,10 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
     epoch = 1
     while train:
         train_loader = Pose_DataLoader(is_coco=True, model=model, dataset=train_dataset, batch_size=16,
-                                       sequence_length=sequence_length, drop_last=True, shuffle=True, num_workers=1,
-                                       contact=True)
+                                       sequence_length=sequence_length, frame_sample_hop=1, drop_last=True,
+                                       shuffle=True, num_workers=1, contact=True)
         val_loader = Pose_DataLoader(is_coco=True, model=model, dataset=val_dataset, sequence_length=sequence_length,
-                                     drop_last=True, batch_size=16, num_workers=1, contact=True)
+                                     frame_sample_hop=1, drop_last=True, batch_size=16, num_workers=1, contact=True)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -765,7 +783,7 @@ def train_harper(model, sequence_length, body_part, pretrained=True, new_classif
 
     print('Testing')
     test_loader = Pose_DataLoader(is_coco=True, model=model, dataset=test_dataset, sequence_length=sequence_length,
-                                  batch_size=16, drop_last=False, num_workers=1, contact=True)
+                                  frame_sample_hop=1, batch_size=16, drop_last=False, num_workers=1, contact=True)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
     process_time = 0
     net.eval()

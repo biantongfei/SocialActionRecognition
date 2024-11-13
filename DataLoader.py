@@ -22,7 +22,8 @@ def rnn_collate_fn(data):
 
 
 class Pose_DataLoader(DataLoader):
-    def __init__(self, is_coco, model, dataset, batch_size, sequence_length, drop_last=True, shuffle=False,
+    def __init__(self, is_coco, model, dataset, batch_size, sequence_length, frame_sample_hop, drop_last=True,
+                 shuffle=False,
                  num_workers=1, contact=False):
         super(Pose_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                               drop_last=drop_last, num_workers=num_workers)
@@ -36,6 +37,7 @@ class Pose_DataLoader(DataLoader):
             self.collate_fn = self.stgcn_collate_fn
         self.is_coco = is_coco
         self.sequence_length = sequence_length
+        self.frame_sample_hop = frame_sample_hop
         self.coco_body_l_pair_num = len(coco_body_l_pair)
         self.halpe_body_l_pair_num = len(halpe_body_l_pair)
         self.head_l_pair_num = len(coco_head_l_pair)
@@ -85,7 +87,7 @@ class Pose_DataLoader(DataLoader):
         int_label, att_label, act_label, contact_label = [], [], [], []
         frame_num = 0
         for d in data:
-            for ii in range(self.sequence_length):
+            for ii in range(int(self.sequence_length / self.frame_sample_hop)):
                 for i in range(len(d[0])):
                     if i == 0:
                         edge_index = torch.Tensor(coco_body_l_pair if self.is_coco else halpe_body_l_pair).t()
