@@ -253,13 +253,7 @@ class JPL_Dataset(Dataset):
         x_list = [0, 0, 0]
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        first_id = -1
-        for frame in feature_json['frames']:
-            if frame['frame_id'] % self.frame_sample_hop == 0:
-                first_id = frame['frame_id']
-                break
-        if first_id == -1:
-            return 0, 0
+        first_id = feature_json['frames'][0]['frame_id']
         for index_body, body in enumerate(self.body_part):
             if body:
                 index = 0
@@ -281,7 +275,7 @@ class JPL_Dataset(Dataset):
                             index += 1
                             if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
-                            elif frame['frame_id'] % self.frame_sample_hop == 0:
+                            else:
                                 box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
                                     frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])

@@ -61,29 +61,27 @@ class Pose_DataLoader(DataLoader):
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
 
     def gcn_collate_fn(self, data):
-        x_tensors_list, edge_index_list, batch = [
-            torch.zeros(
-                (
-                    len(data) * self.sequence_length * (coco_body_point_num if self.is_coco else halpe_body_point_num),
-                    3)),
-            torch.zeros((len(data) * self.sequence_length * head_point_num, 3)),
-            torch.zeros((len(data) * self.sequence_length * hands_point_num, 3))], [
-            torch.zeros((2, len(data) * self.sequence_length * (
-                    2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
-                coco_body_point_num if self.is_coco else halpe_body_point_num)))).to(
-                torch.int64),
-            torch.zeros((2, len(data) * self.sequence_length * (2 * self.head_l_pair_num + head_point_num))).to(
-                torch.int64),
-            torch.zeros((2, len(data) * self.sequence_length * (2 * self.hand_l_pair_num + hands_point_num))).to(
-                torch.int64)], [torch.zeros(
-            (len(data) * self.sequence_length * (coco_body_point_num if self.is_coco else halpe_body_point_num),)).to(
-            torch.int64), torch.zeros(len(data) * self.sequence_length * head_point_num, ).to(torch.int64),
-            torch.zeros((len(data) * self.sequence_length * hands_point_num,)).to(torch.int64)]
+        x_tensors_list = [torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * (
+            coco_body_point_num if self.is_coco else halpe_body_point_num), 3)), torch.zeros(
+            (len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, 3)), torch.zeros(
+            (len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num, 3))],
+        edge_index_list = [torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
+                2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
+            coco_body_point_num if self.is_coco else halpe_body_point_num)))).to(torch.int64),
+                           torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
+                                   2 * self.head_l_pair_num + head_point_num))).to(torch.int64),
+                           torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
+                                   2 * self.hand_l_pair_num + hands_point_num))).to(torch.int64)]
+        batch = [torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * (
+            coco_body_point_num if self.is_coco else halpe_body_point_num),)).to(torch.int64),
+                 torch.zeros(len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, ).to(
+                     torch.int64),
+                 torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num,)).to(
+                     torch.int64)]
         point_nums = [coco_body_point_num if self.is_coco else halpe_body_point_num, head_point_num, hands_point_num]
-        edge_nums = [
-            2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
-                coco_body_point_num if self.is_coco else halpe_body_point_num),
-            2 * self.head_l_pair_num + head_point_num, 2 * self.hand_l_pair_num + hands_point_num]
+        edge_nums = [2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
+            coco_body_point_num if self.is_coco else halpe_body_point_num), 2 * self.head_l_pair_num + head_point_num,
+                     2 * self.hand_l_pair_num + hands_point_num]
         int_label, att_label, act_label, contact_label = [], [], [], []
         frame_num = 0
         for d in data:
