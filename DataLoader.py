@@ -64,7 +64,7 @@ class Pose_DataLoader(DataLoader):
         x_tensors_list = [torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * (
             coco_body_point_num if self.is_coco else halpe_body_point_num), 3)), torch.zeros(
             (len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, 3)), torch.zeros(
-            (len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num, 3))],
+            (len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num, 3))]
         edge_index_list = [torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
                 2 * (self.coco_body_l_pair_num if self.is_coco else self.halpe_body_l_pair_num) + (
             coco_body_point_num if self.is_coco else halpe_body_point_num)))).to(torch.int64),
@@ -99,11 +99,6 @@ class Pose_DataLoader(DataLoader):
                         continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
                     edge_index, _ = add_self_loops(edge_index, num_nodes=point_nums[i])
-                    print(i, ii, frame_num)
-                    print(len(x_tensors_list))
-                    print(x_tensors_list[i].shape)
-                    print(len(d))
-                    print(d[0].shape)
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (
                             edge_index + torch.full((2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(
