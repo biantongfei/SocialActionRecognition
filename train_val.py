@@ -207,13 +207,13 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
         tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
                                                               ori_videos=ori_videos)
         trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco,
-                               body_part=body_part,
-                               model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+                               body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
+                               sequence_length=sequence_length)
         valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
                              model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
         testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco,
-                              body_part=body_part,
-                              model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+                              body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
+                              sequence_length=sequence_length)
     else:
         tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', is_coco=is_coco,
                                                               ori_videos=ori_videos)
@@ -233,7 +233,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
         net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
-                  sequence_length=sequence_length)
+                  sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
     elif model == 'msgcn':

@@ -440,7 +440,7 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, is_coco, body_part, framework, model, sequence_length, train_classifier=True):
+    def __init__(self, is_coco, body_part, framework, model, sequence_length, frame_sample_hop, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -449,6 +449,7 @@ class GNN(nn.Module):
         self.framework = framework
         self.model = model
         self.sequence_length = sequence_length
+        self.frame_sample_hop = frame_sample_hop
         self.keypoint_hidden_dim = 16
         self.time_hidden_dim = self.keypoint_hidden_dim * 4
         self.pooling = False
@@ -510,22 +511,24 @@ class GNN(nn.Module):
                 nn.ReLU(),
                 nn.Dropout(0.5))
             # self.other_parameters += self.time_model.parameters()
-            self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / 3) / 2)
+            self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / frame_sample_hop / 3) / 2)
         elif model == 'gcn_tran':
             model_dim, num_heads, num_layers, num_classes = 256, 8, 3, 16
             self.embedding = nn.Linear(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                                        model_dim)
-            self.positional_encoding = nn.Parameter(torch.zeros(1, sequence_length, model_dim))
+            self.positional_encoding = nn.Parameter(torch.zeros(1, int(sequence_length / frame_sample_hop), model_dim))
 
             encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
             self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
             # self.other_parameters += self.embedding.parameters() + self.positional_encoding + self.transformer_encoder.parameters()
             self.fc_input_size = model_dim
         else:
-            self.time_edge_index = torch.tensor(np.array([[i, i + 1] for i in range(self.sequence_length - 1)]),
-                                                dtype=torch.int32, device=device).t().contiguous()
+            self.time_edge_index = torch.tensor(
+                np.array([[i, i + 1] for i in range(int(self.sequence_length / self.frame_sample_hop) - 1)]),
+                dtype=torch.int32, device=device).t().contiguous()
             self.time_edge_index = torch.cat([self.time_edge_index, self.time_edge_index.flip([0])], dim=1)
-            self.time_edge_index, _ = add_self_loops(self.time_edge_index, num_nodes=self.sequence_length)
+            self.time_edge_index, _ = add_self_loops(self.time_edge_index,
+                                                     num_nodes=int(self.sequence_length / self.frame_sample_hop))
             self.GCN_time = GCN(
                 in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
                 hidden_channels=self.time_hidden_dim, num_layers=2)
@@ -536,7 +539,7 @@ class GNN(nn.Module):
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
             self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length)
+            self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, 256),
@@ -596,7 +599,7 @@ class GNN(nn.Module):
                 x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
-            x_body = x_body.view(-1, self.sequence_length, self.keypoint_hidden_dim * (
+            x_body = x_body.view(-1, int(self.sequence_length / self.frame_sample_hop), self.keypoint_hidden_dim * (
                 coco_body_point_num if self.is_coco else halpe_body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
@@ -608,7 +611,8 @@ class GNN(nn.Module):
                 x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_head = global_mean_pool(x_head, batch_head)
-            x_head = x_head.view(-1, self.sequence_length, self.keypoint_hidden_dim * head_point_num)
+            x_head = x_head.view(-1, self.sequence_length / self.frame_sample_hop,
+                                 self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_head)
         if self.body_part[2]:
             x_hand, edge_index_hand, batch_hand = data[0][2].to(dtype=dtype, device=device), data[1][2].to(device), \
@@ -622,7 +626,8 @@ class GNN(nn.Module):
             x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
-        x = x.view(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
+        x = x.view(-1, int(self.sequence_length / self.frame_sample_hop),
+                   self.keypoint_hidden_dim * int(self.input_size / 3))
         gcn_attention_weights = nn.Softmax(dim=1)(self.gcn_attention(x))
         x = x * gcn_attention_weights
 
