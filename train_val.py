@@ -362,7 +362,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
             int_score = np.mean(int_y_score)
             result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
                 int_acc * 100, int_f1, int_score)
-            wandb.log({'train_int_acc': int_acc, 'train_int_f1': int_f1})
         if 'attitude' in tasks:
             att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
             if model == 'perframe':
@@ -372,7 +371,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
             att_score = np.mean(att_y_score)
             result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (
                 att_acc * 100, att_f1, att_score)
-            wandb.log({'train_att_acc': att_acc, 'train_att_f1': att_f1})
         if 'action' in tasks:
             act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
@@ -382,8 +380,11 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
             act_score = np.mean(act_y_score)
             result_str += 'act_acc: %.2f%%, act_f1: %.4f, act_confidence_score: %.4f, ' % (
                 act_acc * 100, act_f1, act_score)
-            wandb.log({'train_act_acc': act_acc, 'train_act_f1': act_f1})
+
         print(result_str + 'loss: %.4f' % total_loss)
+        wandb.log(
+            {'epoch': epoch, 'val_int_acc': int_acc, 'val_int_f1': int_f1, 'val_att_acc': att_acc, 'val_att_f1': att_f1,
+             'val_act_acc': act_acc, 'val_act_f1': act_f1})
         torch.cuda.empty_cache()
         if epoch == wandb.config.epochs:
             break
@@ -507,7 +508,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         performance_model['intention_y_true'] = int_y_true
         performance_model['intention_y_pred'] = int_y_pred
         result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score :%.4f, ' % (int_acc * 100, int_f1, int_score)
-        wandb.log({'test_int_acc': int_acc, 'test_int_f1': int_f1})
     if 'attitude' in tasks:
         att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
         if model == 'perframe':
@@ -521,7 +521,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         performance_model['attitude_y_true'] = att_y_true
         performance_model['attitude_y_pred'] = att_y_pred
         result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (att_acc * 100, att_f1, att_score)
-        wandb.log({'test_att_acc': att_acc, 'test_att_f1': att_f1})
     if 'action' in tasks:
         act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         if model == 'perframe':
@@ -535,7 +534,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
         result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (act_acc * 100, act_f1, act_score)
-        wandb.log({'test_act_acc': act_acc, 'test_act_f1': act_f1})
     if augment_method not in ['mixed', 'crop', 'noise']:
         r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
                                                                                    att_y_true, att_y_pred,
@@ -545,6 +543,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
         (total_params, process_time * 1000 / len(testset))))
+    wandb.log({'test_int_acc': int_acc, 'test_int_f1': int_f1, 'test_att_acc': att_acc, 'test_att_f1': att_f1,
+               'test_act_acc': act_acc, 'test_act_f1': act_f1, 'test_avg_acc': (int_acc + att_acc + act_acc) / 3,
+               'test_avg_f1': (int_f1 + att_f1 + act_f1) / 3})
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # torch.save(net, 'models/jpl_%s_fps10.pt' % model)
