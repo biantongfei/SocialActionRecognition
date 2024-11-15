@@ -83,9 +83,9 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     #             val_files.append(file)
     #     elif '-ori_' in file:
     #         test_files.append(file)
-    tra_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/')
-    val_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/')
-    test_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/')
+    tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
+    val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
+    test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
     return tra_files, val_files, test_files
 
 
@@ -257,7 +257,6 @@ class JPL_Dataset(Dataset):
         return features, label
 
     def get_graph_data_from_file(self, file):
-        print(file)
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
