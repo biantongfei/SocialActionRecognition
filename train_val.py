@@ -355,6 +355,8 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
             int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
             if model == 'perframe':
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
+            print(int_y_pred)
+            print(int_y_true)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
             int_score = np.mean(int_y_score)
