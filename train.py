@@ -1,6 +1,6 @@
 from train_val import train_jpl, draw_save, send_email
 import wandb
-import datetime
+from datetime import datetime
 
 body_part = [True, True, True]
 model = 'gcn_lstm'
@@ -38,9 +38,9 @@ sweep_config = {
         'keypoint_hidden_dim': {'values': [8, 16, 32]},
         'time_hidden_dim': {'values': [16, 32, 64, 128]}
     },
-    'early_terminate':{
-        'type':'hyperband',
-        'min_iter':5
+    'early_terminate': {
+        'type': 'hyperband',
+        'min_iter': 5
     }
 }
 wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
