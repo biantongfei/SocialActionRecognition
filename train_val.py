@@ -544,8 +544,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
         (total_params, process_time * 1000 / len(testset))))
     wandb.log({'test_int_acc': int_acc, 'test_int_f1': int_f1, 'test_att_acc': att_acc, 'test_att_f1': att_f1,
-               'test_act_acc': act_acc, 'test_act_f1': act_f1, 'test_avg_acc': (int_acc + att_acc + act_acc) / 3,
-               'test_avg_f1': (int_f1 + att_f1 + act_f1) / 3})
+               'test_act_acc': act_acc, 'test_act_f1': act_f1, 'avg_acc': (int_acc + att_acc + act_acc) / 3,
+               'avg_f1': (int_f1 + att_f1 + act_f1) / 3})
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # torch.save(net, 'models/jpl_%s_fps10.pt' % model)
