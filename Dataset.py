@@ -257,6 +257,7 @@ class JPL_Dataset(Dataset):
         return features, label
 
     def get_graph_data_from_file(self, file):
+        print(file)
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
