@@ -452,7 +452,7 @@ class GNN(nn.Module):
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
         self.keypoint_hidden_dim = keypoint_hidden_dim
-        self.time_hidden_dim = time_hidden_dim
+        self.time_hidden_dim = keypoint_hidden_dim * time_hidden_dim
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
