@@ -49,4 +49,4 @@ if __name__ == '__main__':
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
     sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps30')
-    wandb.agent(sweep_id, function=train, count=4)
+    wandb.agent(sweep_id, function=train, count=30)
