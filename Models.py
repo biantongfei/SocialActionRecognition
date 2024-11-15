@@ -440,7 +440,8 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, is_coco, body_part, framework, model, sequence_length, frame_sample_hop, train_classifier=True):
+    def __init__(self, is_coco, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
+                 time_hidden_dim, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.is_coco = is_coco
@@ -450,8 +451,8 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        self.keypoint_hidden_dim = 16
-        self.time_hidden_dim = self.keypoint_hidden_dim * 4
+        self.keypoint_hidden_dim = keypoint_hidden_dim
+        self.time_hidden_dim = time_hidden_dim
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []

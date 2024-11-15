@@ -145,7 +145,7 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
         print(test_files[index], act_y_true[index], act_y_pred[index])
 
 
-def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop, sequence_length=99999,
+def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length=99999,
               ori_videos=False, dataset='mixed+coco', oneshot=False):
     """
     :param
@@ -156,6 +156,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
     # dataset = '0+coco'
+    run = wandb.init()
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -219,6 +220,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
         net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
+                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim, time_hidden_dim=wandb.config.time_hidden_dim,
                   sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
     elif model == 'stgcn':
         net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
@@ -383,7 +385,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
             wandb.log({'train_act_acc': act_acc, 'train_act_f1': act_f1})
         print(result_str + 'loss: %.4f' % total_loss)
         torch.cuda.empty_cache()
-        if epoch == train_epochs:
+        if epoch == wandb.config.epochs:
             break
         else:
             epoch += 1
@@ -545,7 +547,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
         (total_params, process_time * 1000 / len(testset))))
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    torch.save(net, 'models/jpl_%s_fps10.pt' % model)
+    # torch.save(net, 'models/jpl_%s_fps10.pt' % model)
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
     # attn_weight = torch.cat(attn_weight, dim=0)
