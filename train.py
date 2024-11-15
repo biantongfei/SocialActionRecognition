@@ -16,10 +16,9 @@ def train():
     frame_sample_hop = 1
     sequence_length = 30
     dataset = 'mixed+coco'
-    oneshot = False
     p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework,
                     frame_sample_hop=frame_sample_hop, ori_videos=ori_video, sequence_length=sequence_length,
-                    dataset=dataset, oneshot=oneshot)
+                    dataset=dataset)
     # pretrained = True
     # new_classifier = False
     # if_train = False
