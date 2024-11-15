@@ -34,55 +34,58 @@ def get_data_path(augment_method, is_coco):
 
 
 def get_tra_test_files(augment_method, is_coco, ori_videos=False):
-    if augment_method.split('+')[0] not in ['mixed', 'crop', 'noise']:
-        return get_tra_test_files_generalisation()
-    data_path = get_data_path(augment_method, is_coco)
-    files = os.listdir(data_path)
-    ori_videos_dict = {}
-    for file in files:
-        if '-ori_' in file:
-            with open(data_path + file, 'r') as f:
-                feature_json = json.load(f)
-                if feature_json['action_class'] in ori_videos_dict.keys():
-                    ori_videos_dict[feature_json['action_class']].append(file)
-                else:
-                    ori_videos_dict[feature_json['action_class']] = [file]
-                f.close()
-    validation_videos_dict = {}
-    test_videos_dict = {}
-    for action_class in ori_videos_dict.keys():
-        random.shuffle(ori_videos_dict[action_class])
-        val_video_list = ori_videos_dict[action_class][int(len(ori_videos_dict[action_class]) * (1 - valset_rate)):]
-        test_video_list = ori_videos_dict[action_class][:int(len(ori_videos_dict[action_class]) * testset_rate)]
-        for test_video in test_video_list:
-            if test_video.split('-')[0] in test_videos_dict.keys():
-                test_videos_dict[test_video.split('-')[0]].append(test_video.split('_p')[-1].split('.')[0])
-            else:
-                test_videos_dict[test_video.split('-')[0]] = [test_video.split('_p')[-1].split('.')[0]]
-        for val_video in val_video_list:
-            if val_video.split('-')[0] in validation_videos_dict.keys():
-                validation_videos_dict[val_video.split('-')[0]].append(val_video.split('_p')[-1].split('.')[0])
-            else:
-                validation_videos_dict[val_video.split('-')[0]] = [val_video.split('_p')[-1].split('.')[0]]
-    tra_files = []
-    val_files = []
-    test_files = []
-    for file in files:
-        if 'json' not in file:
-            continue
-        elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
-                test_videos_dict[file.split('-')[0]]:
-            if file.split('-')[0] not in validation_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
-                    validation_videos_dict[file.split('-')[0]]:
-                if ori_videos and '-ori_' not in file:
-                    continue
-                tra_files.append(file)
-            else:
-                if ori_videos and '-ori_' not in file:
-                    continue
-                val_files.append(file)
-        elif '-ori_' in file:
-            test_files.append(file)
+    # if augment_method.split('+')[0] not in ['mixed', 'crop', 'noise']:
+    #     return get_tra_test_files_generalisation()
+    # data_path = get_data_path(augment_method, is_coco)
+    # files = os.listdir(data_path)
+    # ori_videos_dict = {}
+    # for file in files:
+    #     if '-ori_' in file:
+    #         with open(data_path + file, 'r') as f:
+    #             feature_json = json.load(f)
+    #             if feature_json['action_class'] in ori_videos_dict.keys():
+    #                 ori_videos_dict[feature_json['action_class']].append(file)
+    #             else:
+    #                 ori_videos_dict[feature_json['action_class']] = [file]
+    #             f.close()
+    # validation_videos_dict = {}
+    # test_videos_dict = {}
+    # for action_class in ori_videos_dict.keys():
+    #     random.shuffle(ori_videos_dict[action_class])
+    #     val_video_list = ori_videos_dict[action_class][int(len(ori_videos_dict[action_class]) * (1 - valset_rate)):]
+    #     test_video_list = ori_videos_dict[action_class][:int(len(ori_videos_dict[action_class]) * testset_rate)]
+    #     for test_video in test_video_list:
+    #         if test_video.split('-')[0] in test_videos_dict.keys():
+    #             test_videos_dict[test_video.split('-')[0]].append(test_video.split('_p')[-1].split('.')[0])
+    #         else:
+    #             test_videos_dict[test_video.split('-')[0]] = [test_video.split('_p')[-1].split('.')[0]]
+    #     for val_video in val_video_list:
+    #         if val_video.split('-')[0] in validation_videos_dict.keys():
+    #             validation_videos_dict[val_video.split('-')[0]].append(val_video.split('_p')[-1].split('.')[0])
+    #         else:
+    #             validation_videos_dict[val_video.split('-')[0]] = [val_video.split('_p')[-1].split('.')[0]]
+    # tra_files = []
+    # val_files = []
+    # test_files = []
+    # for file in files:
+    #     if 'json' not in file:
+    #         continue
+    #     elif file.split('-')[0] not in test_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
+    #             test_videos_dict[file.split('-')[0]]:
+    #         if file.split('-')[0] not in validation_videos_dict.keys() or file.split('_p')[-1].split('.')[0] not in \
+    #                 validation_videos_dict[file.split('-')[0]]:
+    #             if ori_videos and '-ori_' not in file:
+    #                 continue
+    #             tra_files.append(file)
+    #         else:
+    #             if ori_videos and '-ori_' not in file:
+    #                 continue
+    #             val_files.append(file)
+    #     elif '-ori_' in file:
+    #         test_files.append(file)
+    tra_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/train/')
+    val_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/validation/')
+    test_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/test/')
     return tra_files, val_files, test_files
 
 
@@ -155,10 +158,17 @@ def get_l_pair(is_coco, body_part):
 
 
 class JPL_Dataset(Dataset):
-    def __init__(self, data_files, augment_method, is_coco, body_part, model, frame_sample_hop, sequence_length=99999):
+    def __init__(self, data_files, augment_method, is_coco, body_part, model, frame_sample_hop, subset,
+                 sequence_length=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(augment_method=augment_method, is_coco=is_coco)
+        if subset == 'train':
+            self.data_path += 'train/'
+        elif subset == 'validation':
+            self.data_path += 'validation/'
+        elif subset == 'test':
+            self.data_path += 'test/'
         self.is_coco = is_coco
         self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
         self.model = model

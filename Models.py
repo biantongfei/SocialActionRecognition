@@ -611,7 +611,7 @@ class GNN(nn.Module):
                 x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_head = global_mean_pool(x_head, batch_head)
-            x_head = x_head.view(-1, self.sequence_length / self.frame_sample_hop,
+            x_head = x_head.view(-1, int(self.sequence_length / self.frame_sample_hop),
                                  self.keypoint_hidden_dim * head_point_num)
             x_list.append(x_head)
         if self.body_part[2]:
@@ -623,7 +623,8 @@ class GNN(nn.Module):
                 x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_hand = global_mean_pool(x_hand, batch_hand)
-            x_hand = x_hand.view(-1, self.sequence_length, self.keypoint_hidden_dim * hands_point_num)
+            x_hand = x_hand.view(-1, int(self.sequence_length / self.frame_sample_hop),
+                                 self.keypoint_hidden_dim * hands_point_num)
             x_list.append(x_hand)
         x = torch.cat(x_list, dim=2)
         x = x.view(-1, int(self.sequence_length / self.frame_sample_hop),

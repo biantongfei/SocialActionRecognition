@@ -22,8 +22,6 @@ from email.mime.text import MIMEText
 from tqdm import tqdm
 import time
 
-import wandb
-
 
 def send_email(body):
     subject = "Training Is Done"
@@ -150,8 +148,8 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
         print(test_files[index], act_y_true[index], act_y_pred[index])
 
 
-def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False,
-              dataset='mixed+coco', oneshot=False):
+def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop, sequence_length=99999,
+              ori_videos=False, dataset='mixed+coco', oneshot=False):
     """
     :param
     action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
@@ -161,16 +159,6 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
     # dataset = 'crop+coco'
     # dataset = 'noise+halpe'
     # dataset = '0+coco'
-    train_epochs = 50
-    config = {
-        'model': model,
-        'body_part': body_part,
-        'framework': framework,
-        'epochs': train_epochs,
-    }
-    wandb.init(project='SocialEgoNet', name='jpl_%s_%s' % (model, datetime.now().strftime("%Y-%m-%d_%H:%M")),
-               config=config)
-
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -208,12 +196,13 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
                                                               ori_videos=ori_videos)
         trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco,
                                body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                               sequence_length=sequence_length)
+                               sequence_length=sequence_length, subset='train')
         valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                             model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+                             model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                             subset='validation')
         testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco,
                               body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                              sequence_length=sequence_length)
+                              sequence_length=sequence_length, subset='test')
     else:
         tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', is_coco=is_coco,
                                                               ori_videos=ori_videos)
@@ -571,17 +560,8 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length=999
     return performance_model
 
 
-def train_harper(model, sequence_length, body_part, pretrained=True, new_classifier=False, train=True):
-    train_epochs = 50
-    config = {
-        'model': model,
-        'body_part': body_part,
-        'pretrained': pretrained,
-        'new_classifier': new_classifier,
-        'epochs': train_epochs,
-    }
-    wandb.init(project='SocialEgoNet', name='harper_%s_%s' % (model, datetime.now().strftime("%Y-%m-%d_%H:%M")),
-               config=config)
+def train_harper(wandb, train_epochs, model, sequence_length, body_part, pretrained=True, new_classifier=False,
+                 train=True):
     data_path = '../HARPER/pose_sequences/'
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'contact']
