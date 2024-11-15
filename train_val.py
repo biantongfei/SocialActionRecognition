@@ -249,7 +249,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
                                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                        drop_last=True, shuffle=True, num_workers=num_workers)
         val_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
-                                     frame_sample_hop=frame_sample_hop, drop_last=True, batch_size=batch_size,
+                                     frame_sample_hop=frame_sample_hop, drop_last=False, batch_size=batch_size,
                                      num_workers=num_workers)
         net.train()
         print('Training')
@@ -317,7 +317,6 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
                 inputs = inputs.to(dtype=dtype, device=device)
             elif 'gcn' in model:
                 inputs, (int_labels, att_labels, act_labels) = data
-            print(data[0].shape, data[1][0].shape, data[1][1].shape, data[1][2].shape)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
             if framework == 'intention':
@@ -356,8 +355,6 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
             int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
             if model == 'perframe':
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
-            print(int_y_pred)
-            print(int_y_true)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
             int_score = np.mean(int_y_score)
