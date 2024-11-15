@@ -317,6 +317,7 @@ def train_jpl(wandb, model, body_part, framework, train_epochs, frame_sample_hop
                 inputs = inputs.to(dtype=dtype, device=device)
             elif 'gcn' in model:
                 inputs, (int_labels, att_labels, act_labels) = data
+            print(data[0].shape, data[1][0].shape, data[1][1].shape, data[1][2].shape)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
             if framework == 'intention':
