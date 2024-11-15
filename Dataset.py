@@ -83,9 +83,9 @@ def get_tra_test_files(augment_method, is_coco, ori_videos=False):
     #             val_files.append(file)
     #     elif '-ori_' in file:
     #         test_files.append(file)
-    tra_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/train/')
-    val_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/validation/')
-    test_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco/test/')
+    tra_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/')
+    val_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/')
+    test_files = os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/')
     return tra_files, val_files, test_files
 
 
