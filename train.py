@@ -1,4 +1,5 @@
 from train_val import train_jpl, draw_save, send_email, train_harper
+from Dataset import get_dataset
 import wandb
 from datetime import datetime
 
@@ -15,10 +16,10 @@ def train():
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
-    dataset = 'mixed+coco'
-    p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework,
-                    frame_sample_hop=frame_sample_hop, ori_videos=ori_video, sequence_length=sequence_length,
-                    dataset=dataset)
+    trainset, valset, testset = get_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                                            ori_videos=ori_video)
+    p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
+                    frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
     # pretrained = True
     # new_classifier = False
     # if_train = False
@@ -33,15 +34,15 @@ def train():
 
 if __name__ == '__main__':
     sweep_config = {
-        'method': 'random',
+        'method': 'grid',
         'metric': {
             'name': 'avg_f1',
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {'values': [20, 30, 40, 50]},
+            'epochs': {'values': [30, 40, 50]},
             'keypoint_hidden_dim': {'values': [8, 16, 32, 64]},
-            'time_hidden_dim': {'values': [1, 2, 4, 8]}
+            'time_hidden_dim': {'values': [2, 4, 8]}
         },
         'early_terminate': {
             'type': 'hyperband',

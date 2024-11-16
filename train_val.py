@@ -145,17 +145,7 @@ def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true,
         print(test_files[index], act_y_true[index], act_y_pred[index])
 
 
-def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length=99999, ori_videos=False,
-              dataset='mixed+coco'):
-    """
-    :param
-    action_recognition: 1 for origin 7 classes; 2 for add not interested and interested; False for attitude recognition
-    :return:
-    """
-    # dataset = 'mixed+coco'
-    # dataset = 'crop+coco'
-    # dataset = 'noise+halpe'
-    # dataset = '0+coco'
+def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     run = wandb.init()
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
@@ -185,49 +175,24 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         num_workers = 1
     elif model == 'r3d':
         batch_size = r3d_batch_size
-
-    print('loading data for %s' % dataset)
-    augment_method = dataset.split('+')[0]
-    is_coco = True if 'coco' in dataset else False
-    if model != 'r3d':
-        tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, is_coco=is_coco,
-                                                              ori_videos=ori_videos)
-        trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, is_coco=is_coco,
-                               body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                               sequence_length=sequence_length, subset='train')
-        valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, is_coco=is_coco, body_part=body_part,
-                             model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
-                             subset='validation')
-        testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, is_coco=is_coco,
-                              body_part=body_part, model=model, frame_sample_hop=frame_sample_hop,
-                              sequence_length=sequence_length, subset='test')
-    else:
-        tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', is_coco=is_coco,
-                                                              ori_videos=ori_videos)
-        trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
-                                 sequence_length=sequence_length)
-        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-        testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
-                                sequence_length=sequence_length)
-    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     if model in ['avg', 'perframe']:
-        net = DNN(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = DNN(body_part=body_part, framework=framework)
     elif model == 'lstm':
-        net = RNN(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = RNN(body_part=body_part, framework=framework)
     elif model == 'conv1d':
-        net = Cnn1D(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
+        net = Cnn1D(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif model == 'tran':
-        net = Transformer(is_coco=is_coco, body_part=body_part, framework=framework, sequence_length=sequence_length)
+        net = Transformer(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
-        net = GNN(is_coco=is_coco, body_part=body_part, framework=framework, model=model,
+        net = GNN(body_part=body_part, framework=framework, model=model,
                   keypoint_hidden_dim=wandb.config.keypoint_hidden_dim, time_hidden_dim=wandb.config.time_hidden_dim,
                   sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
     elif model == 'stgcn':
-        net = STGCN(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
-        net = MSGCN(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = MSGCN(body_part=body_part, framework=framework)
     elif model == 'dgstgcn':
-        net = DGSTGCN(is_coco=is_coco, body_part=body_part, framework=framework)
+        net = DGSTGCN(body_part=body_part, framework=framework)
     elif model == 'r3d':
         net = R3D(framework=framework)
     net.to(device)
@@ -246,13 +211,13 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     #     writer = csv.writer(file)
     #     writer.writerow(['Attentions'])
     #     file.close()
+    train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
+                                   sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
+                                   drop_last=True, shuffle=True, num_workers=num_workers)
+    val_loader = Pose_DataLoader(model=model, dataset=valset, sequence_length=sequence_length,
+                                 frame_sample_hop=frame_sample_hop, drop_last=False, batch_size=batch_size,
+                                 num_workers=num_workers)
     while True:
-        train_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=trainset, batch_size=batch_size,
-                                       sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
-                                       drop_last=True, shuffle=True, num_workers=num_workers)
-        val_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=valset, sequence_length=sequence_length,
-                                     frame_sample_hop=frame_sample_hop, drop_last=False, batch_size=batch_size,
-                                     num_workers=num_workers)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -398,7 +363,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
             # break
 
     print('Testing')
-    test_loader = Pose_DataLoader(is_coco=is_coco, model=model, dataset=testset, sequence_length=sequence_length,
+    test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length,
                                   frame_sample_hop=frame_sample_hop, batch_size=batch_size, drop_last=False,
                                   num_workers=num_workers)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
@@ -511,21 +476,20 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         wandb_log['test_act_f1'] = act_f1
         total_acc += act_acc
         total_f1 += act_f1
-    if augment_method not in ['mixed', 'crop', 'noise']:
-        r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
-                                                                                   att_y_true, att_y_pred,
-                                                                                   act_y_true, augment_method)
-        int_recall = recall_score(r_int_y_true, r_int_y_pred, average='micro')
-        att_recall = recall_score(r_att_y_true, r_att_y_pred, average='micro')
-        result_str += 'int_recall: %.2f%%, att_recall: %.2f%%, ' % (int_recall * 100, att_recall * 100)
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
         (total_params, process_time * 1000 / len(testset))))
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     wandb_log['avg_acc'] = total_acc / len(tasks)
+    model_name = 'jpl_%s_fps%d_e%d_k%d_t%d.pt' % (
+        model, int(sequence_length / frame_sample_hop), wandb.config.epochs, wandb.config.keypoint_hidden_dim,
+        wandb.config.time_hidden_dim)
+    torch.save(net, 'models/%s' % model_name)
+    artifact = wandb.Artifact(model_name, type="model")
+    artifact.add_file("models/%s" % model_name)
+    wandb.log_artifact(artifact)
     wandb.log(wandb_log)
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    # torch.save(net, 'models/jpl_%s_fps10.pt' % model)
     # send_email(str(attention_weight.itme()))
     # draw_training_process(trainging_process)
     # attn_weight = torch.cat(attn_weight, dim=0)
@@ -556,24 +520,24 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
         net = torch.load('models/jpl_gcn_lstm_fps10.pt')
         net.sequence_length = sequence_length
     elif model in ['avg', 'perframe']:
-        net = DNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+        net = DNN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'lstm':
-        net = RNN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+        net = RNN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'conv1d':
-        net = Cnn1D(is_coco=True, body_part=[True, True, True], framework='chain+contact',
+        net = Cnn1D(body_part=[True, True, True], framework='chain+contact',
                     sequence_length=sequence_length)
     elif model == 'tran':
-        net = Transformer(is_coco=True, body_part=[True, True, True], framework='chain+contact',
+        net = Transformer(body_part=[True, True, True], framework='chain+contact',
                           sequence_length=sequence_length)
     elif 'gcn_' in model:
-        net = GNN(is_coco=True, body_part=[True, True, True], framework='chain+contact', model=model,
+        net = GNN(body_part=[True, True, True], framework='chain+contact', model=model,
                   sequence_length=sequence_length, train_classifier=not new_classifier)
     elif model == 'stgcn':
-        net = STGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+        net = STGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'msgcn':
-        net = MSGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+        net = MSGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'dgstgcn':
-        net = DGSTGCN(is_coco=True, body_part=[True, True, True], framework='chain+contact')
+        net = DGSTGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'r3d':
         net = R3D(framework='chain+contact')
     net.to(device)
@@ -587,10 +551,10 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     while train:
-        train_loader = Pose_DataLoader(is_coco=True, model=model, dataset=train_dataset, batch_size=16,
+        train_loader = Pose_DataLoader(model=model, dataset=train_dataset, batch_size=16,
                                        sequence_length=sequence_length, frame_sample_hop=1, drop_last=True,
                                        shuffle=True, num_workers=1, contact=True)
-        val_loader = Pose_DataLoader(is_coco=True, model=model, dataset=val_dataset, sequence_length=sequence_length,
+        val_loader = Pose_DataLoader(model=model, dataset=val_dataset, sequence_length=sequence_length,
                                      frame_sample_hop=1, drop_last=True, batch_size=16, num_workers=1, contact=True)
         net.train()
         print('Training')
@@ -759,7 +723,7 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
             # break
 
     print('Testing')
-    test_loader = Pose_DataLoader(is_coco=True, model=model, dataset=test_dataset, sequence_length=sequence_length,
+    test_loader = Pose_DataLoader(model=model, dataset=test_dataset, sequence_length=sequence_length,
                                   frame_sample_hop=1, batch_size=16, drop_last=False, num_workers=1, contact=True)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
     process_time = 0

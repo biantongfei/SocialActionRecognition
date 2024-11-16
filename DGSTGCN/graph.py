@@ -68,7 +68,6 @@ class Graph:
     """
 
     def __init__(self,
-                 is_coco,
                  body_part,
                  num_point,
                  layout='coco-wholebody',
@@ -89,7 +88,6 @@ class Graph:
 
         assert nx_node == 1 or mode == 'random', "nx_node can be > 1 only if mode is 'random'"
         # assert layout in ['openpose', 'nturgb+d', 'coco', 'handmp']
-        self.is_coco = is_coco
         self.body_part = body_part
         self.num_point = num_point
         self.get_layout(layout)
@@ -140,10 +138,9 @@ class Graph:
             self.num_node = self.num_point
             previous_nodes = 0
             if not self.body_part[0]:
-                previous_nodes += coco_body_point_num if self.is_coco else halpe_body_point_num
+                previous_nodes += coco_body_point_num
                 previous_nodes += head_point_num if self.body_part[2] else 0
-            self.inward = [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
-                           get_l_pair(self.is_coco, self.body_part)]
+            self.inward = [[i[0] - previous_nodes, i[1] - previous_nodes] for i in get_l_pair(self.body_part)]
             self.center = 27 if self.body_part[1] else 0
         else:
             raise ValueError(f'Do Not Exist This Layout: {layout}')

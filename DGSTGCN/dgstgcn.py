@@ -52,7 +52,6 @@ class DGBlock(nn.Module):
 class Model(nn.Module):
 
     def __init__(self,
-                 is_coco,
                  body,
                  num_class,
                  in_channels=3,
@@ -66,13 +65,12 @@ class Model(nn.Module):
                  pretrained=None,
                  **kwargs):
         super().__init__()
-        self.is_coco = is_coco
         self.body = body
         self.body_part = [False, False, False]
         self.body_part[body] = True
-        self.num_point = int(get_inputs_size(self.is_coco, self.body_part) / 3)
+        self.num_point = int(get_inputs_size(self.body_part) / 3)
 
-        self.graph = Graph(is_coco, self.body_part, self.num_point)
+        self.graph = Graph(self.body_part, self.num_point)
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.data_bn_type = data_bn_type
         self.kwargs = kwargs

@@ -27,7 +27,7 @@ class Graph():
 
     """
 
-    def __init__(self, is_coco, body, strategy='spatial', max_hop=1, dilation=1):
+    def __init__(self, body, strategy='spatial', max_hop=1, dilation=1):
         self.body = body
         self.max_hop = max_hop
         self.dilation = dilation
@@ -35,14 +35,14 @@ class Graph():
         # self.get_edge(layout)
         body_part = [False, False, False]
         body_part[body] = True
-        self.num_node = int(get_inputs_size(is_coco, body_part) / 3)
+        self.num_node = int(get_inputs_size(body_part) / 3)
         self.center = 0 if body != 1 else 27
         previous_nodes = 0
         if body != 0:
-            previous_nodes += coco_body_point_num if is_coco else halpe_body_point_num
+            previous_nodes += coco_body_point_num
             previous_nodes += head_point_num if body == 2 else 0
         self.edge = [[i, i] for i in range(self.num_node)] + [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
-                                                              get_l_pair(is_coco, body_part)]
+                                                              get_l_pair(body_part)]
         self.hop_dis = get_hop_distance(self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
 
