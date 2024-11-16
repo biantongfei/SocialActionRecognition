@@ -345,14 +345,14 @@ class GNN(nn.Module):
             self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 256),
+            nn.Linear(self.fc_input_size, fc_hidden1),
             nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Linear(256, 16),
+            nn.BatchNorm1d(fc_hidden1),
+            nn.Linear(fc_hidden1, fc_hidden2),
             nn.ReLU(),
-            nn.BatchNorm1d(16),
+            nn.BatchNorm1d(fc_hidden2),
         )
-        self.classifier = Classifier(framework)
+        self.classifier = Classifier(framework, fc_hidden2)
         self.train_classifier = train_classifier
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()
