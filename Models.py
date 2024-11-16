@@ -244,7 +244,7 @@ class Transformer(nn.Module):
 
 class GNN(nn.Module):
     def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
-                 time_hidden_dim, train_classifier=True):
+                 time_hidden_dim, fc_hidden1, fc_hidden2, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part

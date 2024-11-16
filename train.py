@@ -3,21 +3,22 @@ from Dataset import get_dataset
 import wandb
 from datetime import datetime
 
+body_part = [True, True, True]
+model = 'gcn_lstm'
+# framework = 'intention'
+# framework = 'attitude'
+# framework = 'action'
+# framework = 'parallel'
+framework = 'tree'
+# framework = 'chain'
+ori_video = False
+frame_sample_hop = 1
+sequence_length = 30
+trainset, valset, testset = get_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                                        ori_videos=ori_video)
+
 
 def train():
-    body_part = [True, True, True]
-    model = 'gcn_lstm'
-    # framework = 'intention'
-    # framework = 'attitude'
-    # framework = 'action'
-    # framework = 'parallel'
-    framework = 'tree'
-    # framework = 'chain'
-    ori_video = False
-    frame_sample_hop = 1
-    sequence_length = 30
-    trainset, valset, testset = get_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-                                            ori_videos=ori_video)
     p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
                     frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
     # pretrained = True
@@ -34,21 +35,17 @@ def train():
 
 if __name__ == '__main__':
     sweep_config = {
-        'method': 'grid',
+        'method': 'random',
         'metric': {
             'name': 'avg_f1',
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {'values': [30, 40, 50]},
-            'keypoint_hidden_dim': {'values': [8, 16, 32, 64]},
-            'time_hidden_dim': {'values': [2, 4, 8]}
-        },
-        'early_terminate': {
-            'type': 'hyperband',
-            'min_iter': 5,
-            'eta': 2,
-            's': 5
+            'epochs': {'values': [20, 30, 40, 50]},
+            'keypoint_hidden_dim': {'values': [16, 32, 64]},
+            'time_hidden_dim': {'values': [1, 2, 4]},
+            'fc_hidden1': {'values': [64, 128, 256]},
+            'fc_hidden2': {'values': [8, 16, 32]}
         }
     }
     # sweep_config = {
@@ -69,4 +66,4 @@ if __name__ == '__main__':
     # }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
     sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps30')
-    wandb.agent(sweep_id, function=train, count=30)
+    wandb.agent(sweep_id, function=train, count=50)
