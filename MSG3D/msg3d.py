@@ -1,6 +1,6 @@
 import sys
 from Dataset import get_inputs_size, get_l_pair
-from constants import coco_body_point_num, halpe_body_point_num, head_point_num
+from constants import body_point_num, head_point_num
 
 sys.path.insert(0, '')
 
@@ -126,7 +126,7 @@ class Model(nn.Module):
         num_person = 1
         previous_nodes = 0
         if body != 0:
-            previous_nodes += coco_body_point_num
+            previous_nodes += body_point_num
             previous_nodes += head_point_num if body == 2 else 0
 
         inward = [[i[0] - previous_nodes, i[1] - previous_nodes] for i in get_l_pair(body_part)]

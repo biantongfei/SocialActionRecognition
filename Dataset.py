@@ -7,8 +7,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from constants import body_point_num, halpe_body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, \
-    hand_l_pair
+from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair
 
 video_path = '../jpl_augmented_videos/'
 

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from Dataset import get_l_pair, get_inputs_size, coco_body_point_num, halpe_body_point_num, head_point_num
+from Dataset import get_l_pair, get_inputs_size, body_point_num, head_point_num
 
 
 class Graph():
@@ -39,7 +39,7 @@ class Graph():
         self.center = 0 if body != 1 else 27
         previous_nodes = 0
         if body != 0:
-            previous_nodes += coco_body_point_num
+            previous_nodes += body_point_num
             previous_nodes += head_point_num if body == 2 else 0
         self.edge = [[i, i] for i in range(self.num_node)] + [[i[0] - previous_nodes, i[1] - previous_nodes] for i in
                                                               get_l_pair(body_part)]

@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from constants import coco_body_point_num, halpe_body_point_num, head_point_num
+from constants import body_point_num, head_point_num
 from Dataset import get_inputs_size, get_l_pair
 
 
@@ -138,7 +138,7 @@ class Graph:
             self.num_node = self.num_point
             previous_nodes = 0
             if not self.body_part[0]:
-                previous_nodes += coco_body_point_num
+                previous_nodes += body_point_num
                 previous_nodes += head_point_num if self.body_part[2] else 0
             self.inward = [[i[0] - previous_nodes, i[1] - previous_nodes] for i in get_l_pair(self.body_part)]
             self.center = 27 if self.body_part[1] else 0
