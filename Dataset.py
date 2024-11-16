@@ -34,14 +34,14 @@ def get_body_part(feature, body_part):
     :param body_part: list, index0 for body, index1 for face, index2 for hands
     :return:
     """
-    body_part = [23, 91]
+    point_nums = [body_point_num, body_point_num + head_point_num]
     new_features = []
     if body_part[0]:
-        new_features += feature[:body_part[0]].tolist()
+        new_features += feature[:point_nums[0]].tolist()
     if body_part[1]:
-        new_features += feature[body_part[0]:body_part[1]].tolist()
+        new_features += feature[point_nums[0]:point_nums[1]].tolist()
     if body_part[2]:
-        new_features += feature[body_part[1]:].tolist()
+        new_features += feature[point_nums[1]:].tolist()
     return np.array(new_features)
 
 
