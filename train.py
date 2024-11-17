@@ -35,16 +35,16 @@ def train():
 
 if __name__ == '__main__':
     sweep_config = {
-        'method': 'random',
+        'method': 'grid',
         'metric': {
             'name': 'avg_f1',
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {'values': [20, 30, 40, 50]},
+            'epochs': {'values': [30, 40, 50]},
             'keypoint_hidden_dim': {'values': [16, 32, 64]},
-            'time_hidden_dim': {'values': [1, 2, 4]},
-            'fc_hidden1': {'values': [64, 128, 256]},
+            'time_hidden_dim': {'values': [4]},
+            'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [8, 16, 32]}
         }
     }
@@ -66,4 +66,4 @@ if __name__ == '__main__':
     # }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
     sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps30')
-    wandb.agent(sweep_id, function=train, count=50)
+    wandb.agent(sweep_id, function=train)
