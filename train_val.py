@@ -1,4 +1,5 @@
-from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets
+from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets, \
+    get_jpl_dataset
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
 from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import Pose_DataLoader
@@ -83,8 +84,8 @@ def draw_save(name, performance_model, framework, augment_method=False):
         csvfile.close()
     if 'intention' in tasks:
         plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
-    # if 'attitude' in tasks:
-    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    if 'attitude' in tasks:
+        plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
     if 'action' in tasks:
         plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
@@ -864,3 +865,24 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
     torch.save(net, 'models/harper_%s_%s_%s.pt' % (
         model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else ''))
     return performance_model
+
+
+if __name__ == '__main__':
+    body_part = [True, True, True]
+    model = 'msg3d'
+    # framework = 'intention'
+    # framework = 'attitude'
+    # framework = 'action'
+    # framework = 'parallel'
+    framework = 'tree'
+    # framework = 'chain'
+    ori_video = False
+    frame_sample_hop = 1
+    sequence_length = 30
+    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                augment_method='mixed', ori_videos=ori_video)
+    p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
+                    frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
+    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
+        model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
+    print(result_str)

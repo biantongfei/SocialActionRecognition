@@ -243,8 +243,8 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
-                 time_hidden_dim, fc_hidden1, fc_hidden2, train_classifier=True):
+    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim, fc_hidden2,
+                 train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
@@ -254,7 +254,7 @@ class GNN(nn.Module):
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
         self.keypoint_hidden_dim = keypoint_hidden_dim
-        self.time_hidden_dim = keypoint_hidden_dim * time_hidden_dim
+        self.time_hidden_dim = keypoint_hidden_dim * 4
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
@@ -345,10 +345,10 @@ class GNN(nn.Module):
             self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, fc_hidden1),
+            nn.Linear(self.fc_input_size, 64),
             nn.ReLU(),
-            nn.BatchNorm1d(fc_hidden1),
-            nn.Linear(fc_hidden1, fc_hidden2),
+            nn.BatchNorm1d(64),
+            nn.Linear(64, fc_hidden2),
             nn.ReLU(),
             nn.BatchNorm1d(fc_hidden2),
         )

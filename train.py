@@ -1,10 +1,10 @@
 from train_val import train_jpl, draw_save, send_email, train_harper
-from Dataset import get_dataset
+from Dataset import get_jpl_dataset
 import wandb
 from datetime import datetime
 
 body_part = [True, True, True]
-model = 'gcn_lstm'
+model = 'msg3d'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
@@ -14,8 +14,8 @@ framework = 'tree'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
-trainset, valset, testset = get_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-                                        ori_videos=ori_video)
+trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                                            ori_videos=ori_video)
 
 
 def train():
@@ -43,8 +43,6 @@ if __name__ == '__main__':
         'parameters': {
             'epochs': {'values': [30, 40, 50]},
             'keypoint_hidden_dim': {'values': [16, 32, 64]},
-            'time_hidden_dim': {'values': [4]},
-            'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [8, 16, 32]}
         }
     }
@@ -65,5 +63,5 @@ if __name__ == '__main__':
     #     }
     # }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps30')
+    sweep_id = wandb.sweep(sweep_config, project='MSG3D_JPL_fps30')
     wandb.agent(sweep_id, function=train)
