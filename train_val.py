@@ -482,9 +482,10 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         (total_params, process_time * 1000 / len(testset))))
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     wandb_log['avg_acc'] = total_acc / len(tasks)
-    model_name = 'jpl_%s_fps%d_e%d_k%d_t%d.pt' % (
-        model, int(sequence_length / frame_sample_hop), wandb.config.epochs, wandb.config.keypoint_hidden_dim,
-        wandb.config.time_hidden_dim)
+    wandb_log['params'] = total_params
+    wandb_log['process_time'] = process_time * 1000 / len(testset)
+    model_name = 'jpl_%s_fps%d_e%d_k%d.pt' % (
+        model, int(sequence_length / frame_sample_hop), wandb.config.epochs, wandb.config.keypoint_hidden_dim)
     torch.save(net, 'models/%s' % model_name)
     artifact = wandb.Artifact(model_name, type="model")
     artifact.add_file("models/%s" % model_name)
