@@ -104,10 +104,9 @@ class Pose_DataLoader(DataLoader):
             act_label.append(d[1][2])
             if self.contact:
                 contact_label.append(d[1][3])
-        lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
-        if self.contact:
-            lables = (
-                torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
+        lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
+                  torch.Tensor(contact_label)) if self.contact else (
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
         return (x_tensors_list, edge_index_list, batch), lables
 
     def stgcn_collate_fn(self, data):
@@ -128,7 +127,9 @@ class Pose_DataLoader(DataLoader):
             if self.contact:
                 contact_label.append(d[1][2])
         return input, (
-            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
+            torch.Tensor(contact_label)) if self.contact else (
+            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
 
 
 class Harper_Dataloader(DataLoader):

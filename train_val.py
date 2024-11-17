@@ -1,7 +1,7 @@
 from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets, \
     get_jpl_dataset
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
-from draw_utils import draw_training_process, plot_confusion_matrix
+from draw_utils import plot_confusion_matrix
 from DataLoader import Pose_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
@@ -77,10 +77,10 @@ def draw_save(name, performance_model, framework):
         csvfile.close()
     if 'intention' in tasks:
         plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
-    if 'attitude' in tasks:
-        plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
-    if 'action' in tasks:
-        plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
+    # if 'attitude' in tasks:
+    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    # if 'action' in tasks:
+    #     plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):
@@ -469,7 +469,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
-    # draw_training_process(trainging_process)
     # attn_weight = torch.cat(attn_weight, dim=0)
     # print(attn_weight.shape)
     # with open(csv_file, mode='a', newline='') as file:
