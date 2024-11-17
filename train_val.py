@@ -870,7 +870,7 @@ if __name__ == '__main__':
             model, body_part[0], body_part[1], body_part[2], framework)
         print(result_str)
     framework = 'chain'
-    for model in ['msgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
+    for model in ['msgcn', 'dgstgcn', 'stgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
         p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                         valset=valset, testset=testset)
