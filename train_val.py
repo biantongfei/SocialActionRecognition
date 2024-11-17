@@ -457,7 +457,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d.pt' % (model, int(sequence_length / frame_sample_hop))
-    if model=='msgcn':
+    if model == 'msgcn':
         torch.save(net, 'models/%s' % model_name)
     if wandb:
         artifact = wandb.Artifact(model_name, type="model")
@@ -859,27 +859,21 @@ if __name__ == '__main__':
         p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                         valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
-            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
-            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
-            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+            model, body_part[0], body_part[1], body_part[2], framework)
         print(result_str)
     for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
         p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                         valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
-            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
-            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
-            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+            model, body_part[0], body_part[1], body_part[2], framework)
         print(result_str)
     framework = 'chain'
     for model in ['msgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
         p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                         valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
-            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
-            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
-            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+            model, body_part[0], body_part[1], body_part[2], framework)
         print(result_str)
