@@ -644,14 +644,13 @@ class STGCN(nn.Module):
         graph_cfg = ()
         if self.body_part[0]:
             self.stgcn_body = ST_GCN_18(3, 0).to(device)
-            self.fcn_body = nn.Conv2d(256, 16, kernel_size=1).to(device)
+            self.fcn_body = nn.Conv2d(256, 32, kernel_size=1).to(device)
         if self.body_part[1]:
             self.stgcn_head = ST_GCN_18(3, 1).to(device)
-            self.fcn_head = nn.Conv2d(256, 16, kernel_size=1).to(device)
+            self.fcn_head = nn.Conv2d(256, 32, kernel_size=1).to(device)
         if self.body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, 2).to(device)
-            self.fcn_hand = nn.Conv2d(256, 16, kernel_size=1).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 32, 1)
+            self.fcn_hand = nn.Conv2d(256, 32, kernel_size=1).to(device)
         self.classifier = Classifier(framework, 32 * self.body_part.count(True))
 
     def forward(self, x):
@@ -685,7 +684,6 @@ class MSGCN(nn.Module):
             self.MSGCN_head = MsG3d(1, 16).to(device)
         if self.body_part[2]:
             self.MSGCN_hand = MsG3d(2, 16).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
         self.classifier = Classifier(framework, 16 * self.body_part.count(True))
 
     def forward(self, x):
@@ -716,7 +714,6 @@ class DGSTGCN(nn.Module):
             self.DGSTGCN_head = DG_Model(1, 16).to(device)
         if self.body_part[2]:
             self.DGSTGCN_hand = DG_Model(2, 16).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
         self.classifier = Classifier(framework, 16 * self.body_part.count(True))
 
     def forward(self, x):

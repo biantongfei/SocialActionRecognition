@@ -170,8 +170,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         net = Transformer(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=body_part, framework=framework, model=model,
-                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
-                  fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2,
                   sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
