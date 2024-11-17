@@ -9,8 +9,8 @@ model = 'gcn_lstm'
 # framework = 'attitude'
 # framework = 'action'
 # framework = 'parallel'
-framework = 'tree'
-# framework = 'chain'
+# framework = 'tree'
+framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
@@ -43,6 +43,7 @@ if __name__ == '__main__':
         'parameters': {
             'epochs': {'values': [30, 40, 50]},
             'keypoint_hidden_dim': {'values': [16, 32, 64]},
+            'fc_hidden1': {'values': [64, 128]},
             'fc_hidden2': {'values': [8, 16, 32]}
         }
     }

@@ -186,7 +186,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         net = Transformer(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=body_part, framework=framework, model=model,
-                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim, time_hidden_dim=wandb.config.time_hidden_dim,
+                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
                   fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2,
                   sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
     elif model == 'stgcn':
@@ -881,8 +881,8 @@ if __name__ == '__main__':
     sequence_length = 30
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
-    p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
-                    frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
+    # p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
+    #                 frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
