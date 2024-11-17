@@ -457,7 +457,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d.pt' % (model, int(sequence_length / frame_sample_hop))
-    torch.save(net, 'models/%s' % model_name)
+    # torch.save(net, 'models/%s' % model_name)
     if wandb:
         artifact = wandb.Artifact(model_name, type="model")
         artifact.add_file("models/%s" % model_name)
@@ -841,8 +841,7 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
 
 
 if __name__ == '__main__':
-    body_part = [True, True, True]
-    model = 'stgcn'
+    model = 'gcn_lstm'
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
@@ -852,10 +851,34 @@ if __name__ == '__main__':
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
-    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed', ori_videos=ori_video)
-    p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
-                    frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
-    result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
-        model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
-    print(result_str)
+    for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
+                      [True, False, True], [False, True, True], [True, True, True]]:
+        trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                    augment_method='mixed', ori_videos=ori_video)
+        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                        valset=valset, testset=testset)
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
+            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
+            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
+            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        print(result_str)
+    for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
+        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                        valset=valset, testset=testset)
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
+            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
+            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
+            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        print(result_str)
+    framework = 'chain'
+    for model in ['msgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
+        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                        valset=valset, testset=testset)
+        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, int_acc: %.2f, int_f1: %.2f,att_acc: %.2f, att_f1: %.2f,act_acc: %.2f, act_f1: %.2f' % (
+            model, body_part[0], body_part[1], body_part[2], framework, p_m['intention_accuracy' * 100],
+            p_m['intention_f1' * 100], p_m['attitude_accuracy' * 100], p_m['attitude_f1' * 100],
+            p_m['action_accuracy' * 100], p_m['action_f1' * 100])
+        print(result_str)

@@ -644,14 +644,14 @@ class STGCN(nn.Module):
         graph_cfg = ()
         if self.body_part[0]:
             self.stgcn_body = ST_GCN_18(3, 0).to(device)
-            self.fcn_body = nn.Conv2d(256, 32, kernel_size=1).to(device)
+            self.fcn_body = nn.Conv2d(256, 16, kernel_size=1).to(device)
         if self.body_part[1]:
             self.stgcn_head = ST_GCN_18(3, 1).to(device)
-            self.fcn_head = nn.Conv2d(256, 32, kernel_size=1).to(device)
+            self.fcn_head = nn.Conv2d(256, 16, kernel_size=1).to(device)
         if self.body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, 2).to(device)
-            self.fcn_hand = nn.Conv2d(256, 32, kernel_size=1).to(device)
-        self.classifier = Classifier(framework, 32 * self.body_part.count(True))
+            self.fcn_hand = nn.Conv2d(256, 16, kernel_size=1).to(device)
+        self.classifier = Classifier(framework, 16 * self.body_part.count(True))
 
     def forward(self, x):
         y_list = []

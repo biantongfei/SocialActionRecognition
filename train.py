@@ -12,7 +12,7 @@ model = 'gcn_lstm'
 # framework = 'tree'
 framework = 'chain'
 ori_video = False
-frame_sample_hop = 1
+frame_sample_hop = 3
 sequence_length = 30
 trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                             ori_videos=ori_video)
@@ -43,8 +43,9 @@ if __name__ == '__main__':
         'parameters': {
             'epochs': {'values': [30, 40, 50]},
             'keypoint_hidden_dim': {'values': [16, 32, 64]},
-            'fc_hidden1': {'values': [64, 128]},
-            'fc_hidden2': {'values': [8, 16, 32]}
+            'time_hidden_dim': {'values': [1, 2, 4]},
+            'fc_hidden1': {'values': [32, 64]},
+            'fc_hidden2': {'values': [8, 16]}
         }
     }
     # sweep_config = {
