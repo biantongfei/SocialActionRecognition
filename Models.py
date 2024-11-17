@@ -13,9 +13,9 @@ from Dataset import get_inputs_size, body_point_num, head_point_num, hands_point
 from graph import Graph, ConvTemporalGraphical
 from MSG3D.msg3d import Model as MsG3d
 from DGSTGCN.dgstgcn import Model as DG_Model
-from constants import intention_class, attitude_classes, action_classes, device, dtype
+from constants import intention_classes, attitude_classes, action_classes, device, dtype
 
-intention_class_num = len(intention_class)
+intention_class_num = len(intention_classes)
 attitude_class_num = len(attitude_classes)
 action_class_num = len(action_classes)
 
@@ -243,8 +243,7 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim, fc_hidden1,
-                 fc_hidden2, train_classifier=True):
+    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
@@ -253,8 +252,8 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        self.keypoint_hidden_dim = keypoint_hidden_dim
-        self.time_hidden_dim = keypoint_hidden_dim * 4
+        self.keypoint_hidden_dim = 16
+        self.time_hidden_dim = self.keypoint_hidden_dim * 4
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
@@ -345,14 +344,14 @@ class GNN(nn.Module):
             self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, fc_hidden1),
+            nn.Linear(self.fc_input_size, 128),
             nn.ReLU(),
-            nn.BatchNorm1d(fc_hidden1),
-            nn.Linear(fc_hidden1, fc_hidden2),
+            nn.BatchNorm1d(128),
+            nn.Linear(128, 32),
             nn.ReLU(),
-            nn.BatchNorm1d(fc_hidden2),
+            nn.BatchNorm1d(32),
         )
-        self.classifier = Classifier(framework, fc_hidden2)
+        self.classifier = Classifier(framework, 32)
         self.train_classifier = train_classifier
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()
@@ -652,8 +651,8 @@ class STGCN(nn.Module):
         if self.body_part[2]:
             self.stgcn_hand = ST_GCN_18(3, 2).to(device)
             self.fcn_hand = nn.Conv2d(256, 16, kernel_size=1).to(device)
-        self.gcn_attention = nn.Linear(self.body_part.count(True) * 16, 1)
-        self.classifier = Classifier(framework, 16 * self.body_part.count(True))
+        self.gcn_attention = nn.Linear(self.body_part.count(True) * 32, 1)
+        self.classifier = Classifier(framework, 32 * self.body_part.count(True))
 
     def forward(self, x):
         y_list = []

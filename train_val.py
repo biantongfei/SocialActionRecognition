@@ -5,15 +5,16 @@ from draw_utils import draw_training_process, plot_confusion_matrix
 from DataLoader import Pose_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
-    intention_class, attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
+    intention_classes, attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
 
 import torch
 from torch.nn import functional
 import torch.nn.utils.rnn as rnn_utils
 from torch.optim.lr_scheduler import StepLR
+from torch.autograd import grad
 
 import numpy as np
-from sklearn.metrics import f1_score, recall_score
+from sklearn.metrics import f1_score
 import csv
 import smtplib
 from email.mime.text import MIMEText
@@ -36,7 +37,7 @@ def send_email(body):
     print("Email sent!")
 
 
-def draw_save(name, performance_model, framework, augment_method=False):
+def draw_save(name, performance_model, framework):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     with open('plots/%s.csv' % name, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
@@ -72,18 +73,10 @@ def draw_save(name, performance_model, framework, augment_method=False):
                 else:
                     act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
                     act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
-            if augment_method == 'gen':
-                r_int_y_true, r_int_y_pred, r_att_y_true, r_att_y_pred = get_unseen_sample(int_y_true, int_y_pred,
-                                                                                           att_y_true, att_y_pred,
-                                                                                           act_y_true, augment_method)
-                int_recall = recall_score(r_int_y_true, r_int_y_pred, average='macro')
-                att_recall = recall_score(r_att_y_true, r_att_y_pred, average='macro')
-                data.append(int_recall)
-                data.append(att_recall)
             spamwriter.writerow(data)
         csvfile.close()
     if 'intention' in tasks:
-        plot_confusion_matrix(int_y_true, int_y_pred, intention_class, sub_name="cm_%s_intention" % name)
+        plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
     if 'attitude' in tasks:
         plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
     if 'action' in tasks:
@@ -110,44 +103,35 @@ def filter_not_interacting_sample(att_y_true, att_y_output):
     return att_y_true, att_y_output
 
 
-def get_unseen_sample(int_y_true, int_y_pred, att_y_true, att_y_pred, action_y_true):
-    indexes = []
-    for i in range(action_y_true.shape[0]):
-        if action_y_true[i] in [1, 2, 4, 7, 8]:
-            indexes.append(i)
-    indexes = torch.Tensor(indexes).to(torch.int64)
-    int_y_true = torch.index_select(int_y_true, 0, indexes)
-    int_y_pred = torch.index_select(int_y_pred, 0, indexes)
-    att_y_true = torch.index_select(att_y_true, 0, indexes)
-    att_y_pred = torch.index_select(att_y_pred, 0, indexes)
-    print(int_y_true)
-    print(int_y_pred)
-    print(att_y_true)
-    print(att_y_pred)
-    return int_y_true, int_y_pred, att_y_true, att_y_pred
+# 计算梯度投影
+def project_gradients(gradients):
+    """
+    投影梯度，确保梯度间方向一致
+    """
+    shared_grad = gradients[0]
+    for grad in gradients[1:]:
+        cosine_similarity = torch.dot(shared_grad.view(-1), grad.view(-1)) / (
+                torch.norm(shared_grad.view(-1)) * torch.norm(grad.view(-1)) + 1e-6
+        )
+        if cosine_similarity < 0:  # 避免梯度冲突
+            shared_grad = shared_grad - grad
+    return shared_grad
 
 
-def find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files):
-    different_indices_int = torch.nonzero(torch.ne(int_y_true, int_y_pred)).squeeze()
-    different_indices_att = torch.nonzero(torch.ne(att_y_true, att_y_pred)).squeeze()
-    different_indices_act = torch.nonzero(torch.ne(act_y_true, act_y_pred)).squeeze()
-    print('Intention:')
-    print(different_indices_int.shape)
-    for i in range(different_indices_int.shape):
-        index = different_indices_int[i]
-        print(test_files[index], int_y_true[index], int_y_pred[index])
-    print('Attitude:')
-    for i in range(different_indices_att.shape):
-        index = different_indices_att[i]
-        print(test_files[index], att_y_true[index], att_y_pred[index])
-    print('Action:')
-    for i in range(different_indices_act.shape):
-        index = different_indices_act[i]
-        print(test_files[index], act_y_true[index], act_y_pred[index])
+# 动态权重更新：基于帕累托优化
+def compute_pareto_weights(gradients, losses):
+    """
+    帕累托权重优化，基于损失动态调整。
+    """
+    grad_magnitudes = [torch.norm(grad.view(-1)) for grad in gradients]
+    inverse_magnitude = [1.0 / (g + 1e-6) for g in grad_magnitudes]
+    weights = [l * im for l, im in zip(losses, inverse_magnitude)]
+    return weights
 
 
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
-    run = wandb.init()
+    if wandb:
+        run = wandb.init()
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -199,20 +183,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         net = R3D(framework=framework)
     net.to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    # if 'gcn_' not in model:
-    #     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    # else:
-    #     optimizer = torch.optim.Adam([
-    #         {'params': net.other_parameters, 'lr': learning_rate},
-    #         {'params': net.attn_parameters, 'lr': attn_learning_rate}
-    #     ])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    # csv_file = 'plots/attention_weight_log.csv'
-    # with open(csv_file, mode='w', newline='') as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow(['Attentions'])
-    #     file.close()
     train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
                                    sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                    drop_last=True, shuffle=True, num_workers=num_workers)
@@ -253,20 +225,24 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 total_loss = loss_1 + loss_2 + loss_3
-                # losses = [loss_1, loss_2, loss_3]
 
-                # Compute inverse loss weights
-                # weights = [1.0 / (loss.item() + epsilon) for loss in losses]
-                # weight_sum = sum(weights)
-                # weights = [w / weight_sum for w in weights]
-                # # Compute weighted loss
-                # total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
+                # losses = [loss_1.item(), loss_2.item(), loss_3.item()]
+                # loss_sum = sum(losses)
+                # weights = [loss / loss_sum for loss in losses]
+                # total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
 
-                # if epoch == 1:
-                #     initial_losses = [loss.item() for loss in losses]
-                # gradnorm_loss = compute_gradnorm(losses, initial_losses).to(device=device, dtype=dtype)
-                # weights = torch.softmax(net.task_weights, dim=0).to(device=device, dtype=dtype)
-                # total_loss = sum(weight * loss for weight, loss in zip(weights, losses)) + gradnorm_loss
+                # optimizer.zero_grad()
+                # grads_task1 = grad(loss_1, net.parameters(), retain_graph=True, create_graph=True)
+                # grads_task2 = grad(loss_2, net.parameters(), retain_graph=True, create_graph=True)
+                # grads_task3 = grad(loss_3, net.parameters(), retain_graph=True, create_graph=True)
+                # # 梯度投影和权重计算
+                # projected_grad = project_gradients([grads_task1, grads_task2, grads_task3])
+                # weights = compute_pareto_weights([grads_task1, grads_task2],
+                #                                  [loss_1.item(), loss_2.item(), loss_3.item()])
+                #
+                # # 加权总损失
+                # total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -355,9 +331,10 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
             wandb_log['val_act_acc'] = act_acc
             wandb_log['val_act_f1'] = act_f1
         print(result_str + 'loss: %.4f' % total_loss)
-        wandb.log(wandb_log)
+        if wandb:
+            wandb.log(wandb_log)
         torch.cuda.empty_cache()
-        if epoch == wandb.config.epochs:
+        if epoch == 40:
             break
         else:
             epoch += 1
@@ -369,14 +346,11 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                                   frame_sample_hop=frame_sample_hop, batch_size=batch_size, drop_last=False,
                                   num_workers=num_workers)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score = [], [], [], [], [], [], [], [], []
-    attn_weight = []
     process_time = 0
     net.eval()
     progress_bar = tqdm(total=len(test_loader), desc='Progress')
     for index, data in enumerate(test_loader):
         progress_bar.update(1)
-        if index == 0:
-            total_params = sum(p.numel() for p in net.parameters())
         start_time = time.time()
         if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
             inputs, (int_labels, att_labels, act_labels) = data
@@ -426,6 +400,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     progress_bar.close()
     result_str = ''
     wandb_log = {}
+    params = sum(p.numel() for p in net.parameters())
     total_f1, total_acc = 0, 0
     if 'intention' in tasks:
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
@@ -457,8 +432,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         performance_model['attitude_y_true'] = att_y_true
         performance_model['attitude_y_pred'] = att_y_pred
         result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (att_acc * 100, att_f1, att_score)
-        wandb_log['test_int_acc'] = att_acc
-        wandb_log['test_int_f1'] = att_f1
+        wandb_log['test_att_acc'] = att_acc
+        wandb_log['test_att_f1'] = att_f1
         total_acc += att_acc
         total_f1 += att_f1
     if 'action' in tasks:
@@ -478,19 +453,20 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         wandb_log['test_act_f1'] = act_f1
         total_acc += act_acc
         total_f1 += act_f1
-    print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
-        (total_params, process_time * 1000 / len(testset))))
+    print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (params, process_time * 1000 / len(testset)))
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     wandb_log['avg_acc'] = total_acc / len(tasks)
-    wandb_log['params'] = total_params
+    wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d_e%d_k%d.pt' % (
         model, int(sequence_length / frame_sample_hop), wandb.config.epochs, wandb.config.keypoint_hidden_dim)
     torch.save(net, 'models/%s' % model_name)
-    artifact = wandb.Artifact(model_name, type="model")
-    artifact.add_file("models/%s" % model_name)
-    wandb.log_artifact(artifact)
-    wandb.log(wandb_log)
+    if wandb:
+        artifact = wandb.Artifact(model_name, type="model")
+        artifact.add_file("models/%s" % model_name)
+        wandb.log_artifact(artifact)
+        wandb.log(wandb_log)
+
     # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
@@ -870,20 +846,20 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
 
 if __name__ == '__main__':
     body_part = [True, True, True]
-    model = 'msg3d'
+    model = 'stgcn'
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
     # framework = 'parallel'
-    framework = 'tree'
-    # framework = 'chain'
+    # framework = 'tree'
+    framework = 'chain'
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
-    # p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
-    #                 frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
+    p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
+                    frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s, sequence_length: %d, frame_hop: %s' % (
         model, body_part[0], body_part[1], body_part[2], framework, sequence_length, frame_sample_hop)
     print(result_str)
