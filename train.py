@@ -4,7 +4,7 @@ import wandb
 from datetime import datetime
 
 body_part = [True, True, True]
-model = 'msg3d'
+model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
