@@ -243,7 +243,8 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, train_classifier=True):
+    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, key_hidden_dim, time_hidden_dim,
+                 fc_hidden1, fc_hidden2, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
@@ -252,8 +253,10 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        self.keypoint_hidden_dim = 16
-        self.time_hidden_dim = self.keypoint_hidden_dim * 4
+        self.keypoint_hidden_dim = key_hidden_dim
+        self.time_hidden_dim = self.keypoint_hidden_dim * time_hidden_dim
+        self.fc_hidden1 = fc_hidden1
+        self.fc_hidden2 = fc_hidden2
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
         # self.other_parameters = []
@@ -344,14 +347,14 @@ class GNN(nn.Module):
             self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
-            nn.Linear(self.fc_input_size, 128),
+            nn.Linear(self.fc_input_size, self.fc_hidden1),
             nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Linear(128, 32),
+            nn.BatchNorm1d(self.fc_hidden1),
+            nn.Linear(self.fc_hidden1, self.fc_hidden2),
             nn.ReLU(),
-            nn.BatchNorm1d(32),
+            nn.BatchNorm1d(self.fc_hidden2),
         )
-        self.classifier = Classifier(framework, 32)
+        self.classifier = Classifier(framework, self.fc_hidden2)
         self.train_classifier = train_classifier
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()

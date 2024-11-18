@@ -132,6 +132,10 @@ def compute_pareto_weights(gradients, losses):
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
+        print(
+            'hyperparameters--> epochs: %d, keypoint_hidden_dim: %d, time_hidden_dim: %d, fc1: %d, fc2: %d, times: %d' % (
+                wandb.config.epochs, wandb.config.keypoint_hidden_dim, wandb.config.time_hidden_dim,
+                wandb.config.fc_hidden1, wandb.config.fc_hidden2, wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -170,7 +174,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         net = Transformer(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=body_part, framework=framework, model=model,
-                  sequence_length=sequence_length, frame_sample_hop=frame_sample_hop)
+                  sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
+                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim, time_hidden_dim=wandb.config.time_hidden_dim,
+                  fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2)
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
@@ -332,7 +338,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         if wandb:
             wandb.log(wandb_log)
         torch.cuda.empty_cache()
-        if epoch == 40:
+        if epoch == wandb.config.epochs:
             break
         else:
             epoch += 1
@@ -457,8 +463,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d.pt' % (model, int(sequence_length / frame_sample_hop))
-    if model == 'msgcn':
-        torch.save(net, 'models/%s' % model_name)
+    torch.save(net, 'models/%s' % model_name)
     if wandb:
         artifact = wandb.Artifact(model_name, type="model")
         artifact.add_file("models/%s" % model_name)
