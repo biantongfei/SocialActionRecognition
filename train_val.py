@@ -237,22 +237,22 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
 
                 # total_loss = loss_1 + loss_2 + loss_3
 
-                losses = [loss_1.item(), loss_2.item(), loss_3.item()]
-                loss_sum = sum(losses)
-                weights = [loss / loss_sum for loss in losses]
-                total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
-
-                # optimizer.zero_grad()
-                # grads_task1 = grad(loss_1, net.parameters(), retain_graph=True, create_graph=True)
-                # grads_task2 = grad(loss_2, net.parameters(), retain_graph=True, create_graph=True)
-                # grads_task3 = grad(loss_3, net.parameters(), retain_graph=True, create_graph=True)
-                # # 梯度投影和权重计算
-                # projected_grad = project_gradients([grads_task1, grads_task2, grads_task3])
-                # weights = compute_pareto_weights([grads_task1, grads_task2],
-                #                                  [loss_1.item(), loss_2.item(), loss_3.item()])
-                #
-                # # 加权总损失
+                # losses = [loss_1.item(), loss_2.item(), loss_3.item()]
+                # loss_sum = sum(losses)
+                # weights = [loss / loss_sum for loss in losses]
                 # total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+
+                optimizer.zero_grad()
+                grads_task1 = grad(loss_1, net.parameters(), retain_graph=True, create_graph=True)
+                grads_task2 = grad(loss_2, net.parameters(), retain_graph=True, create_graph=True)
+                grads_task3 = grad(loss_3, net.parameters(), retain_graph=True, create_graph=True)
+                # 梯度投影和权重计算
+                projected_grad = project_gradients([grads_task1, grads_task2, grads_task3])
+                weights = compute_pareto_weights([grads_task1, grads_task2],
+                                                 [loss_1.item(), loss_2.item(), loss_3.item()])
+
+                # 加权总损失
+                total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
 
             optimizer.zero_grad()
             total_loss.backward()
