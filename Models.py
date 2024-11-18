@@ -243,8 +243,8 @@ class Transformer(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, key_hidden_dim, time_hidden_dim,
-                 fc_hidden1, fc_hidden2, train_classifier=True):
+    def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
+                 time_hidden_dim, fc_hidden1, fc_hidden2, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
@@ -253,7 +253,7 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        self.keypoint_hidden_dim = key_hidden_dim
+        self.keypoint_hidden_dim = keypoint_hidden_dim
         self.time_hidden_dim = self.keypoint_hidden_dim * time_hidden_dim
         self.fc_hidden1 = fc_hidden1
         self.fc_hidden2 = fc_hidden2
