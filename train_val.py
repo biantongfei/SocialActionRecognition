@@ -852,28 +852,41 @@ if __name__ == '__main__':
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
-    for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
-                      [True, False, True], [False, True, True], [True, True, True]]:
-        trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                    augment_method='mixed', ori_videos=ori_video)
-        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                        valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-            model, body_part[0], body_part[1], body_part[2], framework)
-        print(result_str)
-    for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
-        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                        valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-            model, body_part[0], body_part[1], body_part[2], framework)
-        print(result_str)
-    framework = 'chain'
-    for model in ['msgcn', 'dgstgcn', 'stgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
-        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                        valset=valset, testset=testset)
-        result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-            model, body_part[0], body_part[1], body_part[2], framework)
-        print(result_str)
+    body_part = [True, True, True]
+    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                augment_method='mixed', ori_videos=ori_video)
+    with open("result.csv", "w") as csvfile:
+        for i in range(10):
+            p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                            sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                            valset=valset, testset=testset)
+            writer = csv.writer(csvfile)
+            writer.writerow(
+                [p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
+                 p_m['action_accuracy'], p_m['action_f1']])
+
+    # for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
+    #                   [True, False, True], [False, True, True], [True, True, True]]:
+    #     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+    #                                                 augment_method='mixed', ori_videos=ori_video)
+    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+    #                     valset=valset, testset=testset)
+    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+    #         model, body_part[0], body_part[1], body_part[2], framework)
+    #     print(result_str)
+    # for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
+    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+    #                     valset=valset, testset=testset)
+    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+    #         model, body_part[0], body_part[1], body_part[2], framework)
+    #     print(result_str)
+    # framework = 'chain'
+    # for model in ['msgcn', 'dgstgcn', 'stgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
+    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+    #                     valset=valset, testset=testset)
+    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
+    #         model, body_part[0], body_part[1], body_part[2], framework)
+    #     print(result_str)
