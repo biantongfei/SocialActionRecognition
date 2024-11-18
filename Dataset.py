@@ -449,7 +449,7 @@ class HARPER_Dataset(Dataset):
 def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', ori_videos=False):
     print('Loading data for JPL %s dataset' % augment_method)
     if model != 'r3d':
-        tra_files, val_files, test_files = get_tra_test_files(augment_method=augment_method, ori_videos=ori_videos)
+        tra_files, val_files, test_files = get_tra_test_files()
         trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part, model=model,
                                frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='train')
         valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, body_part=body_part, model=model,
