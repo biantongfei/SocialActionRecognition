@@ -12,10 +12,11 @@ model = 'gcn_lstm'
 # framework = 'tree'
 framework = 'chain'
 ori_video = False
-frame_sample_hop = 3
+frame_sample_hop = 1
 sequence_length = 30
 trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                             ori_videos=ori_video)
+
 
 def train():
     p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
@@ -27,7 +28,6 @@ def train():
     #                    pretrained=pretrained, new_classifier=new_classifier, train=if_train)
     # draw_save(framework, performance_model, framework)
     # send_email(result_str)
-
 
 
 if __name__ == '__main__':
@@ -43,6 +43,7 @@ if __name__ == '__main__':
             'time_hidden_dim': {'values': [2, 4]},
             'fc_hidden1': {'values': [64, 128]},
             'fc_hidden2': {'values': [8, 16, 32]},
+            'loss_type': {'values': ['sum', 'dynamic', 'pmtl']},
             'times': {'values': [0, 1, 2, 3]}
         }
     }

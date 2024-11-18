@@ -173,10 +173,16 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     elif model == 'tran':
         net = Transformer(body_part=body_part, framework=framework, sequence_length=sequence_length)
     elif 'gcn_' in model:
-        net = GNN(body_part=body_part, framework=framework, model=model,
-                  sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
-                  keypoint_hidden_dim=wandb.config.keypoint_hidden_dim, time_hidden_dim=wandb.config.time_hidden_dim,
-                  fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2)
+        if wandb:
+            net = GNN(body_part=body_part, framework=framework, model=model,
+                      sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
+                      keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
+                      time_hidden_dim=wandb.config.time_hidden_dim,
+                      fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2)
+        else:
+            net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
+                      frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,
+                      fc_hidden2=16)
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
@@ -228,12 +234,13 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                total_loss = loss_1 + loss_2 + loss_3
 
-                # losses = [loss_1.item(), loss_2.item(), loss_3.item()]
-                # loss_sum = sum(losses)
-                # weights = [loss / loss_sum for loss in losses]
-                # total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                # total_loss = loss_1 + loss_2 + loss_3
+
+                losses = [loss_1.item(), loss_2.item(), loss_3.item()]
+                loss_sum = sum(losses)
+                weights = [loss / loss_sum for loss in losses]
+                total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
 
                 # optimizer.zero_grad()
                 # grads_task1 = grad(loss_1, net.parameters(), retain_graph=True, create_graph=True)
@@ -860,15 +867,9 @@ if __name__ == '__main__':
     body_part = [True, True, True]
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
-    with open("result.csv", "w") as csvfile:
-        for i in range(10):
-            p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                            sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                            valset=valset, testset=testset)
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
-                 p_m['action_accuracy'], p_m['action_f1']])
+    p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                    sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                    valset=valset, testset=testset)
 
     # for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
     #                   [True, False, True], [False, True, True], [True, True, True]]:
