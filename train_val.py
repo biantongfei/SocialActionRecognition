@@ -104,16 +104,15 @@ def filter_not_interacting_sample(att_y_true, att_y_output):
 
 
 def pareto_optimization(task_losses, task_weights, epsilon=0.01):
-    """
-    使用帕累托优化更新任务权重。
-    """
-    gradients = [grad(task_losses[i], task_weights, retain_graph=True)[0] for i in range(len(task_losses))]
-    norm_gradients = [g / (torch.norm(g) + 1e-8) for g in gradients]  # 标准化梯度
+    weighted_losses = [task_weights[i] * task_losses[i] for i in range(len(task_losses))]
+    total_loss = sum(weighted_losses)
 
-    # 构建梯度矩阵
-    grad_matrix = torch.stack(norm_gradients, dim=1)
-    d = grad_matrix @ task_weights  # 当前梯度方向
-    new_weights = task_weights - epsilon * d  # 更新权重
+    # 计算总损失对任务权重的梯度
+    gradients = grad(total_loss, task_weights, retain_graph=True, allow_unused=True)[0]
+    norm_gradients = gradients / (torch.norm(gradients) + 1e-8)  # 标准化梯度
+
+    # 更新权重
+    new_weights = task_weights - epsilon * norm_gradients
     new_weights = torch.clamp(new_weights, min=0)  # 保证非负
     return new_weights / new_weights.sum()  # 保证权重归一化
 
