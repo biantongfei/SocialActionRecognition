@@ -237,7 +237,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 task_weights = pareto_optimization(task_losses, task_weights)
 
             optimizer.zero_grad()
-            total_loss.backward()
+            total_loss.backward(retain_graph=True)
             optimizer.step()
             torch.cuda.empty_cache()
         scheduler.step()
