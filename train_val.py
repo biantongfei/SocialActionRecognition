@@ -103,30 +103,19 @@ def filter_not_interacting_sample(att_y_true, att_y_output):
     return att_y_true, att_y_output
 
 
-# 计算梯度投影
-def project_gradients(gradients):
+def pareto_optimization(task_losses, task_weights, epsilon=0.01):
     """
-    投影梯度，确保梯度间方向一致
+    使用帕累托优化更新任务权重。
     """
-    shared_grad = gradients[0]
-    for grad in gradients[1:]:
-        cosine_similarity = torch.dot(shared_grad.view(-1), grad.view(-1)) / (
-                torch.norm(shared_grad.view(-1)) * torch.norm(grad.view(-1)) + 1e-6
-        )
-        if cosine_similarity < 0:  # 避免梯度冲突
-            shared_grad = shared_grad - grad
-    return shared_grad
+    gradients = [grad(task_losses[i], task_weights, retain_graph=True)[0] for i in range(len(task_losses))]
+    norm_gradients = [g / (torch.norm(g) + 1e-8) for g in gradients]  # 标准化梯度
 
-
-# 动态权重更新：基于帕累托优化
-def compute_pareto_weights(gradients, losses):
-    """
-    帕累托权重优化，基于损失动态调整。
-    """
-    grad_magnitudes = [torch.norm(grad.view(-1)) for grad in gradients]
-    inverse_magnitude = [1.0 / (g + 1e-6) for g in grad_magnitudes]
-    weights = [l * im for l, im in zip(losses, inverse_magnitude)]
-    return weights
+    # 构建梯度矩阵
+    grad_matrix = torch.stack(norm_gradients, dim=1)
+    d = grad_matrix @ task_weights  # 当前梯度方向
+    new_weights = task_weights - epsilon * d  # 更新权重
+    new_weights = torch.clamp(new_weights, min=0)  # 保证非负
+    return new_weights / new_weights.sum()  # 保证权重归一化
 
 
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
@@ -242,17 +231,11 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 # weights = [loss / loss_sum for loss in losses]
                 # total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
 
-                optimizer.zero_grad()
-                grads_task1 = grad(loss_1, net.parameters(), retain_graph=True, create_graph=True)
-                grads_task2 = grad(loss_2, net.parameters(), retain_graph=True, create_graph=True)
-                grads_task3 = grad(loss_3, net.parameters(), retain_graph=True, create_graph=True)
-                # 梯度投影和权重计算
-                projected_grad = project_gradients([grads_task1, grads_task2, grads_task3])
-                weights = compute_pareto_weights([grads_task1, grads_task2],
-                                                 [loss_1.item(), loss_2.item(), loss_3.item()])
-
-                # 加权总损失
-                total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                if epoch == 1:
+                    task_weights = torch.ones(3, requires_grad=True, device=device) / 3
+                task_losses = torch.stack([loss_1, loss_2, loss_3])
+                total_loss = torch.dot(task_weights, task_losses)
+                task_weights = pareto_optimization(task_losses, task_weights)
 
             optimizer.zero_grad()
             total_loss.backward()
