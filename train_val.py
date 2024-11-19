@@ -121,9 +121,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     if wandb:
         run = wandb.init()
         print(
-            'hyperparameters--> epochs: %d, keypoint_hidden_dim: %d, time_hidden_dim: %d, fc1: %d, fc2: %d, times: %d' % (
-                wandb.config.epochs, wandb.config.keypoint_hidden_dim, wandb.config.time_hidden_dim,
-                wandb.config.fc_hidden1, wandb.config.fc_hidden2, wandb.config.times))
+            'hyperparameters--> epochs: %d, time_hidden_dim: %d, fc1: %d, fc2: %d, loss_type: %s, times: %d' % (
+                wandb.config.epochs, wandb.config.time_hidden_dim, wandb.config.fc_hidden1, wandb.config.fc_hidden2,
+                wandb.config.loss_type, wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
