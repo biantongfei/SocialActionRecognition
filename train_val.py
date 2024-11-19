@@ -103,27 +103,13 @@ def filter_not_interacting_sample(att_y_true, att_y_output):
     return att_y_true, att_y_output
 
 
-def pareto_optimization(task_losses, task_weights, epsilon=0.01):
-    weighted_losses = [task_weights[i] * task_losses[i] for i in range(len(task_losses))]
-    total_loss = sum(weighted_losses)
-
-    # 计算总损失对任务权重的梯度
-    gradients = grad(total_loss, task_weights, retain_graph=True, allow_unused=True)[0]
-    norm_gradients = gradients / (torch.norm(gradients) + 1e-8)  # 标准化梯度
-
-    # 更新权重
-    new_weights = task_weights - epsilon * norm_gradients
-    new_weights = torch.clamp(new_weights, min=0)  # 保证非负
-    return new_weights / new_weights.sum()  # 保证权重归一化
-
-
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
         print(
-            'hyperparameters--> epochs: %d, time_hidden_dim: %d, fc1: %d, fc2: %d, loss_type: %s, times: %d' % (
-                wandb.config.epochs, wandb.config.time_hidden_dim, wandb.config.fc_hidden1, wandb.config.fc_hidden2,
-                wandb.config.loss_type, wandb.config.times))
+            'hyperparameters--> epochs: %d, time_hidden_dim: %d, fc2: %d, loss_type: %s, times: %d' % (
+                wandb.config.epochs, wandb.config.time_hidden_dim, wandb.config.fc_hidden2, wandb.config.loss_type,
+                wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     for t in tasks:
         performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
@@ -163,9 +149,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     elif 'gcn_' in model:
         if wandb:
             net = GNN(body_part=body_part, framework=framework, model=model,
-                      sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
-                      keypoint_hidden_dim=16, time_hidden_dim=wandb.config.time_hidden_dim,
-                      fc_hidden1=wandb.config.fc_hidden1, fc_hidden2=wandb.config.fc_hidden2)
+                      sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16,
+                      time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=64, fc_hidden2=wandb.config.fc_hidden2)
         else:
             net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
                       frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,
@@ -228,12 +213,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                     loss_sum = sum(losses)
                     weights = [loss / loss_sum for loss in losses]
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
-                elif wandb.config.loss_type == 'pmtl':
-                    if epoch == 1:
-                        task_weights = torch.ones(3, requires_grad=True, device=device) / 3
-                    task_losses = torch.stack([loss_1, loss_2, loss_3])
-                    total_loss = torch.dot(task_weights, task_losses)
-                    task_weights = pareto_optimization(task_losses, task_weights)
 
             optimizer.zero_grad()
             total_loss.backward(retain_graph=True)

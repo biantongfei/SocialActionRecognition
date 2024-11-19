@@ -40,9 +40,8 @@ if __name__ == '__main__':
         'parameters': {
             'epochs': {'values': [40, 50]},
             'time_hidden_dim': {'values': [2, 4]},
-            'fc_hidden1': {'values': [64, 128]},
             'fc_hidden2': {'values': [8, 16, 32]},
-            'loss_type': {'values': ['sum', 'dynamic', 'pmtl']},
+            'loss_type': {'values': ['sum', 'dynamic']},
             'times': {'values': [0, 1, 2, 3]}
         }
     }
