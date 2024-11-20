@@ -204,16 +204,10 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                if wandb.config.loss_type == 'sum':
-                    total_loss = loss_1 + loss_2 + loss_3
-                elif wandb.config.loss_type == 'dynamic':
-                    losses = [loss_1.item(), loss_2.item(), loss_3.item()]
-                    loss_sum = sum(losses)
-                    weights = [loss / loss_sum for loss in losses]
-                    total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                total_loss = loss_1 + loss_2 + loss_3
 
             optimizer.zero_grad()
-            total_loss.backward(retain_graph=True)
+            total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
         scheduler.step()
