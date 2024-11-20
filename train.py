@@ -21,8 +21,6 @@ sequence_length = 10
 # HARPER Dataset
 trainset, valset, testset = get_harper_dataset(body_part, sequence_length)
 
-print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
-
 
 def train():
     # p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
