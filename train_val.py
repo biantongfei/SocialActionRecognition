@@ -111,9 +111,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 wandb.config.epochs, wandb.config.time_hidden_dim, wandb.config.fc_hidden2, wandb.config.loss_type,
                 wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
-    for t in tasks:
-        performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
-                             '%s_y_true' % t: None, '%s_y_pred' % t: None}
+    performance_model = {}
     num_workers = 8
     if model == 'avg':
         batch_size = avg_batch_size
@@ -150,7 +148,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         if wandb:
             net = GNN(body_part=body_part, framework=framework, model=model,
                       sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16,
-                      time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=64, fc_hidden2=wandb.config.fc_hidden2)
+                      time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
         else:
             net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
                       frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,
@@ -425,6 +423,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         total_acc += act_acc
         total_f1 += act_f1
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (params, process_time * 1000 / len(testset)))
+    performance_model['params'] = params
+    performance_model['latency'] = process_time * 1000 / len(testset)
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     wandb_log['avg_acc'] = total_acc / len(tasks)
     wandb_log['params'] = params
@@ -824,23 +824,27 @@ if __name__ == '__main__':
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
-    body_part = [True, True, True]
-    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed', ori_videos=ori_video)
-    p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                    sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                    valset=valset, testset=testset)
-
-    # for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
-    #                   [True, False, True], [False, True, True], [True, True, True]]:
-    #     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-    #                                                 augment_method='mixed', ori_videos=ori_video)
-    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-    #                     valset=valset, testset=testset)
-    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-    #         model, body_part[0], body_part[1], body_part[2], framework)
-    #     print(result_str)
+    # body_part = [True, True, True]
+    # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+    #                                             augment_method='mixed', ori_videos=ori_video)
+    # p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+    #                 sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+    #                 valset=valset, testset=testset)
+    with open('body_part.csv', 'w', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile)
+        for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
+                          [True, False, True], [False, True, True], [True, True, True]]:
+            spamwriter.writerow([str(body_part)])
+            trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                        augment_method='mixed', ori_videos=ori_video)
+            for i in range(4):
+                print('body_part: %s, times: %d' % (str(body_part), i))
+                p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                                sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                                valset=valset, testset=testset)
+                spamwriter.writerow(
+                    [i, p_m['intention_acc'], p_m['intention_f1'], p_m['attitude_acc'], p_m['attitude_f1'],
+                     p_m['action_acc'], p_m['action_f1'], p_m['params'], p_m['latency']])
     # for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
     #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
     #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
