@@ -248,17 +248,17 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 elif wandb.config.loss_type == 'pareto':
                     optimizer.zero_grad()
                     loss_1.backward(retain_graph=True)  # 保留计算图
-                    g1 = [p.grad.clone() for p in model.parameters()]
+                    g1 = [p.grad.clone() for p in net.parameters()]
                     optimizer.zero_grad()
                     loss_2.backward()
-                    g2 = [p.grad.clone() for p in model.parameters()]
+                    g2 = [p.grad.clone() for p in net.parameters()]
                     optimizer.zero_grad()
                     loss_3.backward()
-                    g3 = [p.grad.clone() for p in model.parameters()]
+                    g3 = [p.grad.clone() for p in net.parameters()]
 
                     # 合并梯度（例如使用简单加权或 MGDA）
-                    combined_grad = [g1[i] + g2[i] for i in range(len(g1))]
-                    for i, p in enumerate(model.parameters()):
+                    combined_grad = [g1[i] + g2[i] + g3[i] for i in range(len(g1))]
+                    for i, p in enumerate(net.parameters()):
                         p.grad = combined_grad[i]
                 elif wandb.config.loss_type == 'dwa':
                     if epoch == 1:
