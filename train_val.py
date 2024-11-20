@@ -808,7 +808,7 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
 
 
 if __name__ == '__main__':
-    model = 'gcn_lstm'
+    model = 'msgcn'
     # framework = 'intention'
     # framework = 'attitude'
     # framework = 'action'
@@ -818,27 +818,29 @@ if __name__ == '__main__':
     ori_video = False
     frame_sample_hop = 1
     sequence_length = 30
-    # body_part = [True, True, True]
-    # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-    #                                             augment_method='mixed', ori_videos=ori_video)
-    # p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-    #                 sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-    #                 valset=valset, testset=testset)
-    with open('body_part.csv', 'w', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile)
-        for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
-                          [True, False, True], [False, True, True], [True, True, True]]:
-            spamwriter.writerow([str(body_part)])
-            trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                        augment_method='mixed', ori_videos=ori_video)
-            for i in range(4):
-                print('body_part: %s, times: %d' % (str(body_part), i))
-                p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                                sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                                valset=valset, testset=testset)
-                spamwriter.writerow(
-                    [i, p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
-                     p_m['action_accuracy'], p_m['action_f1'], p_m['params'], p_m['latency']])
+    body_part = [True, True, True]
+    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                augment_method='mixed', ori_videos=ori_video)
+    for i in range(4):
+        print(i)
+        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+                        valset=valset, testset=testset)
+    # with open('body_part.csv', 'w', newline='') as csvfile:
+    #     spamwriter = csv.writer(csvfile)
+    #     for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
+    #                       [True, False, True], [False, True, True], [True, True, True]]:
+    #         spamwriter.writerow([str(body_part)])
+    #         trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+    #                                                     augment_method='mixed', ori_videos=ori_video)
+    #         for i in range(4):
+    #             print('body_part: %s, times: %d' % (str(body_part), i))
+    #             p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
+    #                             sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
+    #                             valset=valset, testset=testset)
+    #             spamwriter.writerow(
+    #                 [i, p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
+    #                  p_m['action_accuracy'], p_m['action_f1'], p_m['params'], p_m['latency']])
     # for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
     #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
     #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
