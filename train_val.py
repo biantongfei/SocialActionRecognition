@@ -780,9 +780,9 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset, train
     wandb_log['avg_acc'] = total_acc / len(tasks)
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    model_name = 'models/harper_%s_%s_%s.pt' % (
+    model_name = 'harper_%s_%s_%s.pt' % (
         model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else '')
-    torch.save(net, model_name)
+    torch.save(net, 'models/' + model_name)
     if wandb:
         artifact = wandb.Artifact(model_name, type="model")
         artifact.add_file("models/%s" % model_name)
