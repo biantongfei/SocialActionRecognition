@@ -1,5 +1,4 @@
-from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, split_harper_subsets, \
-    get_jpl_dataset
+from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, get_jpl_dataset
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
 from draw_utils import plot_confusion_matrix
 from DataLoader import Pose_DataLoader
@@ -431,7 +430,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         wandb.log_artifact(artifact)
         wandb.log(wandb_log)
 
-    # find_wrong_cases(int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, test_files)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
     # attn_weight = torch.cat(attn_weight, dim=0)
@@ -443,21 +441,12 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     return performance_model
 
 
-def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_classifier=False, train=True):
-    data_path = '../HARPER/pose_sequences/'
+def train_harper(wandb, model, sequence_length, trainset, valset, testset, train=True):
+    pretrained = True
+    new_classifier = wandb.config.new_classifier
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'contact']
-    for t in tasks:
-        performance_model = {'%s_accuracy' % t: None, '%s_f1' % t: None, '%s_confidence_score' % t: None,
-                             '%s_y_true' % t: None, '%s_y_pred' % t: None}
-    train_files, val_files, test_files = split_harper_subsets(data_path)
-    train_dataset = HARPER_Dataset(data_path=data_path, files=train_files, body_part=body_part, sequence_length=10,
-                                   train=True)
-    val_dataset = HARPER_Dataset(data_path=data_path, files=val_files, body_part=body_part, sequence_length=10)
-    test_dataset = HARPER_Dataset(data_path=data_path, files=test_files, body_part=body_part, sequence_length=10)
-    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (
-        len(train_dataset), len(val_dataset), len(test_dataset)))
-
+    performance_model = {}
     if pretrained:
         net = torch.load('models/jpl_gcn_lstm_fps10.pt')
         net.sequence_length = sequence_length
@@ -473,7 +462,8 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
                           sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=[True, True, True], framework='chain+contact', model=model,
-                  sequence_length=sequence_length, train_classifier=not new_classifier)
+                  sequence_length=sequence_length, frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=2,
+                  fc_hidden1=64, fc_hidden2=32, train_classifier=not new_classifier)
     elif model == 'stgcn':
         net = STGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'msgcn':
@@ -493,11 +483,10 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     while train:
-        train_loader = Pose_DataLoader(model=model, dataset=train_dataset, batch_size=16,
-                                       sequence_length=sequence_length, frame_sample_hop=1, drop_last=True,
-                                       shuffle=True, num_workers=1, contact=True)
-        val_loader = Pose_DataLoader(model=model, dataset=val_dataset, sequence_length=sequence_length,
-                                     frame_sample_hop=1, drop_last=True, batch_size=16, num_workers=1, contact=True)
+        train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=sequence_length,
+                                       frame_sample_hop=1, drop_last=False, shuffle=True, num_workers=1, contact=True)
+        val_loader = Pose_DataLoader(model=model, dataset=valset, sequence_length=sequence_length, frame_sample_hop=1,
+                                     drop_last=False, batch_size=16, num_workers=1, contact=True)
         net.train()
         print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
@@ -532,13 +521,6 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
                     # loss_3 = functional.cross_entropy(act_outputs, act_labels)
                     total_loss = loss_1 + loss_2
 
-                    # losses = [loss_1, loss_2, loss_3]
-                    # Compute inverse loss weights
-                    # weights = [1.0 / (loss.item() + epsilon) for loss in losses]
-                    # weight_sum = sum(weights)
-                    # weights = [w / weight_sum for w in weights]
-                    # # Compute weighted loss
-                    # total_loss = sum(weight * loss for weight, loss in zip(weights, losses))
             else:
                 int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
@@ -547,11 +529,6 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
                 loss_4 = functional.cross_entropy(contact_outputs, contact_labels)
                 total_loss = loss_1 + loss_2 + loss_3 + loss_4
 
-            # if epoch == 1:
-            #     initial_losses = [loss.item() for loss in losses]
-            # gradnorm_loss = compute_gradnorm(losses, initial_losses).to(device=device, dtype=dtype)
-            # weights = torch.softmax(net.task_weights, dim=0).to(device=device, dtype=dtype)
-            # total_loss = sum(weight * loss for weight, loss in zip(weights, losses)) + gradnorm_loss
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -665,8 +642,8 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
             # break
 
     print('Testing')
-    test_loader = Pose_DataLoader(model=model, dataset=test_dataset, sequence_length=sequence_length,
-                                  frame_sample_hop=1, batch_size=16, drop_last=False, num_workers=1, contact=True)
+    test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length, frame_sample_hop=1,
+                                  batch_size=16, drop_last=False, num_workers=1, contact=True)
     int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
     process_time = 0
     net.eval()
@@ -797,13 +774,18 @@ def train_harper(wandb, model, sequence_length, body_part, pretrained=True, new_
         total_acc += contact_acc
         total_f1 += contact_f1
     print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
-        (total_params, process_time * 1000 / len(test_dataset))))
+        (total_params, process_time * 1000 / len(testset))))
     wandb_log['avg_acc'] = total_acc / len(tasks)
     wandb_log['avg_f1'] = total_f1 / len(tasks)
-    wandb.log(wandb_log)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    torch.save(net, 'models/harper_%s_%s_%s.pt' % (
-        model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else ''))
+    model_name = 'models/harper_%s_%s_%s.pt' % (
+        model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else '')
+    torch.save(net, model_name)
+    if wandb:
+        artifact = wandb.Artifact(model_name, type="model")
+        artifact.add_file("models/%s" % model_name)
+        wandb.log_artifact(artifact)
+        wandb.log(wandb_log)
     return performance_model
 
 
@@ -826,6 +808,7 @@ if __name__ == '__main__':
         p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                         valset=valset, testset=testset)
+
     # with open('body_part.csv', 'w', newline='') as csvfile:
     #     spamwriter = csv.writer(csvfile)
     #     for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
@@ -841,18 +824,3 @@ if __name__ == '__main__':
     #             spamwriter.writerow(
     #                 [i, p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
     #                  p_m['action_accuracy'], p_m['action_f1'], p_m['params'], p_m['latency']])
-    # for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
-    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-    #                     valset=valset, testset=testset)
-    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-    #         model, body_part[0], body_part[1], body_part[2], framework)
-    #     print(result_str)
-    # framework = 'chain'
-    # for model in ['msgcn', 'dgstgcn', 'stgcn', 'gcn_conv1d', 'gcn_gcn', 'gcn_tran']:
-    #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-    #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-    #                     valset=valset, testset=testset)
-    #     result_str = 'model: %s, body_part: [%s, %s, %s], framework: %s' % (
-    #         model, body_part[0], body_part[1], body_part[2], framework)
-    #     print(result_str)

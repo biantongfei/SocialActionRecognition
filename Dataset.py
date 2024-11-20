@@ -269,6 +269,27 @@ class JPL_Dataset(Dataset):
             return len(self.features)
 
 
+def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', ori_videos=False):
+    print('Loading data for JPL %s dataset' % augment_method)
+    if model != 'r3d':
+        tra_files, val_files, test_files = get_tra_test_files()
+        trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part, model=model,
+                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='train')
+        valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, body_part=body_part, model=model,
+                             frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='validation')
+        testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part, model=model,
+                              frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
+    else:
+        tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', ori_videos=ori_videos)
+        trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
+                                 sequence_length=sequence_length)
+        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+        testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
+                                sequence_length=sequence_length)
+    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
+    return trainset, valset, testset
+
+
 class ImagesDataset(Dataset):
     def __init__(self, data_files, frame_sample_hop, sequence_length):
         self.frame_sample_hop = frame_sample_hop
@@ -331,29 +352,6 @@ class ImagesDataset(Dataset):
                 images[:, i, :, :] = cropped_frame
 
             self.videos[index] = images
-
-
-def split_harper_subsets(data_path):
-    # 12+5
-    files = os.listdir(data_path)
-    names = []
-    for file in files:
-        if file.split('_')[0] in names:
-            continue
-        else:
-            names.append(file.split('_')[0])
-    random.shuffle(names)
-    train_files = []
-    val_files = []
-    test_files = []
-    for file in files:
-        if file.split('_')[0] in names[:8]:
-            train_files.append(file)
-        elif file.split('_')[0] in names[15:]:
-            val_files.append(file)
-        else:
-            test_files.append(file)
-    return train_files, val_files, test_files
 
 
 class HARPER_Dataset(Dataset):
@@ -446,22 +444,17 @@ class HARPER_Dataset(Dataset):
                 self.labels.append(label)
 
 
-def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', ori_videos=False):
-    print('Loading data for JPL %s dataset' % augment_method)
-    if model != 'r3d':
-        tra_files, val_files, test_files = get_tra_test_files()
-        trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part, model=model,
-                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='train')
-        valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, body_part=body_part, model=model,
-                             frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='validation')
-        testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part, model=model,
-                              frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
-    else:
-        tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', ori_videos=ori_videos)
-        trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
-                                 sequence_length=sequence_length)
-        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
-        testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
-                                sequence_length=sequence_length)
+def get_harper_dataset(body_part, sequence_length):
+    print('Loading data for HARPER dataset')
+    data_path = '../HARPER/'
+    train_files = os.listdir(data_path + 'train/pose_sequences/')
+    val_files = os.listdir(data_path + 'validation/pose_sequences/')
+    test_files = os.listdir(data_path + 'test/pose_sequences/')
+    trainset = HARPER_Dataset(data_path=data_path + 'train/pose_sequences/', files=train_files, body_part=body_part,
+                              sequence_length=sequence_length, train=True)
+    valset = HARPER_Dataset(data_path=data_path + 'validation/pose_sequences/', files=val_files, body_part=body_part,
+                            sequence_length=sequence_length)
+    testset = HARPER_Dataset(data_path=data_path + 'test/pose_sequences/', files=test_files, body_part=body_part,
+                             sequence_length=sequence_length)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     return trainset, valset, testset
