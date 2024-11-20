@@ -39,9 +39,10 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'times': {'values': [i for i in range(10)]},
-            'fc_hidden2': {'values': [8, 16, 32]},
-            'loss_type': {'values': ['sum', 'dynamic', 'uncertain', 'pareto', 'dwa']},
+            # 'times': {'values': [i for i in range(10)]},
+            # 'fc_hidden2': {'values': [8, 16, 32]},
+            'fc_hidden2': {'values': [8]},
+            'loss_type': {'values': ['dynamic', 'uncertain', 'pareto', 'dwa', 'sum']},
         }
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
