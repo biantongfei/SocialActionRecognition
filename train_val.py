@@ -10,7 +10,7 @@ import torch
 from torch.nn import functional
 import torch.nn.utils.rnn as rnn_utils
 from torch.optim.lr_scheduler import StepLR
-from torch.autograd import grad
+from torch import nn
 
 import numpy as np
 from sklearn.metrics import f1_score
@@ -102,13 +102,45 @@ def filter_not_interacting_sample(att_y_true, att_y_output):
     return att_y_true, att_y_output
 
 
+class UncertaintyWeightingLoss(nn.Module):
+    def __init__(self, task_count):
+        super(UncertaintyWeightingLoss, self).__init__()
+        # 每个任务的不确定性参数 (log_vars 初始化为 0)
+        self.log_vars = nn.Parameter(torch.zeros(task_count))
+
+    def forward(self, losses):
+        """
+        losses: 列表，每个任务的损失值
+        返回: 加权后的总损失
+        """
+        total_loss = 0
+        for i, loss in enumerate(losses):
+            weight = torch.exp(-self.log_vars[i])  # 不确定性越大，权重越小
+            total_loss += weight * loss + self.log_vars[i]  # 包括正则化项
+        return total_loss
+
+
+def pareto_optimization(task_losses, epsilon=0.01):
+    weights = torch.ones(len(task_losses))  # 初始化权重
+    for i, loss in enumerate(task_losses):
+        gradient = torch.autograd.grad(loss, weights, retain_graph=True)[0]
+        weights[i] += epsilon * gradient
+    return weights / weights.sum()
+
+
+def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
+    # 计算损失比率
+    ratios = torch.tensor(curr_losses) / torch.tensor(prev_losses)
+    weights = torch.exp(ratios / temp)  # 动态调整
+    return weights / weights.sum()
+
+
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
         print(
-            'hyperparameters--> epochs: %d, time_hidden_dim: %d, fc2: %d, loss_type: %s, times: %d' % (
-                wandb.config.epochs, wandb.config.time_hidden_dim, wandb.config.fc_hidden2, wandb.config.loss_type,
-                wandb.config.times))
+            'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
+                                                                      wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     performance_model = {}
     num_workers = 8
@@ -147,7 +179,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         if wandb:
             net = GNN(body_part=body_part, framework=framework, model=model,
                       sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16,
-                      time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
+                      time_hidden_dim=4, fc_hidden1=64, fc_hidden2=wandb.config.fc_hidden2)
         else:
             net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
                       frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,
@@ -203,8 +235,28 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 loss_1 = functional.cross_entropy(int_outputs, int_labels)
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                total_loss = loss_1 + loss_2 + loss_3
-
+                if wandb.config.loss_type == 'sum':
+                    total_loss = loss_1 + loss_2 + loss_3
+                elif wandb.config.loss_type == 'dynamic':
+                    weights = 1.0 / (torch.tensor([loss_1, loss_2, loss_3]) + 1e-8)
+                    weights = weights / weights.sum()
+                    total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                elif wandb.config.loss_type == 'uncertain':
+                    task_losses = [torch.tensor(loss_1), torch.tensor(loss_2), torch.tensor(loss_3)]
+                    criterion = UncertaintyWeightingLoss(task_count=3)
+                    total_loss = criterion(task_losses)
+                elif wandb.config.loss_type == 'pareto':
+                    task_losses = [torch.tensor(loss_1, requires_grad=True), torch.tensor(loss_2, requires_grad=True),
+                                   torch.tensor(loss_3, requires_grad=True)]
+                    weights = pareto_optimization(task_losses)
+                    total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                elif wandb.config.loss_type == 'dwa':
+                    if epoch == 1:
+                        prev_losses = [1, 1, 1]
+                    else:
+                        weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
+                        total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                        prev_losses = [loss_1, loss_2, loss_3]
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -464,8 +516,8 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset, train
                           sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=[True, True, True], framework='chain+contact', model=model,
-                  sequence_length=sequence_length, frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=2,
-                  fc_hidden1=64, fc_hidden2=32, train_classifier=not new_classifier)
+                  sequence_length=sequence_length, frame_sample_hop=1, keypoint_hidden_dim=32, time_hidden_dim=4,
+                  fc_hidden1=64, fc_hidden2=8, train_classifier=not new_classifier)
     elif model == 'stgcn':
         net = STGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'msgcn':
