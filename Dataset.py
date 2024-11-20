@@ -383,7 +383,7 @@ class HARPER_Dataset(Dataset):
                     index = 0
                     b_p = [False, False, False]
                     b_p[index_body] = True
-                    input_size = get_inputs_size(True, b_p)
+                    input_size = get_inputs_size(b_p)
                     x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
                     frame_num = 0
                     while frame_num < self.sequence_length:
@@ -391,7 +391,7 @@ class HARPER_Dataset(Dataset):
                         frame_feature = np.array(frame['keypoints'])
                         frame_feature = frame_feature.reshape((133, 3))
                         index += 1
-                        frame_feature = get_body_part(frame_feature, True, b_p)
+                        frame_feature = get_body_part(frame_feature, b_p)
                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                         # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
@@ -419,7 +419,7 @@ class HARPER_Dataset(Dataset):
                         index = 0
                         b_p = [False, False, False]
                         b_p[index_body] = True
-                        input_size = get_inputs_size(True, b_p)
+                        input_size = get_inputs_size(b_p)
                         x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
                         frame_num = 0
                         while frame_num < self.sequence_length:
@@ -427,7 +427,7 @@ class HARPER_Dataset(Dataset):
                             frame_feature = np.array(frame['keypoints'])
                             frame_feature = frame_feature.reshape((133, 3))
                             index += 1
-                            frame_feature = get_body_part(frame_feature, True, b_p)
+                            frame_feature = get_body_part(frame_feature, b_p)
                             frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
                             frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
                             # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
