@@ -1,5 +1,5 @@
 from train_val import train_jpl, draw_save, send_email, train_harper
-from Dataset import get_jpl_dataset, HARPER_Dataset
+from Dataset import get_jpl_dataset, get_harper_dataset
 import wandb
 from datetime import datetime
 
@@ -15,16 +15,11 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 10
 # JPL Dataset
-trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-                                            ori_videos=ori_video)
+# trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+#                                             ori_videos=ori_video)
 
 # HARPER Dataset
-data_path = '../HARPER/pose_sequences/'
-
-trainset = HARPER_Dataset(data_path=data_path, files=train_files, body_part=body_part, sequence_length=10,
-                          train=True)
-valset = HARPER_Dataset(data_path=data_path, files=val_files, body_part=body_part, sequence_length=10)
-testset = HARPER_Dataset(data_path=data_path, files=test_files, body_part=body_part, sequence_length=10)
+trainset, valset, testset = get_harper_dataset(body_part, sequence_length)
 
 print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
 
