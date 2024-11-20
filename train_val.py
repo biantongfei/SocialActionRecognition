@@ -242,22 +242,33 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                     weights = weights / weights.sum()
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
                 elif wandb.config.loss_type == 'uncertain':
-                    total_loss = (torch.exp(-model.log_sigma1) * loss_1 + model.log_sigma1 + torch.exp(
-                        -model.log_sigma2) * loss_2 + model.log_sigma2 + torch.exp(
-                        -model.log_sigma3) * loss_3 + model.log_sigma3)
+                    total_loss = (torch.exp(-net.log_sigma1) * loss_1 + net.log_sigma1 + torch.exp(
+                        -net.log_sigma2) * loss_2 + net.log_sigma2 + torch.exp(
+                        -net.log_sigma3) * loss_3 + net.log_sigma3)
                 elif wandb.config.loss_type == 'pareto':
-                    task_losses = [torch.tensor(loss_1, requires_grad=True), torch.tensor(loss_2, requires_grad=True),
-                                   torch.tensor(loss_3, requires_grad=True)]
-                    weights = pareto_optimization(task_losses)
-                    total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                    optimizer.zero_grad()
+                    loss_1.backward(retain_graph=True)  # 保留计算图
+                    g1 = [p.grad.clone() for p in model.parameters()]
+                    optimizer.zero_grad()
+                    loss_2.backward()
+                    g2 = [p.grad.clone() for p in model.parameters()]
+                    optimizer.zero_grad()
+                    loss_3.backward()
+                    g3 = [p.grad.clone() for p in model.parameters()]
+
+                    # 合并梯度（例如使用简单加权或 MGDA）
+                    combined_grad = [g1[i] + g2[i] for i in range(len(g1))]
+                    for i, p in enumerate(model.parameters()):
+                        p.grad = combined_grad[i]
                 elif wandb.config.loss_type == 'dwa':
                     if epoch == 1:
                         prev_losses = [1, 1, 1]
                     weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
                     prev_losses = [loss_1, loss_2, loss_3]
-            optimizer.zero_grad()
-            total_loss.backward()
+            if wandb.config.loss_type != 'pareto':
+                optimizer.zero_grad()
+                total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
         scheduler.step()
