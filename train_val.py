@@ -837,8 +837,8 @@ if __name__ == '__main__':
                                 sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
                                 valset=valset, testset=testset)
                 spamwriter.writerow(
-                    [i, p_m['intention_acc'], p_m['intention_f1'], p_m['attitude_acc'], p_m['attitude_f1'],
-                     p_m['action_acc'], p_m['action_f1'], p_m['params'], p_m['latency']])
+                    [i, p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
+                     p_m['action_accuracy'], p_m['action_f1'], p_m['params'], p_m['latency']])
     # for framework in ['intention', 'attitude', 'action', 'parallel', 'tree']:
     #     p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
     #                     sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
