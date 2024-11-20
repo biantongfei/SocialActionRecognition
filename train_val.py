@@ -260,6 +260,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                     combined_grad = [g1[i] + g2[i] + g3[i] for i in range(len(g1))]
                     for i, p in enumerate(net.parameters()):
                         p.grad = combined_grad[i]
+                    total_loss = loss_1 + loss_2 + loss_3
                 elif wandb.config.loss_type == 'dwa':
                     if epoch == 1:
                         prev_losses = [1, 1, 1]

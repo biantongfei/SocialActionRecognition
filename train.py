@@ -39,9 +39,10 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs':{"values":[40,50]},
-            'times': {'values': [i for i in range(10)]},
-            'fc_hidden2': {'values': [8, 16, 32]},
+            # 'epochs':{"values":[40,50]},
+            # 'times': {'values': [i for i in range(10)]},
+            # 'fc_hidden2': {'values': [8, 16, 32]},
+            'fc_hidden2': {'values': [8]},
             'loss_type': {'values': ['pareto', 'dwa', 'sum', 'dynamic', 'uncertain']},
         }
     }
