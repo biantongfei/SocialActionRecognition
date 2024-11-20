@@ -259,6 +259,9 @@ class GNN(nn.Module):
         self.fc_hidden2 = fc_hidden2
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
+        self.log_sigma1 = nn.Parameter(torch.tensor(0.0))
+        self.log_sigma2 = nn.Parameter(torch.tensor(0.0))
+        self.log_sigma3 = nn.Parameter(torch.tensor(0.0))
         # self.other_parameters = []
         # self.attn_parameters = []
         if body_part[0]:

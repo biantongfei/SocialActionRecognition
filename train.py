@@ -42,7 +42,7 @@ if __name__ == '__main__':
             # 'times': {'values': [i for i in range(10)]},
             # 'fc_hidden2': {'values': [8, 16, 32]},
             'fc_hidden2': {'values': [8]},
-            'loss_type': {'values': ['dynamic', 'uncertain', 'pareto', 'dwa', 'sum']},
+            'loss_type': {'values': ['uncertain', 'pareto', 'dwa', 'sum', 'dynamic']},
         }
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)

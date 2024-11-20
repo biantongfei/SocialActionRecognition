@@ -121,7 +121,7 @@ class UncertaintyWeightingLoss(nn.Module):
 
 
 def pareto_optimization(task_losses, epsilon=0.01):
-    weights = torch.ones(len(task_losses))  # 初始化权重
+    weights = torch.ones(len(task_losses), requires_grad=True)  # 初始化权重
     for i, loss in enumerate(task_losses):
         gradient = torch.autograd.grad(loss, weights, retain_graph=True)[0]
         weights[i] += epsilon * gradient
@@ -242,9 +242,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                     weights = weights / weights.sum()
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
                 elif wandb.config.loss_type == 'uncertain':
-                    task_losses = [torch.tensor(loss_1), torch.tensor(loss_2), torch.tensor(loss_3)]
-                    criterion = UncertaintyWeightingLoss(task_count=3)
-                    total_loss = criterion(task_losses)
+                    total_loss = (torch.exp(-model.log_sigma1) * loss_1 + model.log_sigma1 + torch.exp(
+                        -model.log_sigma2) * loss_2 + model.log_sigma2 + torch.exp(
+                        -model.log_sigma3) * loss_3 + model.log_sigma3)
                 elif wandb.config.loss_type == 'pareto':
                     task_losses = [torch.tensor(loss_1, requires_grad=True), torch.tensor(loss_2, requires_grad=True),
                                    torch.tensor(loss_3, requires_grad=True)]
@@ -253,10 +253,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                 elif wandb.config.loss_type == 'dwa':
                     if epoch == 1:
                         prev_losses = [1, 1, 1]
-                    else:
-                        weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
-                        total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
-                        prev_losses = [loss_1, loss_2, loss_3]
+                    weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
+                    total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
+                    prev_losses = [loss_1, loss_2, loss_3]
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
