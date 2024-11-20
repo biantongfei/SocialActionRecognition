@@ -27,7 +27,8 @@ print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(tr
 def train():
     # p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
     #                 frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
-    p_m = train_harper(wandb=wandb, model=model, sequence_length=sequence_length)
+    p_m = train_harper(wandb=wandb, model=model, sequence_length=sequence_length, trainset=trainset, valset=valset,
+                       testset=testset)
     # draw_save(framework, performance_model, framework)
     # send_email(result_str)
 
