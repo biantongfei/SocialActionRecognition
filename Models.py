@@ -253,7 +253,6 @@ class GNN(nn.Module):
         self.model = model
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        print('+++++++++++++++++++++++++++++', self.sequence_length, self.frame_sample_hop)
         self.keypoint_hidden_dim = keypoint_hidden_dim
         self.time_hidden_dim = self.keypoint_hidden_dim * time_hidden_dim
         self.fc_hidden1 = fc_hidden1
