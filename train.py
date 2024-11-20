@@ -40,7 +40,6 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {'values': [5, 10, 15, 20]},
-            'new_classifier': {'values': [True, False]},
             'times': {'values': [0, 1, 2, 3]}
         }
     }

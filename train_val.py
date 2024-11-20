@@ -443,8 +443,8 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
 
 def train_harper(wandb, model, sequence_length, trainset, valset, testset, train=True):
     pretrained = True
+    new_classifier = False
     run = wandb.init()
-    new_classifier = wandb.config.new_classifier
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'contact']
     performance_model = {}
