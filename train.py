@@ -63,5 +63,5 @@ if __name__ == '__main__':
     #     }
     # }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_HARPER_fps10')
+    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_HARPER_fps10_test')
     wandb.agent(sweep_id, function=train)
