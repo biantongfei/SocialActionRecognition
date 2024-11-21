@@ -359,7 +359,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         if wandb:
             wandb.log(wandb_log)
         torch.cuda.empty_cache()
-        if epoch == 40:
+        if epoch == wandb.config.epochs:
             break
         else:
             epoch += 1
