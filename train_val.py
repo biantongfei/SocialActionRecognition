@@ -178,8 +178,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     elif 'gcn_' in model:
         if wandb:
             net = GNN(body_part=body_part, framework=framework, model=model,
-                      sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16,
-                      time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
+                      sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
+                      keypoint_hidden_dim=wandb.config.keypoints_hidden_dim,
+                      time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=64, fc_hidden2=16)
         else:
             net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
                       frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,

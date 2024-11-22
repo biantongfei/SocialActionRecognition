@@ -11,7 +11,7 @@ model = 'gcn_lstm'
 # framework = 'tree'
 framework = 'chain'
 ori_video = False
-frame_sample_hop = 1
+frame_sample_hop = 3
 sequence_length = 30
 # JPL Dataset
 trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
@@ -42,8 +42,10 @@ if __name__ == '__main__':
             'epochs': {"values": [20, 30, 40, 50]},
             'times': {'values': [i for i in range(8)]},
             'loss_type': {'values': ['pareto', 'dwa', 'sum', 'dynamic', 'uncertain']},
+            'keypoints_hidden_dim': {'values': [8, 16]},
+            'time_hidden_dim': {'values': [2, 4]}
         }
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps30')
+    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train)
