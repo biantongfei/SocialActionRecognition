@@ -32,9 +32,6 @@ def train():
 
 
 if __name__ == '__main__':
-    pretrained_list = [True, True, False]
-    new_classifier_list = [False, True, False]
-    epoch_list = [[0, 5, 10, 15, 20, 25, 30, 35], [10, 15, 20, 25, 30, 35, 40, 45], [15, 20, 25, 30, 35, 40, 45]]
     sweep_config = {
         'method': 'grid',
         'metric': {
@@ -42,7 +39,7 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [0, 5, 10, 15, 20, 25, 30, 35]},
+            'epochs': {"values": [5, 10, 15, 20, 25, 30, 35]},
             'pretrained': {'values': [True]},
             'new_classifier': {'values': [False]},
             'loss_type': {'values': ['sum', 'uncertain', 'dynamic', 'dwa']},
