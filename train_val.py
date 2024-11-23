@@ -528,8 +528,8 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset, train
                           sequence_length=sequence_length)
     elif 'gcn_' in model:
         net = GNN(body_part=[True, True, True], framework='chain+contact', model=model,
-                  sequence_length=sequence_length, frame_sample_hop=1, keypoint_hidden_dim=32, time_hidden_dim=4,
-                  fc_hidden1=64, fc_hidden2=8, train_classifier=not new_classifier)
+                  sequence_length=sequence_length, frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=4,
+                  fc_hidden1=64, fc_hidden2=16, train_classifier=not new_classifier)
     elif model == 'stgcn':
         net = STGCN(body_part=[True, True, True], framework='chain+contact')
     elif model == 'msgcn':
