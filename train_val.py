@@ -513,6 +513,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
                                                                                  'contact']
     performance_model = {}
     if pretrained:
+        print('Loading SocialEgoNet ' + ('without classifier' if new_classifier else 'with classifier'))
         net = torch.load('models/jpl_gcn_lstm_fps10.pt')
         net.sequence_length = sequence_length
         net.frame_sample_hop = 1
