@@ -540,7 +540,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         net = R3D(framework='chain+contact')
     net.to(device)
     if new_classifier:
-        H_Classifier = Classifier(framework='chain+contact', in_feature_size=32)
+        H_Classifier = Classifier(framework='chain+contact', in_feature_size=16)
         H_Classifier.to(device)
         optimizer = torch.optim.Adam(H_Classifier.parameters(), lr=learning_rate)
         net.train_classifier = False
