@@ -39,7 +39,7 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [15, 20, 25, 30, 35]},
+            'epochs': {"values": [40, 45, 50]},
             'pretrained': {'values': [True]},
             'new_classifier': {'values': [True]},
             'times': {'values': [i for i in range(10)]}
