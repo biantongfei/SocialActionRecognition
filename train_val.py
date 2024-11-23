@@ -505,9 +505,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     return performance_model
 
 
-def train_harper(wandb, model, sequence_length, trainset, valset, testset, train=True):
-    pretrained = True
-    new_classifier = False
+def train_harper(wandb, model, sequence_length, trainset, valset, testset):
+    pretrained = wandb.config.pretrained
+    new_classifier = wandb.config.new_classifier
     run = wandb.init()
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'contact']
@@ -548,7 +548,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset, train
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    while train:
+    while epoch < wandb.config.epochs:
         train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=sequence_length,
                                        frame_sample_hop=1, drop_last=False, shuffle=True, num_workers=1, contact=True)
         val_loader = Pose_DataLoader(model=model, dataset=valset, sequence_length=sequence_length, frame_sample_hop=1,
@@ -700,11 +700,8 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset, train
         print(result_str + 'loss: %.4f' % total_loss)
         wandb.log(wandb_log)
         torch.cuda.empty_cache()
-        if epoch == wandb.config.epochs:
-            break
-        else:
-            epoch += 1
-            print('------------------------------------------')
+        epoch += 1
+        print('------------------------------------------')
             # break
 
     print('Testing')
