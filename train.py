@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 'goal': 'maximize',
             },
             'parameters': {
-                'epochs': {"values": [epoch_list[i]]},
+                'epochs': {"values": epoch_list[i]},
                 'pretrained': {'values': [pretrained_list[i]]},
                 'new_classifier': {'values': [new_classifier_list[i]]},
                 'times': {'values': [ii for ii in range(10)]}
