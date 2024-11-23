@@ -548,7 +548,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    while epoch < wandb.config.epochs:
+    while epoch <= wandb.config.epochs:
         train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=sequence_length,
                                        frame_sample_hop=1, drop_last=False, shuffle=True, num_workers=1, contact=True)
         val_loader = Pose_DataLoader(model=model, dataset=valset, sequence_length=sequence_length, frame_sample_hop=1,
