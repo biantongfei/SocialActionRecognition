@@ -32,19 +32,24 @@ def train():
 
 
 if __name__ == '__main__':
-    sweep_config = {
-        'method': 'grid',
-        'metric': {
-            'name': 'avg_f1',
-            'goal': 'maximize',
-        },
-        'parameters': {
-            'epochs': {"values": [10, 15, 20, 25, 30, 35, 40, 45, 50]},
-            'pretrained': {'values': [False]},
-            'new_classifier': {'values': [False]},
-            'times': {'values': [i for i in range(10)]}
+    pretrained_list = [True, True, False]
+    new_classifier_list = [False, True, False]
+    epoch_list = [[0, 5, 10, 15, 20, 25, 30, 35], [10, 15, 20, 25, 30, 35, 40, 45], [15, 20, 25, 30, 35, 40, 45]]
+    for i in range(3):
+        sweep_config = {
+            'method': 'grid',
+            'metric': {
+                'name': 'avg_f1',
+                'goal': 'maximize',
+            },
+            'parameters': {
+                'epochs': {"values": epoch_list[i]},
+                'pretrained': {'values': pretrained_list[i]},
+                'new_classifier': {'values': new_classifier_list[i]},
+                'times': {'values': [ii for ii in range(10)]}
+            }
         }
-    }
-    # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
-    wandb.agent(sweep_id, function=train)
+        # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
+        sweep_id = wandb.sweep(sweep_config,
+                               project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
+        wandb.agent(sweep_id, function=train)
