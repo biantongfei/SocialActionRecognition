@@ -506,9 +506,9 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
 
 
 def train_harper(wandb, model, sequence_length, trainset, valset, testset):
+    run = wandb.init()
     pretrained = wandb.config.pretrained
     new_classifier = wandb.config.new_classifier
-    run = wandb.init()
     tasks = ['intention', 'attitude'] if pretrained and not new_classifier else ['intention', 'attitude', 'action',
                                                                                  'contact']
     performance_model = {}
@@ -702,7 +702,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         torch.cuda.empty_cache()
         epoch += 1
         print('------------------------------------------')
-            # break
+        # break
 
     print('Testing')
     test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length, frame_sample_hop=1,
