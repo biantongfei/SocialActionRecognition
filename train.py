@@ -39,9 +39,9 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [40, 45, 50]},
-            'pretrained': {'values': [True]},
-            'new_classifier': {'values': [True]},
+            'epochs': {"values": [10, 15, 20, 25, 30, 35, 40, 45, 50]},
+            'pretrained': {'values': [False]},
+            'new_classifier': {'values': [False]},
             'times': {'values': [i for i in range(10)]}
         }
     }
