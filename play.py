@@ -12,3 +12,4 @@ with open('wandb_export_2024-11-23T14_00_07.492+00_00.csv') as csvfile:
             performance[key] = float(row['avg_f1']) / 8
 print(len(performance.keys()))
 print(sorted(performance.items(), key=lambda kv: (kv[1], kv[0])))
+

@@ -579,14 +579,14 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
                     loss_2 = functional.cross_entropy(att_outputs, att_labels)
                     loss_3 = functional.cross_entropy(act_outputs, act_labels)
                     loss_4 = functional.cross_entropy(contact_outputs, contact_labels)
-                    total_loss = loss_1 + loss_2 + loss_3 + loss_4
+                    losses = [loss_1, loss_2, loss_3, loss_4]
                 else:
                     int_outputs, att_outputs, _ = net(inputs)
                     # int_outputs, att_outputs, act_outputs, _ = net(inputs)
                     loss_1 = functional.cross_entropy(int_outputs, int_labels)
                     loss_2 = functional.cross_entropy(att_outputs, att_labels)
                     # loss_3 = functional.cross_entropy(act_outputs, act_labels)
-                    total_loss = loss_1 + loss_2
+                    losses = [loss_1, loss_2]
 
             else:
                 int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
@@ -594,8 +594,21 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
                 loss_2 = functional.cross_entropy(att_outputs, att_labels)
                 loss_3 = functional.cross_entropy(act_outputs, act_labels)
                 loss_4 = functional.cross_entropy(contact_outputs, contact_labels)
-                total_loss = loss_1 + loss_2 + loss_3 + loss_4
-
+                losses = [loss_1, loss_2, loss_3, loss_4]
+            if wandb.config.loss_type == 'sum':
+                total_loss = sum(losses)
+            elif wandb.config.loss_type == 'dynamic':
+                weights = 1.0 / (torch.tensor(losses) + 1e-8)
+                weights = weights / weights.sum()
+                total_loss = sum([losses[i] * weights[i] for i in range(len(losses))])
+            elif wandb.config.loss_type == 'uncertain':
+                total_loss = sum([torch.exp(-net.log_sigma1) * losses[i] for i in range(len(losses))])
+            elif wandb.config.loss_type == 'dwa':
+                if epoch == 1:
+                    prev_losses = [1, 1] if len(tasks) == 2 else [1, 1, 1, 1]
+                weights = dynamic_weight_average(prev_losses, losses)
+                total_loss = sum([losses[i] * weights[i] for i in range(len(losses))])
+                prev_losses = losses
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -603,7 +616,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         scheduler.step()
         progress_bar.close()
         print('Validating')
-        int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, contact_y_true, contact_y_pred = [], [], [], [], [], [], [], []
         net.eval()
         for data in val_loader:
             if model in ['avg', 'perframe', 'conv1d', 'tran', 'r3d']:
@@ -634,15 +647,12 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             # int_pred = int_outputs.argmax(dim=1)
             int_y_true += int_labels.tolist()
             int_y_pred += pred.tolist()
-            int_y_score += score.tolist()
             int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
             if model == 'perframe':
                 int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
             int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
             int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-            int_score = np.mean(int_y_score)
-            result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score: %.4f, ' % (
-                int_acc * 100, int_f1, int_score)
+            result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
             wandb_log['val_int_acc'] = int_acc
             wandb_log['val_int_f1'] = int_f1
         if 'attitude' in tasks:
@@ -652,15 +662,12 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             # att_pred = att_outputs.argmax(dim=1)
             att_y_true += att_labels.tolist()
             att_y_pred += pred.tolist()
-            att_y_score += score.tolist()
             att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
             if model == 'perframe':
                 att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
             att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
             att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-            att_score = np.mean(att_y_score)
-            result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (
-                att_acc * 100, att_f1, att_score)
+            result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
             wandb_log['val_att_acc'] = att_acc
             wandb_log['val_att_f1'] = att_f1
         if 'action' in tasks:
@@ -669,15 +676,12 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             # act_pred = act_outputs.argmax(dim=1)
             act_y_true += act_labels.tolist()
             act_y_pred += pred.tolist()
-            act_y_score += score.tolist()
             act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
             if model == 'perframe':
                 act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
             act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
             act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-            act_score = np.mean(act_y_score)
-            result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (
-                act_acc * 100, act_f1, act_score)
+            result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
             wandb_log['val_act_acc'] = act_acc
             wandb_log['val_act_f1'] = act_f1
         if 'contact' in tasks:
@@ -686,16 +690,13 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             # contact_pred = contact_outputs.argmax(dim=1)
             contact_y_true += contact_labels.tolist()
             contact_y_pred += pred.tolist()
-            contact_y_score += score.tolist()
             contact_y_true, contact_y_pred = torch.Tensor(contact_y_true), torch.Tensor(contact_y_pred)
             if model == 'perframe':
                 contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred,
                                                                            sequence_length)
             contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
             contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
-            contact_score = np.mean(contact_y_score)
-            result_str += 'contact_acc: %.2f, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
-                contact_acc * 100, contact_f1, contact_score)
+            result_str += 'contact_acc: %.2f, contact_f1: %.4f, ' % (contact_acc * 100, contact_f1)
             wandb_log['val_contact_acc'] = contact_acc
             wandb_log['val_contact_f1'] = contact_f1
         print(result_str + 'loss: %.4f' % total_loss)
@@ -708,7 +709,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
     print('Testing')
     test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length, frame_sample_hop=1,
                                   batch_size=16, drop_last=False, num_workers=1, contact=True)
-    int_y_true, int_y_pred, int_y_score, att_y_true, att_y_pred, att_y_score, act_y_true, act_y_pred, act_y_score, contact_y_true, contact_y_pred, contact_y_score = [], [], [], [], [], [], [], [], [], [], [], []
+    int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, contact_y_true, contact_y_pred = [], [], [], [], [], [], [], []
     process_time = 0
     net.eval()
     progress_bar = tqdm(total=len(test_loader), desc='Progress')
@@ -745,27 +746,23 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         # int_pred = int_outputs.argmax(dim=1)
         int_y_true += int_labels.tolist()
         int_y_pred += pred.tolist()
-        int_y_score += score.tolist()
         att_outputs = torch.softmax(att_outputs, dim=1)
         att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
         score, pred = torch.max(att_outputs, dim=1)
         # att_pred = att_outputs.argmax(dim=1)
         att_y_true += att_labels.tolist()
         att_y_pred += pred.tolist()
-        att_y_score += score.tolist()
         if not pretrained or new_classifier:
             act_outputs = torch.softmax(act_outputs, dim=1)
             score, pred = torch.max(act_outputs, dim=1)
             # act_pred = act_outputs.argmax(dim=1)
             act_y_true += act_labels.tolist()
             act_y_pred += pred.tolist()
-            act_y_score += score.tolist()
             contact_outputs = torch.softmax(contact_outputs, dim=1)
             score, pred = torch.max(contact_outputs, dim=1)
             # contact_pred = contact_outputs.argmax(dim=1)
             contact_y_true += contact_labels.tolist()
             contact_y_pred += pred.tolist()
-            contact_y_score += score.tolist()
         torch.cuda.empty_cache()
     progress_bar.close()
     result_str = ''
@@ -776,13 +773,11 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
     int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
     int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-    int_score = np.mean(int_y_score)
     performance_model['intention_accuracy'] = int_acc
     performance_model['intention_f1'] = int_f1
-    performance_model['intention_confidence_score'] = int_score
     performance_model['intention_y_true'] = int_y_true
     performance_model['intention_y_pred'] = int_y_pred
-    result_str += 'int_acc: %.2f, int_f1: %.4f, int_confidence_score :%.4f, ' % (int_acc * 100, int_f1, int_score)
+    result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
     wandb_log['test_int_acc'] = int_acc
     wandb_log['test_int_f1'] = int_f1
     total_acc += int_acc
@@ -792,13 +787,11 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
         att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
     att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
     att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-    att_score = np.mean(att_y_score)
     performance_model['attitude_accuracy'] = att_acc
     performance_model['attitude_f1'] = att_f1
-    performance_model['attitude_confidence_score'] = att_score
     performance_model['attitude_y_true'] = att_y_true
     performance_model['attitude_y_pred'] = att_y_pred
-    result_str += 'att_acc: %.2f, att_f1: %.4f, att_confidence_score: %.4f, ' % (att_acc * 100, att_f1, att_score)
+    result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
     wandb_log['test_att_acc'] = att_acc
     wandb_log['test_att_f1'] = att_f1
     total_acc += att_acc
@@ -809,13 +802,11 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
         act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-        act_score = np.mean(act_y_score)
         performance_model['action_accuracy'] = act_acc
         performance_model['action_f1'] = act_f1
-        performance_model['action_confidence_score'] = act_score
         performance_model['action_y_true'] = act_y_true
         performance_model['action_y_pred'] = act_y_pred
-        result_str += 'act_acc: %.2f, act_f1: %.4f, act_confidence_score: %.4f, ' % (act_acc * 100, act_f1, act_score)
+        result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
         wandb_log['test_act_acc'] = act_acc
         wandb_log['test_act_f1'] = act_f1
         total_acc += act_acc
@@ -825,14 +816,11 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred, sequence_length)
         contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
         contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
-        contact_score = np.mean(contact_y_score)
         performance_model['contact_accuracy'] = contact_acc
         performance_model['contact_f1'] = contact_f1
-        performance_model['contact_confidence_score'] = contact_score
         performance_model['contact_y_true'] = contact_y_true
         performance_model['contact_y_pred'] = contact_y_pred
-        result_str += 'contact_acc: %.2f, contact_f1: %.4f, contact_confidence_score: %.4f, ' % (
-            contact_acc * 100, contact_f1, contact_score)
+        result_str += 'contact_acc: %.2f, contact_f1: %.4f, ' % (contact_acc * 100, contact_f1)
         wandb_log['test_contact_acc'] = contact_acc
         wandb_log['test_contact_f1'] = contact_f1
         total_acc += contact_acc
@@ -844,11 +832,11 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     model_name = 'harper_%s_%s_%s.pt' % (
         model, 'pretrained' if pretrained else '', 'new_classifier' if new_classifier else '')
-    torch.save(net, 'models/' + model_name)
+    # torch.save(net, 'models/' + model_name)
     if wandb:
-        artifact = wandb.Artifact(model_name, type="model")
-        artifact.add_file("models/%s" % model_name)
-        wandb.log_artifact(artifact)
+        # artifact = wandb.Artifact(model_name, type="model")
+        # artifact.add_file("models/%s" % model_name)
+        # wandb.log_artifact(artifact)
         wandb.log(wandb_log)
     return performance_model
 
