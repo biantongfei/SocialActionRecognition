@@ -2,7 +2,7 @@ import csv
 
 performance = {}
 # with open('wandb_export_2024-11-20T17_23_33.230+00_00.csv') as csvfile:
-with open('wandb_export_2024-11-24T01_14_15.645+00_00.csv') as csvfile:
+with open('wandb_export_2024-11-24T02_11_52.183+00_00.csv') as csvfile:
     for row in csv.DictReader(csvfile):
         key = 'e%s_loss%s' % (row['epochs'], row['loss_type'])
         if key in performance.keys():
