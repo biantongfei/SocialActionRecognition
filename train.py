@@ -24,7 +24,6 @@ sequence_length = 10
 
 
 def train():
-    body_part = wandb.config.body_part
     p_m = train_jpl(wandb=wandb, model=model, body_part=body_part, framework=framework, sequence_length=sequence_length,
                     frame_sample_hop=frame_sample_hop, trainset=trainset, valset=valset, testset=testset)
     # p_m = train_harper(wandb=wandb, model=model, sequence_length=sequence_length, trainset=trainset, valset=valset,

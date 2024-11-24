@@ -138,6 +138,7 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
+        body_part = wandb.config.body_part
         # print(
         #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
         #                                                               wandb.config.times))
