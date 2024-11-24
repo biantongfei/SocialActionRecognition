@@ -14,7 +14,6 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 10
 
-
 # JPL Dataset
 # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
 #                                             ori_videos=ori_video)
@@ -48,10 +47,9 @@ sweep_config = {
         'times': {'values': [ii for ii in range(10)]}
     }
 }
-# wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-# sweep_id = wandb.sweep(sweep_config,
-#                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
-# wandb.agent(sweep_id, function=train)
+sweep_id = wandb.sweep(sweep_config,
+                       project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
+wandb.agent(sweep_id, function=train)
 #
 # body_part_list = [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
 #                   [True, False, True], [False, True, True], [True, True, True]]
