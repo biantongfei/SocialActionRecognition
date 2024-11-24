@@ -39,9 +39,9 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [5, 10, 15, 20, 25, 30, 35]},
+            'epochs': {"values": [15, 20, 25, 30, 35, 40]},
             'pretrained': {'values': [True]},
-            'new_classifier': {'values': [False]},
+            'new_classifier': {'values': [True]},
             'loss_type': {'values': ['sum', 'uncertain', 'dynamic', 'dwa']},
             'times': {'values': [ii for ii in range(10)]}
         }
