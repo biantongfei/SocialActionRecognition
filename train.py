@@ -12,7 +12,7 @@ model = 'gcn_lstm'
 framework = 'chain'
 ori_video = False
 frame_sample_hop = 1
-sequence_length = 10
+sequence_length = 30
 
 # JPL Dataset
 # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
