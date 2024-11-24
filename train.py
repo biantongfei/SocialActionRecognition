@@ -67,7 +67,7 @@ for model in model_list:
             'time_hidden_dim': {"values": [4]},
             'loss_type': {"values": ['sum']},
             'model': {'values': [model]},
-            'times': {'values': [ii for ii in range(10)]}
+            'times': {'values': [ii for ii in range(6)]}
         }
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
