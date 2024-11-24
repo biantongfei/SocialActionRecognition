@@ -14,6 +14,7 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 
+
 # JPL Dataset
 # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
 #                                             ori_videos=ori_video)
@@ -65,6 +66,7 @@ for body_part in body_part_list:
             'epochs': {"values": [40]},
             'keypoints_hidden_dim': {"values": [16]},
             'time_hidden_dim': {"values": [4]},
+            'loss_type': {"values": ['sum']},
             'body_part': {'values': [body_part]},
             'times': {'values': [ii for ii in range(10)]}
         }
