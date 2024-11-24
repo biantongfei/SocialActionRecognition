@@ -42,7 +42,7 @@ if __name__ == '__main__':
             'epochs': {"values": [20, 25, 30, 35, 40]},
             'pretrained': {'values': [False]},
             'new_classifier': {'values': [False]},
-            'loss_type': {'values': ['sum', 'uncertain', 'dynamic', 'dwa']},
+            'loss_type': {'values': ['sum']},
             'times': {'values': [ii for ii in range(10)]}
         }
     }
