@@ -63,6 +63,8 @@ for body_part in body_part_list:
         },
         'parameters': {
             'epochs': {"values": [40]},
+            'keypoints_hidden_dim': {"values": [16]},
+            'time_hidden_dim': {"values": [4]},
             'body_part': {'values': [body_part]},
             'times': {'values': [ii for ii in range(10)]}
         }
