@@ -51,9 +51,8 @@ def train():
 #                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
 # wandb.agent(sweep_id, function=train)
 #
-body_part_list = [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
-                  [True, False, True], [False, True, True], [True, True, True]]
-for body_part in body_part_list:
+model_list = ['stgcn', 'dgstgcn', 'msgcn', 'r3d']
+for model in model_list:
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
     sweep_config = {
@@ -67,7 +66,7 @@ for body_part in body_part_list:
             'keypoints_hidden_dim': {"values": [16]},
             'time_hidden_dim': {"values": [4]},
             'loss_type': {"values": ['sum']},
-            'body_part': {'values': [body_part]},
+            'model': {'values': [model]},
             'times': {'values': [ii for ii in range(10)]}
         }
     }
