@@ -17,7 +17,7 @@ def get_data_path(augment_method):
         data_path = '../JPL_Augmented_Posefeatures/crop/coco_wholebody/'
     elif augment_method == 'noise':
         data_path = '../JPL_Augmented_Posefeatures/gaussian/coco_wholebody/'
-    elif augment_method in ['mixed', 'gen']:
+    elif augment_method in ['mixed']:
         data_path = '../JPL_Augmented_Posefeatures/mixed/coco_wholebody/'
     return data_path
 
@@ -283,21 +283,28 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
         tra_files, val_files, test_files = get_tra_test_files()
         tra_files = [i for i in tra_files if 'noise' not in i]
         trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
-                                 sequence_length=sequence_length)
-        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
+                                 sequence_length=sequence_length, subset='train')
+        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                               subset='validation')
         testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
-                                sequence_length=sequence_length)
+                                sequence_length=sequence_length, subset='test')
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     return trainset, valset, testset
 
 
 class ImagesDataset(Dataset):
-    def __init__(self, data_files, frame_sample_hop, sequence_length):
+    def __init__(self, data_files, frame_sample_hop, sequence_length, subset):
         self.frame_sample_hop = frame_sample_hop
         self.json_files = data_files
         self.sequence_length = sequence_length
         self.r3d_image_size = 112
         self.json_data_path = get_data_path(augment_method='mixed')
+        if subset == 'train':
+            self.json_data_path += 'train/'
+        elif subset == 'validation':
+            self.json_data_path += 'validation/'
+        elif subset == 'test':
+            self.json_data_path += 'test/'
         self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
         self.get_bboxes_labels_from_file()
         self.get_images_from_file()
