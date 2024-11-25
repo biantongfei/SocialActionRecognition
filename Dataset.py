@@ -281,6 +281,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
     else:
         tra_files, val_files, test_files = get_tra_test_files(ori_videos=ori_videos)
+        tra_files = [i for i in tra_files if 'noise' not in i]
         trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
                                  sequence_length=sequence_length)
         valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)
