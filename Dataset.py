@@ -269,7 +269,7 @@ class JPL_Dataset(Dataset):
             return len(self.features)
 
 
-def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', ori_videos=False):
+def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed'):
     print('Loading data for JPL %s dataset' % augment_method)
     if model != 'r3d':
         tra_files, val_files, test_files = get_tra_test_files()
@@ -280,7 +280,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
         testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part, model=model,
                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
     else:
-        tra_files, val_files, test_files = get_tra_test_files(ori_videos=ori_videos)
+        tra_files, val_files, test_files = get_tra_test_files()
         tra_files = [i for i in tra_files if 'noise' not in i]
         trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
                                  sequence_length=sequence_length)
