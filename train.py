@@ -51,7 +51,7 @@ def train():
 #                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
 # wandb.agent(sweep_id, function=train)
 #
-model_list = ['dgstgcn', 'msgcn', 'r3d']
+model_list = ['msgcn', 'r3d']
 for model in model_list:
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
@@ -62,7 +62,7 @@ for model in model_list:
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [40]},
+            'epochs': {"values": [1]},
             'keypoints_hidden_dim': {"values": [16]},
             'time_hidden_dim': {"values": [4]},
             'loss_type': {"values": ['sum']},
@@ -72,5 +72,5 @@ for model in model_list:
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
     sweep_id = wandb.sweep(sweep_config,
-                           project='SocialEgoNet_JPL_fps%d_sota' % int(sequence_length / frame_sample_hop))
+                           project='SocialEgoNet_JPL_fps%d_sota_test' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train)
