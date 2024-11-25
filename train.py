@@ -54,7 +54,7 @@ def train():
 model_list = ['r3d']
 for model in model_list:
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed', ori_videos=ori_video)
+                                                augment_method='mixed')
     sweep_config = {
         'method': 'grid',
         'metric': {
