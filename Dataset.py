@@ -297,7 +297,7 @@ class ImagesDataset(Dataset):
         self.json_files = data_files
         self.sequence_length = sequence_length
         self.r3d_image_size = 112
-        self.json_data_path = get_data_path(augment_method='crop')
+        self.json_data_path = get_data_path(augment_method='mixed')
         self.video_files, self.bboxes, self.labels, self.null_files = [], [], [], []
         self.get_bboxes_labels_from_file()
         self.get_images_from_file()
