@@ -72,5 +72,5 @@ for model in model_list:
     }
     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
     sweep_id = wandb.sweep(sweep_config,
-                           project='SocialEgoNet_JPL_fps%d_sota_test' % int(sequence_length / frame_sample_hop))
+                           project='SocialEgoNet_JPL_fps%d_sota' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train)
