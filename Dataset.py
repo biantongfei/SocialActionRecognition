@@ -280,7 +280,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
         testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part, model=model,
                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
     else:
-        tra_files, val_files, test_files = get_tra_test_files(augment_method='crop', ori_videos=ori_videos)
+        tra_files, val_files, test_files = get_tra_test_files(ori_videos=ori_videos)
         trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
                                  sequence_length=sequence_length)
         valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length)

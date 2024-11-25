@@ -51,7 +51,7 @@ def train():
 #                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
 # wandb.agent(sweep_id, function=train)
 #
-model_list = ['msgcn', 'r3d']
+model_list = ['msgcn']
 for model in model_list:
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed', ori_videos=ori_video)
