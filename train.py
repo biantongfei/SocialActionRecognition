@@ -51,7 +51,7 @@ def train():
 #                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
 # wandb.agent(sweep_id, function=train)
 #
-framework_list = ['intention', 'attitude', 'action', 'parallel', 'chain']
+framework_list = ['parallel', 'tree']
 for framework in framework_list:
     trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
                                                 augment_method='mixed')
