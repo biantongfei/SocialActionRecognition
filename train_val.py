@@ -39,7 +39,8 @@ def send_email(body):
 def draw_confusion_martix(model_path, performance_model, framework):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     net = torch.load(model_path)
-
+    testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                              subset='test')
     for index, p_m in enumerate(performance_model):
         data = [index + 1]
         if 'intention' in tasks:
@@ -73,13 +74,12 @@ def draw_confusion_martix(model_path, performance_model, framework):
                 act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
                 act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
 
-
-# if 'intention' in tasks:
-#     plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
-# if 'attitude' in tasks:
-#     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
-if 'action' in tasks:
-    plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
+    # if 'intention' in tasks:
+    #     plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
+    # if 'attitude' in tasks:
+    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+    if 'action' in tasks:
+        plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):
