@@ -39,12 +39,12 @@ def send_email(body):
 
 
 def draw_confusion_martix(model_path):
-    net = torch.load(model_path)
-    testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+    net = torch.load(model_path, map_location=device)
+    testset = get_jpl_dataset('gcn_lstm', [True,True,True], 1, 30, augment_method='mixed',
                               subset='test')
-    test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length,
-                                  frame_sample_hop=frame_sample_hop, batch_size=128, drop_last=False,
-                                  num_workers=8)
+    test_loader = Pose_DataLoader(model='gcn_lstm', dataset=testset, sequence_length=30,
+                                  frame_sample_hop=1, batch_size=128, drop_last=False,
+                                  num_workers=1)
     act_y_true, act_y_pred = [], []
     net.eval()
     progress_bar = tqdm(total=len(test_loader), desc='Progress')
@@ -123,7 +123,7 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
-        sequence_length=wandb.config.sequence_length
+        sequence_length = wandb.config.sequence_length
         # print(
         #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
         #                                                               wandb.config.times))
