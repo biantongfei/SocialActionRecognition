@@ -36,50 +36,50 @@ def send_email(body):
     print("Email sent!")
 
 
-def draw_save(name, performance_model, framework):
+def draw_confusion_martix(model_path, performance_model, framework):
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
-    with open('plots/%s.csv' % name, 'w', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile)
-        for index, p_m in enumerate(performance_model):
-            data = [index + 1]
-            if 'intention' in tasks:
-                data.append(p_m['intention_accuracy'])
-                data.append(p_m['intention_f1'])
-                data.append(p_m['intention_confidence_score'])
-                if index == 0:
-                    int_y_true = p_m['intention_y_true']
-                    int_y_pred = p_m['intention_y_pred']
-                else:
-                    int_y_true = torch.cat((int_y_true, p_m['intention_y_true']), dim=0)
-                    int_y_pred = torch.cat((int_y_pred, p_m['intention_y_pred']), dim=0)
-            if 'attitude' in tasks:
-                data.append(p_m['attitude_accuracy'])
-                data.append(p_m['attitude_f1'])
-                data.append(p_m['attitude_confidence_score'])
-                if index == 0:
-                    att_y_true = p_m['attitude_y_true']
-                    att_y_pred = p_m['attitude_y_pred']
-                else:
-                    att_y_true = torch.cat((att_y_true, p_m['attitude_y_true']), dim=0)
-                    att_y_pred = torch.cat((att_y_pred, p_m['attitude_y_pred']), dim=0)
-            if 'action' in tasks:
-                data.append(p_m['action_accuracy'])
-                data.append(p_m['action_f1'])
-                data.append(p_m['action_confidence_score'])
-                if index == 0:
-                    act_y_true = p_m['action_y_true']
-                    act_y_pred = p_m['action_y_pred']
-                else:
-                    act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
-                    act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
-            spamwriter.writerow(data)
-        csvfile.close()
-    if 'intention' in tasks:
-        plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
-    # if 'attitude' in tasks:
-    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
-    # if 'action' in tasks:
-    #     plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
+    net = torch.load(model_path)
+
+    for index, p_m in enumerate(performance_model):
+        data = [index + 1]
+        if 'intention' in tasks:
+            data.append(p_m['intention_accuracy'])
+            data.append(p_m['intention_f1'])
+            data.append(p_m['intention_confidence_score'])
+            if index == 0:
+                int_y_true = p_m['intention_y_true']
+                int_y_pred = p_m['intention_y_pred']
+            else:
+                int_y_true = torch.cat((int_y_true, p_m['intention_y_true']), dim=0)
+                int_y_pred = torch.cat((int_y_pred, p_m['intention_y_pred']), dim=0)
+        if 'attitude' in tasks:
+            data.append(p_m['attitude_accuracy'])
+            data.append(p_m['attitude_f1'])
+            data.append(p_m['attitude_confidence_score'])
+            if index == 0:
+                att_y_true = p_m['attitude_y_true']
+                att_y_pred = p_m['attitude_y_pred']
+            else:
+                att_y_true = torch.cat((att_y_true, p_m['attitude_y_true']), dim=0)
+                att_y_pred = torch.cat((att_y_pred, p_m['attitude_y_pred']), dim=0)
+        if 'action' in tasks:
+            data.append(p_m['action_accuracy'])
+            data.append(p_m['action_f1'])
+            data.append(p_m['action_confidence_score'])
+            if index == 0:
+                act_y_true = p_m['action_y_true']
+                act_y_pred = p_m['action_y_pred']
+            else:
+                act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
+                act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
+
+
+# if 'intention' in tasks:
+#     plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
+# if 'attitude' in tasks:
+#     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
+if 'action' in tasks:
+    plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):

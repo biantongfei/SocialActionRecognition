@@ -269,27 +269,51 @@ class JPL_Dataset(Dataset):
             return len(self.features)
 
 
-def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed'):
+def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', subset='all'):
     print('Loading data for JPL %s dataset' % augment_method)
+    subset_list = []
+    result_str = ''
     if model != 'r3d':
         tra_files, val_files, test_files = get_tra_test_files()
-        trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part, model=model,
-                               frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='train')
-        valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, body_part=body_part, model=model,
-                             frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='validation')
-        testset = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part, model=model,
-                              frame_sample_hop=frame_sample_hop, sequence_length=sequence_length, subset='test')
+        if subset != 'test':
+            trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part,
+                                   model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                                   subset='train')
+            subset_list.append(trainset)
+            result_str += 'Train_set_size: %d, ' % len(trainset)
+        if subset == 'all':
+            valset = JPL_Dataset(data_files=val_files, augment_method=augment_method, body_part=body_part, model=model,
+                                 frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                                 subset='validation')
+            subset_list.append(valset)
+            result_str += 'Validation_set_size: %d, ' % len(valset)
+        if subset != 'train':
+            test_set = JPL_Dataset(data_files=test_files, augment_method=augment_method, body_part=body_part,
+                                   model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                                   subset='test')
+            subset_list.append(test_set)
+            result_str += 'Test_set_size: %d.' % len(test_set)
+
     else:
         tra_files, val_files, test_files = get_tra_test_files()
         tra_files = [i for i in tra_files if 'noise' not in i]
-        trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
-                                 sequence_length=sequence_length, subset='train')
-        valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
-                               subset='validation')
-        testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
-                                sequence_length=sequence_length, subset='test')
-    print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
-    return trainset, valset, testset
+        if subset != 'test':
+            trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
+                                     sequence_length=sequence_length, subset='train')
+            subset_list.append(trainset)
+            result_str += 'Train_set_size: %d, ' % len(trainset)
+        if subset == 'all':
+            valset = ImagesDataset(data_files=val_files, frame_sample_hop=frame_sample_hop,
+                                   sequence_length=sequence_length,
+                                   subset='validation')
+            subset_list.append(valset)
+            result_str += 'Validation_set_size: %d, ' % len(valset)
+        if subset == 'train':
+            testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
+                                    sequence_length=sequence_length, subset='test')
+            subset_list.append(testset)
+            result_str += 'Test_set_size: %d, ' % len(testset)
+    return tuple(subset_list)
 
 
 class ImagesDataset(Dataset):

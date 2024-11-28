@@ -1,4 +1,4 @@
-from train_val import train_jpl, draw_save, send_email, train_harper
+from train_val import train_jpl, send_email, train_harper
 from Dataset import get_jpl_dataset, get_harper_dataset
 import wandb
 
@@ -15,8 +15,7 @@ frame_sample_hop = 1
 sequence_length = 30
 
 # JPL Dataset
-trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-                                            ori_videos=ori_video)
+trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed')
 
 
 # HARPER Dataset
@@ -42,11 +41,9 @@ sweep_config = {
         'epochs': {"values": [20, 30, 40, 50]},
         'loss_type': {"values": ['sum', 'dwa', 'dynamic', 'pareto', 'uncertain']},
         'times': {'values': [ii for ii in range(6)]}
-
     }
 }
-sweep_id = wandb.sweep(sweep_config,
-                       project='MSG3D_JPL_fps%d' % int(sequence_length / frame_sample_hop))
+sweep_id = wandb.sweep(sweep_config, project='MSG3D_JPL_fps%d' % int(sequence_length / frame_sample_hop))
 wandb.agent(sweep_id, function=train)
 
 # framework_list = ['parallel', 'tree']

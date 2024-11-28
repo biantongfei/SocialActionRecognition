@@ -11,3 +11,6 @@ with open('wandb_export_2024-11-24T02_11_52.183+00_00.csv') as csvfile:
             performance[key] = float(row['avg_f1']) / 10
 print(len(performance.keys()))
 print(sorted(performance.items(), key=lambda kv: (kv[1], kv[0])))
+
+p_list = [1, 2, 3, 4]
+print(tuple(p_list))
