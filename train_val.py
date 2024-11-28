@@ -36,50 +36,33 @@ def send_email(body):
     print("Email sent!")
 
 
-def draw_confusion_martix(model_path, performance_model, framework):
-    tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
+def draw_confusion_martix(model_path):
     net = torch.load(model_path)
     testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                               subset='test')
-    for index, p_m in enumerate(performance_model):
-        data = [index + 1]
-        if 'intention' in tasks:
-            data.append(p_m['intention_accuracy'])
-            data.append(p_m['intention_f1'])
-            data.append(p_m['intention_confidence_score'])
-            if index == 0:
-                int_y_true = p_m['intention_y_true']
-                int_y_pred = p_m['intention_y_pred']
-            else:
-                int_y_true = torch.cat((int_y_true, p_m['intention_y_true']), dim=0)
-                int_y_pred = torch.cat((int_y_pred, p_m['intention_y_pred']), dim=0)
-        if 'attitude' in tasks:
-            data.append(p_m['attitude_accuracy'])
-            data.append(p_m['attitude_f1'])
-            data.append(p_m['attitude_confidence_score'])
-            if index == 0:
-                att_y_true = p_m['attitude_y_true']
-                att_y_pred = p_m['attitude_y_pred']
-            else:
-                att_y_true = torch.cat((att_y_true, p_m['attitude_y_true']), dim=0)
-                att_y_pred = torch.cat((att_y_pred, p_m['attitude_y_pred']), dim=0)
-        if 'action' in tasks:
-            data.append(p_m['action_accuracy'])
-            data.append(p_m['action_f1'])
-            data.append(p_m['action_confidence_score'])
-            if index == 0:
-                act_y_true = p_m['action_y_true']
-                act_y_pred = p_m['action_y_pred']
-            else:
-                act_y_true = torch.cat((act_y_true, p_m['action_y_true']), dim=0)
-                act_y_pred = torch.cat((act_y_pred, p_m['action_y_pred']), dim=0)
-
-    # if 'intention' in tasks:
-    #     plot_confusion_matrix(int_y_true, int_y_pred, intention_classes, sub_name="cm_%s_intention" % name)
-    # if 'attitude' in tasks:
-    #     plot_confusion_matrix(att_y_true, att_y_pred, attitude_classes, sub_name="cm_%s_attitude" % name)
-    if 'action' in tasks:
-        plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_%s_action" % name)
+    test_loader = Pose_DataLoader(model=model, dataset=testset, sequence_length=sequence_length,
+                                  frame_sample_hop=frame_sample_hop, batch_size=128, drop_last=False,
+                                  num_workers=8)
+    act_y_true, act_y_pred = [], []
+    net.eval()
+    progress_bar = tqdm(total=len(test_loader), desc='Progress')
+    for index, data in enumerate(test_loader):
+        progress_bar.update(1)
+        start_time = time.time()
+        inputs, (int_labels, att_labels, act_labels) = data
+        int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
+        int_outputs, att_outputs, act_outputs = net(inputs)
+        act_outputs = torch.softmax(act_outputs, dim=1)
+        score, pred = torch.max(act_outputs, dim=1)
+        # act_pred = act_outputs.argmax(dim=1)
+        act_y_true += act_labels.tolist()
+        act_y_pred += pred.tolist()
+        torch.cuda.empty_cache()
+    act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+    act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+    act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+    print('act_acc: %.2f, act_f1: %.4f' % (act_acc * 100, act_f1))
+    plot_confusion_matrix(torch.tensor(act_y_true), torch.tensor(act_y_pred), action_classes, sub_name="cm_action")
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):

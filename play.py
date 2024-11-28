@@ -1,4 +1,5 @@
 import csv
+from train_val import draw_confusion_martix
 
 performance = {}
 # with open('wandb_export_2024-11-20T17_23_33.230+00_00.csv') as csvfile:
@@ -12,5 +13,4 @@ with open('wandb_export_2024-11-24T02_11_52.183+00_00.csv') as csvfile:
 print(len(performance.keys()))
 print(sorted(performance.items(), key=lambda kv: (kv[1], kv[0])))
 
-p_list = [1, 2, 3, 4]
-print(tuple(p_list))
+draw_confusion_martix('models/')
