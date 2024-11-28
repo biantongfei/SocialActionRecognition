@@ -40,7 +40,7 @@ def send_email(body):
 
 def draw_confusion_martix(model_path):
     net = torch.load(model_path, map_location=device)
-    testset = get_jpl_dataset(model=net.model, body_part=net.bodt_part, frame_sample_hop=net.frame_sample_hop,
+    testset = get_jpl_dataset(model=net.model, body_part=net.body_part, frame_sample_hop=net.frame_sample_hop,
                               sequence_length=net.sequence_length, augment_method='mixed', subset='test')
     test_loader = Pose_DataLoader(model=net.model, dataset=testset, sequence_length=net.sequence_length,
                                   frame_sample_hop=net.frame_sample_hop, batch_size=128, drop_last=False,
