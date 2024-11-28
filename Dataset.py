@@ -314,7 +314,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
             subset_list.append(testset)
             result_str += 'Test_set_size: %d, ' % len(testset)
     print(result_str)
-    return tuple(subset_list)
+    return tuple(subset_list) if len(subset) > 1 else subset_list[0]
 
 
 class ImagesDataset(Dataset):
