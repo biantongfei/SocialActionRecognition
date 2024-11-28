@@ -313,6 +313,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
                                     sequence_length=sequence_length, subset='test')
             subset_list.append(testset)
             result_str += 'Test_set_size: %d, ' % len(testset)
+    print(result_str)
     return tuple(subset_list)
 
 
