@@ -138,7 +138,6 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
-        framework = wandb.config.framework
         # print(
         #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
         #                                                               wandb.config.times))
@@ -488,11 +487,11 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d.pt' % (model, int(sequence_length / frame_sample_hop))
-    # torch.save(net.state_dict(), 'models/%s' % model_name)
+    torch.save(net.state_dict(), 'models/%s' % model_name)
     if wandb:
-        # artifact = wandb.Artifact(model_name, type="model")
-        # artifact.add_file("models/%s" % model_name)
-        # wandb.log_artifact(artifact)
+        artifact = wandb.Artifact(model_name, type="model")
+        artifact.add_file("models/%s" % model_name)
+        wandb.log_artifact(artifact)
         wandb.log(wandb_log)
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')

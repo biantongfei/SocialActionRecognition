@@ -3,7 +3,7 @@ from Dataset import get_jpl_dataset, get_harper_dataset
 import wandb
 
 body_part = [True, True, True]
-model = 'gcn_lstm'
+model = 'msgcn'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
@@ -14,10 +14,9 @@ ori_video = False
 frame_sample_hop = 1
 sequence_length = 30
 
-
 # JPL Dataset
-# trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-#                                             ori_videos=ori_video)
+trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                                            ori_videos=ori_video)
 
 
 # HARPER Dataset
@@ -33,44 +32,42 @@ def train():
     # send_email(result_str)
 
 
-# sweep_config = {
-#     'method': 'grid',
-#     'metric': {
-#         'name': 'avg_f1',
-#         'goal': 'maximize',
-#     },
-#     'parameters': {
-#         'epochs': {"values": [30, 35, 40, 45, 50, 55, 60]},
-#         'loss_type': {'values': ['sum']},
-#         'pretrained': {'values': [False]},
-#         'new_classifier': {'values': [False]},
-#         'times': {'values': [ii for ii in range(10)]}
-#     }
-# }
-# sweep_id = wandb.sweep(sweep_config,
-#                        project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
-# wandb.agent(sweep_id, function=train)
-#
-framework_list = ['parallel', 'tree']
-for framework in framework_list:
-    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed')
-    sweep_config = {
-        'method': 'grid',
-        'metric': {
-            'name': 'avg_f1',
-            'goal': 'maximize',
-        },
-        'parameters': {
-            'epochs': {"values": [40]},
-            'keypoints_hidden_dim': {"values": [16]},
-            'time_hidden_dim': {"values": [4]},
-            'loss_type': {"values": ['sum']},
-            'framework': {'values': [framework]},
-            'times': {'values': [ii for ii in range(10)]}
-        }
+sweep_config = {
+    'method': 'grid',
+    'metric': {
+        'name': 'avg_f1',
+        'goal': 'maximize',
+    },
+    'parameters': {
+        'epochs': {"values": [20, 30, 40, 50]},
+        'loss_type': {"values": ['sum', 'dwa', 'dynamic', 'pareto', 'uncertain']},
+        'times': {'values': [ii for ii in range(6)]}
     }
-    # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
-    sweep_id = wandb.sweep(sweep_config,
-                           project='SocialEgoNet_JPL_fps%d_classifier' % int(sequence_length / frame_sample_hop))
-    wandb.agent(sweep_id, function=train)
+}
+sweep_id = wandb.sweep(sweep_config,
+                       project='MSG3D_JPL_fps%d' % int(sequence_length / frame_sample_hop))
+wandb.agent(sweep_id, function=train)
+
+# framework_list = ['parallel', 'tree']
+# for framework in framework_list:
+#     # trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+#     #                                             augment_method='mixed')
+#     sweep_config = {
+#         'method': 'grid',
+#         'metric': {
+#             'name': 'avg_f1',
+#             'goal': 'maximize',
+#         },
+#         'parameters': {
+#             'epochs': {"values": [40]},
+#             'keypoints_hidden_dim': {"values": [16]},
+#             'time_hidden_dim': {"values": [4]},
+#             'loss_type': {"values": ['sum']},
+#             'framework': {'values': [framework]},
+#             'times': {'values': [ii for ii in range(10)]}
+#         }
+#     }
+#     # wandb.init(project='SocialEgoNet', name='%s_%s' % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")), config=config)
+#     sweep_id = wandb.sweep(sweep_config,
+#                            project='SocialEgoNet_JPL_fps%d_classifier' % int(sequence_length / frame_sample_hop))
+#     wandb.agent(sweep_id, function=train)
