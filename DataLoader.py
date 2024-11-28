@@ -57,6 +57,7 @@ class Pose_DataLoader(DataLoader):
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label), torch.Tensor(contact_label))
 
     def gcn_collate_fn(self, data):
+        print(len(data))
         x_tensors_list = [
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * body_point_num, 3)),
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, 3)),
