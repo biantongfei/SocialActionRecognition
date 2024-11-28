@@ -58,6 +58,7 @@ class Pose_DataLoader(DataLoader):
 
     def gcn_collate_fn(self, data):
         print(len(data))
+        print(len(data[0]))
         x_tensors_list = [
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * body_point_num, 3)),
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, 3)),
@@ -92,8 +93,8 @@ class Pose_DataLoader(DataLoader):
                         continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
                     edge_index, _ = add_self_loops(edge_index, num_nodes=point_nums[i])
-                    print(d[0][i][ii].shape)
-                    print(x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]].shape)
+                    # print(d[0][i][ii].shape)
+                    # print(x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]].shape)
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (
                             edge_index + torch.full((2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(
