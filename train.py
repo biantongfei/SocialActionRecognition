@@ -42,7 +42,6 @@ sweep_config = {
         'epochs': {"values": [20, 30, 40, 50]},
         'loss_type': {"values": ['sum', 'dwa', 'dynamic', 'pareto', 'uncertain']},
         'times': {'values': [ii for ii in range(6)]}
-
     }
 }
 sweep_id = wandb.sweep(sweep_config,
