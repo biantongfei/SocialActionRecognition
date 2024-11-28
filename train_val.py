@@ -1,3 +1,5 @@
+import os
+
 from Dataset import JPL_Dataset, get_tra_test_files, ImagesDataset, HARPER_Dataset, get_jpl_dataset
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
 from draw_utils import plot_confusion_matrix
@@ -121,6 +123,7 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     if wandb:
         run = wandb.init()
+        sequence_length=wandb.config.sequence_length
         # print(
         #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
         #                                                               wandb.config.times))
@@ -476,6 +479,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
         artifact.add_file("models/%s" % model_name)
         wandb.log_artifact(artifact)
         wandb.log(wandb_log)
+        os.remove('models/%s' % model_name)
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
