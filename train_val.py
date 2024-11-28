@@ -40,17 +40,14 @@ def send_email(body):
 
 def draw_confusion_martix(model_path):
     net = torch.load(model_path, map_location=device)
-    testset = get_jpl_dataset('gcn_lstm', [True,True,True], 1, 30, augment_method='mixed',
+    testset = get_jpl_dataset('gcn_lstm', [True, True, True], 1, 30, augment_method='mixed',
                               subset='test')
     test_loader = Pose_DataLoader(model='gcn_lstm', dataset=testset, sequence_length=30,
                                   frame_sample_hop=1, batch_size=128, drop_last=False,
                                   num_workers=1)
     act_y_true, act_y_pred = [], []
     net.eval()
-    progress_bar = tqdm(total=len(test_loader), desc='Progress')
     for index, data in enumerate(test_loader):
-        progress_bar.update(1)
-        start_time = time.time()
         inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         int_outputs, att_outputs, act_outputs = net(inputs)
@@ -64,7 +61,7 @@ def draw_confusion_martix(model_path):
     act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
     act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
     print('act_acc: %.2f, act_f1: %.4f' % (act_acc * 100, act_f1))
-    plot_confusion_matrix(torch.tensor(act_y_true), torch.tensor(act_y_pred), action_classes, sub_name="cm_action")
+    plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_action")
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):

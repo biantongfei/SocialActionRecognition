@@ -91,6 +91,7 @@ class Pose_DataLoader(DataLoader):
                         continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
                     edge_index, _ = add_self_loops(edge_index, num_nodes=point_nums[i])
+                    print(d[0][i][ii].shape)
                     x_tensors_list[i][frame_num * point_nums[i]:(frame_num + 1) * point_nums[i]] = d[0][i][ii]
                     edge_index_list[i][:, frame_num * edge_nums[i]:(frame_num + 1) * edge_nums[i]] = (
                             edge_index + torch.full((2, edge_nums[i]), fill_value=frame_num * point_nums[i])).to(
