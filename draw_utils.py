@@ -46,9 +46,9 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
 def draw_observe_window_plots():
     windows = [5, 10, 15, 20, 25, 30, 35, 40]
     # windows = [5, 10, 15, 20]
-    int_f1 = [0.8634, 0.8975, 0.8996, 0.9089, 0.9202, 0.9265, 0.9185, 0.9305]
-    att_f1 = [0.7826, 0.8225, 0.8608, 0.8832, 0.8934, 0.9161, 0.9276, 0.9332]
-    act_f1 = [0.5422, 0.5949, 0.6303, 0.6658, 0.6904, 0.7333, 0.7461, 0.7457]
+    int_f1 = [82.02, 85.25, 87.1, 86.4, 87.31, 88.43, 90.19, 90.81]
+    att_f1 = [77.49, 80.54, 82.8, 83.78, 86.02, 87.15, 91.48, 92.49]
+    act_f1 = [53.56, 57.22, 60.68, 61.13, 63.67, 67.27, 72.51, 73.59]
     # int_f1 = [0.868, 0.889, 0.894, 0.904]
     # att_f1 = [0.757, 0.795, 0.804, 0.810]
     # act_f1 = [0.558, 0.603, 0.652, 0.682]
@@ -58,7 +58,7 @@ def draw_observe_window_plots():
     l3 = plt.plot(windows, act_f1, 'b--', label='Action')
     plt.plot(windows, int_f1, 'ro-', windows, att_f1, 'g+-', windows, act_f1, 'b^-')
     plt.xlabel('Observation Window Size (Frame)')
-    plt.ylabel('F1 score')
+    plt.ylabel('F1 score (%)')
     ax = plt.gca()
     x_major_locator = plt.MultipleLocator(5)
     ax.xaxis.set_major_locator(x_major_locator)

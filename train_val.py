@@ -247,7 +247,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                         p.grad = combined_grad[i]
                     total_loss = loss_1 + loss_2 + loss_3
                 elif wandb.config.loss_type == 'dwa':
-                    print(prev_losses)
+                    print(prev_losses, loss_1.item(), loss_2.item(), loss_3.item())
                     weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
                     prev_losses = [loss_1.item(), loss_2.item(), loss_3.item()]
