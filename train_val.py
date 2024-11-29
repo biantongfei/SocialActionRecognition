@@ -186,6 +186,7 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     val_loader = Pose_DataLoader(model=model, dataset=valset, sequence_length=sequence_length,
                                  frame_sample_hop=frame_sample_hop, drop_last=False, batch_size=batch_size,
                                  num_workers=num_workers)
+    prev_losses = [1, 1, 1]
     while True:
         net.train()
         print('Training')
@@ -246,8 +247,6 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
                         p.grad = combined_grad[i]
                     total_loss = loss_1 + loss_2 + loss_3
                 elif wandb.config.loss_type == 'dwa':
-                    if epoch == 1:
-                        prev_losses = [1, 1, 1]
                     weights = dynamic_weight_average(prev_losses, [loss_1, loss_2, loss_3])
                     total_loss = weights[0] * loss_1 + weights[1] * loss_2 + weights[2] * loss_3
                     prev_losses = [loss_1, loss_2, loss_3]
