@@ -40,7 +40,9 @@ sweep_config = {
     'parameters': {
         'epochs': {"values": [20, 30, 40, 50]},
         'loss_type': {"values": ['sum', 'dwa', 'dynamic', 'pareto', 'uncertain']},
-        'times': {'values': [ii for ii in range(6)]}
+        'times': {'values': [ii for ii in range(6)]},
+        'keypoints_hidden_dim': {"values": [16]},
+        'time_hidden_dim': {"values": [4]},
     }
 }
 sweep_id = wandb.sweep(sweep_config, project='MSG3D_JPL_fps%d' % int(sequence_length / frame_sample_hop))
