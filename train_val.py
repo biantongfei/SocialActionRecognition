@@ -113,7 +113,7 @@ def pareto_optimization(task_losses, epsilon=0.01):
 def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
     # 计算损失比率
 
-    ratios = torch.clamp(curr_losses / (prev_losses + 1e-6), min=1e-3, max=1e3)
+    ratios = torch.clamp(torch.Tensor(curr_losses) / (torch.Tensor(prev_losses) + 1e-6), min=1e-3, max=1e3)
     weights = torch.exp(ratios / temp)  # 动态调整
     return weights / weights.sum()
 
