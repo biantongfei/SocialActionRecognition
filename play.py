@@ -13,4 +13,4 @@ from train_val import draw_confusion_martix
 # print(len(performance.keys()))
 # print(sorted(performance.items(), key=lambda kv: (kv[1], kv[0])))
 
-draw_confusion_martix('models/jpl_gcn_lstm_fps30.pt')
+draw_confusion_martix('models/pretrained_jpl_gcn_lstm_fps30.pt')

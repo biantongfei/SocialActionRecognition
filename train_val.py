@@ -470,13 +470,13 @@ def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_len
     wandb_log['params'] = params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
     model_name = 'jpl_%s_fps%d.pt' % (model, int(sequence_length / frame_sample_hop))
-    torch.save(net.state_dict(), 'models/%s' % model_name)
+    # torch.save(net.state_dict(), 'models/%s' % model_name)
     if wandb:
-        artifact = wandb.Artifact(model_name, type="model")
-        artifact.add_file("models/%s" % model_name)
-        wandb.log_artifact(artifact)
+        # artifact = wandb.Artifact(model_name, type="model")
+        # artifact.add_file("models/%s" % model_name)
+        # wandb.log_artifact(artifact)
         wandb.log(wandb_log)
-        os.remove('models/%s' % model_name)
+        # os.remove('models/%s' % model_name)
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
     # send_email(str(attention_weight.itme()))
@@ -498,7 +498,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
     performance_model = {}
     if pretrained:
         print('Loading SocialEgoNet ' + ('without classifier' if new_classifier else 'with classifier'))
-        net = torch.load('models/jpl_gcn_lstm_fps10.pt')
+        net = torch.load('models/pretrained_jpl_gcn_lstm_fps10.pt')
         net.sequence_length = sequence_length
         net.frame_sample_hop = 1
     elif model in ['avg', 'perframe']:
