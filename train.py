@@ -38,7 +38,7 @@ sweep_config = {
         'goal': 'maximize',
     },
     'parameters': {
-        'epochs': {"values": [30, 40, 50]},
+        'epochs': {"values": [20, 30, 40]},
         'loss_type': {"values": ['pareto', 'dynamic', 'uncertain']},
         'times': {'values': [ii for ii in range(6)]},
         'keypoints_hidden_dim': {"values": [16]},
