@@ -39,7 +39,7 @@ sweep_config = {
     },
     'parameters': {
         'epochs': {"values": [30, 40, 50]},
-        'loss_type': {"values": ['dynamic', 'pareto', 'uncertain']},
+        'loss_type': {"values": ['pareto', 'dynamic', 'uncertain']},
         'times': {'values': [ii for ii in range(6)]},
         'keypoints_hidden_dim': {"values": [16]},
         'time_hidden_dim': {"values": [4]},
