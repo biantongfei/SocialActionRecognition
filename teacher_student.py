@@ -15,6 +15,7 @@ import wandb
 
 
 def train_student(student_model, teacher_model, trainset, valset, testset):
+    run = wandb.init()
     T = wandb.config.T
     student_body_part = wandb.config.student_bodt_part
     student_sequence_length = wandb.config.student_sequence_length
