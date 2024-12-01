@@ -7,7 +7,6 @@ from Dataset import get_jpl_dataset
 
 import torch
 from torch.optim.lr_scheduler import StepLR
-from torch.nn import functional
 import torch.nn.functional as F
 from tqdm import tqdm
 from sklearn.metrics import f1_score
@@ -49,19 +48,27 @@ def train_student(student_model, teacher_model, trainset, valset, testset, T):
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             with torch.no_grad():
-                teacher_int_logits,teacher_att_logits,teacher_act_logits = teacher_net(inputs)
-            int_outputs, att_outputs, act_outputs = student_net(inputs)
+                teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_net(inputs)
+            student_int_outputs, student_att_outputs, student_act_outputs = student_net(inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
-            loss_1 = functional.cross_entropy(int_outputs, int_labels)
-            loss_2 = functional.cross_entropy(att_outputs, att_labels)
-            loss_3 = functional.cross_entropy(act_outputs, act_labels)
-            int_outputs = F.softmax(int_outputs / T, dim=1)
-            att_outputs = F.softmax(att_outputs / T, dim=1)
-            act_outputs = F.softmax(act_outputs / T, dim=1)
-            loss_4 = F.kl_div(int_outputs.log(), teacher_int_logits, reduction="batchmean")
-            loss_5 = F.kl_div(att_outputs.log(), teacher_att_logits, reduction="batchmean")
-            loss_6 = F.kl_div(act_outputs.log(), teacher_act_logits, reduction="batchmean")
-            losses = [loss_1 + loss_2 + loss_3, loss_4 + loss_5 + loss_6]
+            loss_1 = F.cross_entropy(int_outputs, int_labels)
+            loss_2 = F.cross_entropy(att_outputs, att_labels)
+            loss_3 = F.cross_entropy(act_outputs, act_labels)
+            loss_ce = loss_1 + loss_2 + loss_3
+
+            teacher_int_soft = F.softmax(teacher_int_logits / T, dim=1)
+            teacher_att_soft = F.softmax(teacher_att_logits / T, dim=1)
+            teacher_act_soft = F.softmax(teacher_act_logits / T, dim=1)
+            student_int_log_soft = F.log_softmax(student_int_outputs / T, dim=1)
+            student_att_log_soft = F.log_softmax(student_att_outputs / T, dim=1)
+            student_act_log_soft = F.log_softmax(student_act_outputs / T, dim=1)
+            loss_4 = F.kl_div(student_int_log_soft, teacher_int_soft, reduction="batchmean") * (T ** 2)
+            loss_5 = F.kl_div(student_att_log_soft, teacher_att_soft, reduction="batchmean") * (T ** 2)
+            loss_6 = F.kl_div(student_act_log_soft, teacher_act_soft, reduction="batchmean") * (T ** 2)
+            loss_kd = loss_4 + loss_5 + loss_6
+
+            losses = [loss_ce, loss_kd]
+
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
