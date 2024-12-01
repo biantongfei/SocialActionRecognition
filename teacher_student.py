@@ -188,7 +188,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         else:
             epoch += 1
             print('------------------------------------------')
-            # break
+            break
     print('Testing student model')
     test_loader = Pose_DataLoader(model=student_model, dataset=student_testset, batch_size=128,
                                   sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
@@ -271,8 +271,6 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                        subset='train')
-    print([teacher_trainset[i][1][2] for i in range(16)])
-    print([student_trainset[i][1][2] for i in range(16)])
 
 
     def train():
