@@ -1,4 +1,4 @@
-from DataLoader import Pose_DataLoader
+from DataLoader import JPL_TeacherStudent_Datalodaer, Pose_DataLoader
 from constants import intention_classes, attitude_classes, action_classes, device, msgcn_batch_size, gcn_batch_size, \
     learning_rate
 from Models import GNN
@@ -14,7 +14,8 @@ import time
 import wandb
 
 
-def train_student(student_model, teacher_model, trainset, valset, testset):
+def train_student(student_model, teacher_model, student_body_part, student_sequence_length, student_frame_sample_hop,
+                  trainset, valset, testset):
     T = wandb.config.T
     if teacher_model == 'msgcn':
         teacher_net = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
@@ -24,21 +25,23 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
         param.requires_grad = False
     teacher_net.eval()
     if 'gcn_' in student_model:
-        student_net = GNN(body_part=[True, True, True], framework='chain', model=student_model,
-                          sequence_length=teacher_net.sequence_length, frame_sample_hop=teacher_net.frame_sample_hop,
-                          keypoint_hidden_dim=16, time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
+        student_net = GNN(body_part=student_body_part, framework='chain', model=student_model,
+                          sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
+                          keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
+                          time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=wandb.config.fc_hidden1,
+                          fc_hidden2=wandb.config.fc_hidden2)
     student_net.to(device)
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    train_loader = Pose_DataLoader(model=student_model, dataset=trainset, batch_size=batch_size,
-                                   sequence_length=teacher_net.sequence_length,
-                                   frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=True,
-                                   num_workers=num_workers)
-    val_loader = Pose_DataLoader(model=student_model, dataset=valset, batch_size=batch_size,
-                                 sequence_length=teacher_net.sequence_length,
-                                 frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=False,
-                                 num_workers=num_workers)
+    train_loader = JPL_TeacherStudent_Datalodaer(dataset=trainset, batch_size=batch_size,
+                                                 student_sequence_length=student_sequence_length,
+                                                 student_frame_sample_hop=student_frame_sample_hop, drop_last=False,
+                                                 shuffle=True,
+                                                 num_workers=num_workers)
+    val_loader = Pose_DataLoader(model='gcn_lstm', dataset=valset, batch_size=128,
+                                 sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
+                                 drop_last=False, shuffle=False, num_workers=8)
     prev_losses = [1, 1]
     while True:
         student_net.train()
@@ -46,16 +49,16 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
-            inputs, (int_labels, att_labels, act_labels) = data
+            (teacher_inputs, student_inputs), (int_labels, att_labels, act_labels) = data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             with torch.no_grad():
-                teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_net(inputs)
-            student_int_outputs, student_att_outputs, student_act_outputs = student_net(inputs)
+                teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_net(teacher_inputs)
+            student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
-            loss_1 = F.cross_entropy(int_outputs, int_labels)
-            loss_2 = F.cross_entropy(att_outputs, att_labels)
-            loss_3 = F.cross_entropy(act_outputs, act_labels)
+            loss_1 = F.cross_entropy(student_int_outputs, int_labels)
+            loss_2 = F.cross_entropy(student_att_outputs, att_labels)
+            loss_3 = F.cross_entropy(student_act_outputs, act_labels)
             loss_ce = loss_1 + loss_2 + loss_3
 
             teacher_int_soft = F.softmax(teacher_int_logits / T, dim=1)
@@ -154,9 +157,9 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
             print('------------------------------------------')
             # break
     print('Testing student model')
-    test_loader = Pose_DataLoader(model=student_model, dataset=testset, sequence_length=teacher_net.sequence_length,
-                                  frame_sample_hop=teacher_net.frame_sample_hop, batch_size=batch_size, drop_last=False,
-                                  num_workers=num_workers)
+    test_loader = Pose_DataLoader(model=student_model, dataset=valset, batch_size=128,
+                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
+                                  drop_last=False, shuffle=False, num_workers=8)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     process_time = 0
     student_net.eval()
@@ -218,12 +221,12 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
     wandb_log['avg_acc'] = total_acc / 3
     wandb_log['params'] = total_params
     wandb_log['process_time'] = process_time * 1000 / len(testset)
-    model_name = 'jpl_t-%s&s-%s_fps%d.pt' % (
-        teacher_model, student_model, int(teacher_net.sequence_length / teacher_net.frame_sample_hop))
-    torch.save(student_net, 'models/%s' % model_name)
-    artifact = wandb.Artifact(model_name, type="model")
-    artifact.add_file("student_models/%s" % model_name)
-    wandb.log_artifact(artifact)
+    # model_name = 'jpl_t-%s&s-%s_fps%d.pt' % (
+    #     teacher_model, student_model, int(teacher_net.sequence_length / teacher_net.frame_sample_hop))
+    # torch.save(student_net, 'models/%s' % model_name)
+    # artifact = wandb.Artifact(model_name, type="model")
+    # artifact.add_file("student_models/%s" % model_name)
+    # wandb.log_artifact(artifact)
     wandb.log(wandb_log)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
 
@@ -251,15 +254,20 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [10, 20, 30, 40, 50]},
+            # 'epochs': {"values": [10, 20, 30, 40, 50]},
+            'epochs': {"values": [10]},
             'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
-            'T': {'values': [2, 3, 4]},
+            # 'T': {'values': [2, 3, 4]},
+            'T': {'values': [2]},
             'keypoint_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [4]},
             'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [16]},
-            'times': {'values': [ii for ii in range(5)]},
+            'student_body_part': {'values': [[True, False, False]]},
+            'student_sequence_length': {'values': [30]},
+            'student_frame_sample_hop': {'values': [1]},
+            # 'times': {'values': [ii for ii in range(5)]},
         }
     }
-    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d' % int(sequence_length / frame_sample_hop))
+    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d_test' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train)

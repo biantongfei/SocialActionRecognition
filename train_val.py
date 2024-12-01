@@ -826,37 +826,22 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
 
 
 if __name__ == '__main__':
-    model = 'msgcn'
-    # framework = 'intention'
-    # framework = 'attitude'
-    # framework = 'action'
-    # framework = 'parallel'
-    # framework = 'tree'
-    framework = 'chain'
-    ori_video = False
-    frame_sample_hop = 1
-    sequence_length = 30
-    body_part = [True, True, True]
-    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed', ori_videos=ori_video)
-    for i in range(4):
-        print(i)
-        p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-                        sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-                        valset=valset, testset=testset)
-
-    # with open('body_part.csv', 'w', newline='') as csvfile:
-    #     spamwriter = csv.writer(csvfile)
-    #     for body_part in [[True, False, False], [False, True, False], [False, False, True], [True, True, False],
-    #                       [True, False, True], [False, True, True], [True, True, True]]:
-    #         spamwriter.writerow([str(body_part)])
-    #         trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-    #                                                     augment_method='mixed', ori_videos=ori_video)
-    #         for i in range(4):
-    #             print('body_part: %s, times: %d' % (str(body_part), i))
-    #             p_m = train_jpl(wandb=None, model=model, body_part=body_part, framework=framework,
-    #                             sequence_length=sequence_length, frame_sample_hop=frame_sample_hop, trainset=trainset,
-    #                             valset=valset, testset=testset)
-    #             spamwriter.writerow(
-    #                 [i, p_m['intention_accuracy'], p_m['intention_f1'], p_m['attitude_accuracy'], p_m['attitude_f1'],
-    #                  p_m['action_accuracy'], p_m['action_f1'], p_m['params'], p_m['latency']])
+    net = torch.load('models/pretrained_jpl_gcn_lstm_fps30.pt')
+    trainset, valset, testset = get_jpl_dataset([True, True, True], 30)
+    train_loader = Pose_DataLoader(model='gcn_lstm', dataset=trainset, batch_size=128, sequence_length=30,
+                                   frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=8)
+    net.eval()
+    progress_bar = tqdm(total=len(train_loader), desc='Progress')
+    for index, data in enumerate(train_loader):
+        progress_bar.update(1)
+        if index == 0:
+            total_params = sum(p.numel() for p in net.parameters())
+        start_time = time.time()
+        inputs, (int_labels, att_labels, act_labels, contact_labels) = data
+        int_labels, att_labels, act_labels, contact_labels = int_labels.to(dtype=torch.int64,
+                                                                           device=device), att_labels.to(
+            dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
+            dtype=torch.int64, device=device)
+        int_outputs, att_outputs, act_outputs = net(inputs)
+        torch.cuda.empty_cache()
+    progress_bar.close()
