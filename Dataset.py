@@ -308,7 +308,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
                                    subset='validation')
             subset_list.append(valset)
             result_str += 'Validation_set_size: %d, ' % len(valset)
-        if subset == 'train':
+        if subset != 'train':
             testset = ImagesDataset(data_files=test_files, frame_sample_hop=frame_sample_hop,
                                     sequence_length=sequence_length, subset='test')
             subset_list.append(testset)

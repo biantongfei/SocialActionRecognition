@@ -826,7 +826,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
 
 
 if __name__ == '__main__':
-    trainset= get_jpl_dataset('r3d', [True, True, True], 1, 30,subset='train')
+    trainset = get_jpl_dataset('r3d', [True, True, True], 1, 30, subset='train')
     model_list = ['r3d']
     for model in model_list:
         print(model)
