@@ -846,6 +846,7 @@ if __name__ == '__main__':
         for index, data in enumerate(train_loader):
             progress_bar.update(1)
             inputs, (int_labels, att_labels, act_labels) = data
+            inputs = inputs.to(dtype=dtype, device=device)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
                 dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
             int_outputs, att_outputs, act_outputs = net(inputs)
