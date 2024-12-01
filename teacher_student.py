@@ -1,6 +1,5 @@
-from DataLoader import JPL_TeacherStudent_Datalodaer, Pose_DataLoader
-from constants import intention_classes, attitude_classes, action_classes, device, msgcn_batch_size, gcn_batch_size, \
-    learning_rate
+from DataLoader import Pose_DataLoader
+from constants import device, msgcn_batch_size, gcn_batch_size, learning_rate
 from Models import GNN, MSGCN
 from train_val import filter_not_interacting_sample, dynamic_weight_average
 from Dataset import get_jpl_dataset
@@ -11,7 +10,6 @@ import torch.nn.functional as F
 from torch.utils.data import SubsetRandomSampler
 from tqdm import tqdm
 from sklearn.metrics import f1_score
-import time
 import wandb
 import random
 
@@ -48,11 +46,11 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     random.shuffle(indices)
     sampler = SubsetRandomSampler(indices)
 
-    teacher_train_loader = Pose_DataLoader(dataset=teacher_trainset, batch_size=batch_size,
+    teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False,
                                            num_workers=num_workers, sampler=sampler)
-    student_train_loader = Pose_DataLoader(dataset=student_trainset, batch_size=batch_size,
+    student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False,
                                            num_workers=num_workers, sampler=sampler)
@@ -258,8 +256,10 @@ if __name__ == '__main__':
     frame_sample_hop = 1
     sequence_length = 30
 
+    print('Loading data for student')
     student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part, frame_sample_hop,
                                                                         sequence_length, augment_method='mixed')
+    print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                        subset='train')
 
