@@ -57,12 +57,12 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
 
     teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
-                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
-                                           num_workers=num_workers, generator=g)
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
+                                           num_workers=num_workers)
     student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
-                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
-                                           num_workers=num_workers, generator=g)
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
+                                           num_workers=num_workers)
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)

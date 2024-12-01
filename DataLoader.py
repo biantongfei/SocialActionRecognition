@@ -26,7 +26,6 @@ class Pose_DataLoader(DataLoader):
         super(Pose_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                               drop_last=drop_last, num_workers=num_workers,
                                               generator=generator)
-        print(generator)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model in ['conv1d', 'tran']:
@@ -111,7 +110,6 @@ class Pose_DataLoader(DataLoader):
         lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
                   torch.Tensor(contact_label)) if self.contact else (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
-        print(act_label)
         return (x_tensors_list, edge_index_list, batch), lables
 
     def stgcn_collate_fn(self, data):
@@ -131,7 +129,6 @@ class Pose_DataLoader(DataLoader):
             act_label.append(d[1][2])
             if self.contact:
                 contact_label.append(d[1][2])
-        print(act_label)
         return input, (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
             torch.Tensor(contact_label)) if self.contact else (
