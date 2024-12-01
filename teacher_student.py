@@ -64,15 +64,15 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         progress_bar = tqdm(total=len(teacher_train_loader), desc='Progress')
         for teacher_data, student_data in zip(teacher_train_loader, student_train_loader):
             progress_bar.update(1)
-            teacher_inputs, (int_labels1, att_labels1, act_labels1) = teacher_data
+            teacher_inputs, (int_labels, att_labels, act_labels) = teacher_data
             student_inputs, (int_labels2, att_labels2, act_labels2) = student_data
-            print(int_labels1)
+            print(int_labels)
             print(int_labels2)
             print('------------------------')
-            print(att_labels1)
+            print(att_labels)
             print(att_labels2)
             print('------------------------')
-            print(act_labels1)
+            print(act_labels)
             print(act_labels2)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
