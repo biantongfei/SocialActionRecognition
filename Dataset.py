@@ -26,6 +26,7 @@ def get_tra_test_files():
     tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
     val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
     test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
+    tra_files = [i for i in tra_files if 'ori_' in i]
     tra_files.sort()
     val_files.sort()
     test_files.sort()
