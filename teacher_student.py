@@ -14,6 +14,12 @@ import wandb
 import random
 
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2 ** 32
+    random.seed(worker_seed)
+    torch.manual_seed(worker_seed)
+
+
 def train_student(student_model, teacher_model, teacher_trainset, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
@@ -25,7 +31,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         teacher_net = MSGCN([True, True, True], 'chain')
         teacher_net.load_state_dict(teacher_dict)
         teacher_net.to(device)
-        batch_size = msgcn_batch_size
+        batch_size = 32
         num_workers = 1
     for param in teacher_net.parameters():
         param.requires_grad = False
@@ -48,11 +54,11 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
 
     teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
-                                           frame_sample_hop=student_frame_sample_hop, drop_last=False,
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
                                            num_workers=num_workers, sampler=sampler)
     student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
-                                           frame_sample_hop=student_frame_sample_hop, drop_last=False,
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
                                            num_workers=num_workers, sampler=sampler)
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
