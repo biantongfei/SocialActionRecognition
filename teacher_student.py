@@ -1,7 +1,7 @@
 from DataLoader import JPL_TeacherStudent_Datalodaer, Pose_DataLoader
 from constants import intention_classes, attitude_classes, action_classes, device, msgcn_batch_size, gcn_batch_size, \
     learning_rate
-from Models import GNN
+from Models import GNN, MSGCN
 from train_val import filter_not_interacting_sample, dynamic_weight_average
 from Dataset import get_jpl_dataset
 
@@ -21,7 +21,10 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
     student_sequence_length = wandb.config.student_sequence_length
     student_frame_sample_hop = wandb.config.student_frame_sample_hop
     if teacher_model == 'msgcn':
-        teacher_net = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+        teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+        teacher_net = MSGCN([True, True, True], 'chain')
+        teacher_net.load_state_dict(teacher_dict)
+        teacher_net.to(device)
         batch_size = msgcn_batch_size
         num_workers = 1
     for param in teacher_net.parameters():
