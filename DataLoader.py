@@ -26,6 +26,7 @@ class Pose_DataLoader(DataLoader):
         super(Pose_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
                                               drop_last=drop_last, num_workers=num_workers,
                                               generator=generator)
+        print(generator)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model in ['conv1d', 'tran']:
