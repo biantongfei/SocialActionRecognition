@@ -2,7 +2,7 @@ from DataLoader import Pose_DataLoader
 from constants import intention_classes, attitude_classes, action_classes, device, msgcn_batch_size, gcn_batch_size, \
     learning_rate
 from Models import GNN
-from train_val import filter_not_interacting_sample
+from train_val import filter_not_interacting_sample, dynamic_weight_average
 from Dataset import get_jpl_dataset
 
 import torch
@@ -14,15 +14,16 @@ import time
 import wandb
 
 
-def train_student(student_model, teacher_model, trainset, valset, testset, T):
+def train_student(student_model, teacher_model, trainset, valset, testset):
+    T = wandb.config.T
     if teacher_model == 'msgcn':
         teacher_net = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+        batch_size = msgcn_batch_size
+        num_workers = 1
     for param in teacher_net.parameters():
         param.requires_grad = False
     teacher_net.eval()
-    num_workers = 4
     if 'gcn_' in student_model:
-        batch_size = gcn_batch_size
         student_net = GNN(body_part=[True, True, True], framework='chain', model=student_model,
                           sequence_length=teacher_net.sequence_length, frame_sample_hop=teacher_net.frame_sample_hop,
                           keypoint_hidden_dim=16, time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
@@ -38,6 +39,7 @@ def train_student(student_model, teacher_model, trainset, valset, testset, T):
                                  sequence_length=teacher_net.sequence_length,
                                  frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=False,
                                  num_workers=num_workers)
+    prev_losses = [1, 1]
     while True:
         student_net.train()
         print('Training student model')
@@ -67,10 +69,36 @@ def train_student(student_model, teacher_model, trainset, valset, testset, T):
             loss_6 = F.kl_div(student_act_log_soft, teacher_act_soft, reduction="batchmean") * (T ** 2)
             loss_kd = loss_4 + loss_5 + loss_6
 
-            losses = [loss_ce, loss_kd]
-
-            optimizer.zero_grad()
-            total_loss.backward()
+            if wandb.config.loss_type == 'sum':
+                total_loss = loss_ce + loss_kd
+            elif wandb.config.loss_type == 'weighted':
+                total_loss = loss_ce + 0.5 * loss_kd
+            elif wandb.config.loss_type == 'dynamic':
+                weights = 1.0 / (torch.tensor([loss_ce, loss_kd]) + 1e-8)
+                weights = weights / weights.sum()
+                total_loss = weights[0] * loss_ce + weights[1] * loss_kd
+            elif wandb.config.loss_type == 'uncertain':
+                total_loss = (torch.exp(-student_net.log_sigma1) * loss_ce + student_net.log_sigma1 + torch.exp(
+                    -student_net.log_sigma2) * loss_kd + student_net.log_sigma2)
+            elif wandb.config.loss_type == 'pareto':
+                optimizer.zero_grad()
+                loss_ce.backward(retain_graph=True)  # 保留计算图
+                g1 = [p.grad.clone() if p.grad is not None else torch.zeros_like(p) for p in student_net.parameters()]
+                optimizer.zero_grad()
+                loss_kd.backward(retain_graph=True)
+                g2 = [p.grad.clone() if p.grad is not None else torch.zeros_like(p) for p in student_net.parameters()]
+                # 合并梯度（例如使用简单加权或 MGDA）
+                combined_grad = [g1[i] + g2[i] for i in range(len(g1))]
+                for i, p in enumerate(student_net.parameters()):
+                    p.grad = combined_grad[i]
+                total_loss = loss_ce + loss_kd
+            elif wandb.config.loss_type == 'dwa':
+                weights = dynamic_weight_average(prev_losses, [loss_ce, loss_kd])
+                total_loss = weights[0] * loss_ce + weights[1] * loss_kd
+                prev_losses = [loss_ce.item(), loss_kd.item()]
+            if wandb.config.loss_type != 'pareto':
+                optimizer.zero_grad()
+                total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
         scheduler.step()
@@ -201,9 +229,19 @@ def train_student(student_model, teacher_model, trainset, valset, testset, T):
 
 
 if __name__ == '__main__':
+    body_part = [True, True, True]
+    model = 'gcn_lstm'
+    framework = 'chain'
+    frame_sample_hop = 1
+    sequence_length = 10
+
+    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
+                                                augment_method='mixed')
+
+
     def train():
-        p_m = train_student(model=model, sequence_length=sequence_length, trainset=trainset, valset=valset,
-                            testset=testset)
+        train_student(student_model='gcn_lstm', teacher_model='msgcn', trainset=trainset, valset=valset,
+                      testset=testset)
 
 
     sweep_config = {
@@ -213,12 +251,15 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [0, 5, 10, 15, 20]},
-            'loss_type': {"values": ['sum']},
-            'times': {'values': [ii for ii in range(10)]},
-            'new_classifier': {"values": [False]},
-            'pretrained': {"values": [True]}
+            'epochs': {"values": [10, 20, 30, 40, 50]},
+            'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
+            'T': {'values': [2, 3, 4]},
+            'keypoint_hidden_dim': {'values': [16]},
+            'time_hidden_dim': {'values': [4]},
+            'fc_hidden1': {'values': [64]},
+            'fc_hidden2': {'values': [16]},
+            'times': {'values': [ii for ii in range(5)]},
         }
     }
-    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
+    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train)
