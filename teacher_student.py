@@ -14,9 +14,11 @@ import time
 import wandb
 
 
-def train_student(student_model, teacher_model, student_body_part, student_sequence_length, student_frame_sample_hop,
-                  trainset, valset, testset):
+def train_student(student_model, teacher_model, trainset, valset, testset):
     T = wandb.config.T
+    student_body_part = wandb.config.student_bodt_part
+    student_sequence_length = wandb.config.student_sequence_length
+    student_frame_sample_hop = wandb.config.student_frame_sample_hop
     if teacher_model == 'msgcn':
         teacher_net = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
         batch_size = msgcn_batch_size
