@@ -272,6 +272,8 @@ if __name__ == '__main__':
     teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                        subset='train')
 
+    print(teacher_trainset[0][1], student_trainset[0][1])
+
 
     def train():
         train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_trainset=teacher_trainset,
