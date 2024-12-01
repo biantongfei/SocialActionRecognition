@@ -827,7 +827,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
 
 if __name__ == '__main__':
     net = torch.load('models/pretrained_jpl_gcn_lstm_fps30.pt')
-    trainset, valset, testset = get_jpl_dataset([True, True, True], 30)
+    trainset, valset, testset = get_jpl_dataset('gcn_lstm', [True, True, True], 1, 30)
     train_loader = Pose_DataLoader(model='gcn_lstm', dataset=trainset, batch_size=128, sequence_length=30,
                                    frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=8)
     net.eval()
