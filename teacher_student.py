@@ -271,8 +271,8 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
                                        subset='train')
-
-    print(teacher_trainset[0][1], student_trainset[0][1])
+    for i in range(16):
+        print(teacher_trainset[i][1], student_trainset[i][1])
 
 
     def train():
