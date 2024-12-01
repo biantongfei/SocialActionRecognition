@@ -826,18 +826,28 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
 
 
 if __name__ == '__main__':
-    net = torch.load('models/pretrained_jpl_gcn_lstm_fps30.pt')
-    trainset, valset, testset = get_jpl_dataset('gcn_lstm', [True, True, True], 1, 30)
-    train_loader = Pose_DataLoader(model='gcn_lstm', dataset=trainset, batch_size=128, sequence_length=30,
-                                   frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=8)
-    net.eval()
-    progress_bar = tqdm(total=len(train_loader), desc='Progress')
-    for index, data in enumerate(train_loader):
-        print(index)
-        progress_bar.update(1)
-        inputs, (int_labels, att_labels, act_labels) = data
-        int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
-            dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
-        int_outputs, att_outputs, act_outputs = net(inputs)
-    torch.cuda.empty_cache()
-    progress_bar.close()
+    trainset, valset, testset = get_jpl_dataset('stgcn', [True, True, True], 1, 30)
+    model_list = ['stgcn', 'dgstgcn', 'msgcn']
+    for model in model_list:
+        print(model)
+        train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=30,
+                                       frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=1)
+        if model == 'stgcn':
+            net = STGCN(body_part=[True, True, True], framework='chain+contact')
+        elif model == 'msgcn':
+            net = MSGCN(body_part=[True, True, True], framework='chain+contact')
+        elif model == 'dgstgcn':
+            net = DGSTGCN(body_part=[True, True, True], framework='chain+contact')
+        elif model == 'r3d':
+            net = R3D(framework='chain+contact')
+        net.eval()
+        progress_bar = tqdm(total=len(train_loader), desc='Progress')
+        for index, data in enumerate(train_loader):
+            print(index)
+            progress_bar.update(1)
+            inputs, (int_labels, att_labels, act_labels) = data
+            int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
+                dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
+            int_outputs, att_outputs, act_outputs = net(inputs)
+        torch.cuda.empty_cache()
+        progress_bar.close()
