@@ -12,43 +12,21 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 import time
+import wandb
 
 
-def get_teacher_outputs(teacher_model, trainset, T):
+def train_student(student_model, teacher_model, trainset, valset, testset, T):
     if teacher_model == 'msgcn':
-        teacher_net = torch.load('models/jpl_msgcn_fps30.gt')
-        batch_size = msgcn_batch_size
-    teacher_net.to(device)
+        teacher_net = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+    for param in teacher_net.parameters():
+        param.requires_grad = False
     teacher_net.eval()
-    print('Getting training result for teacher model')
-    train_loader = Pose_DataLoader(model=teacher_model, dataset=trainset, batch_size=batch_size,
-                                   sequence_length=teacher_net.sequence_length,
-                                   frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=True,
-                                   num_workers=1)
-    train_int_outputs, train_att_outputs, train_act_outputs = torch.zeros(
-        (len(trainset), len(intention_classes))), torch.zeros((len(trainset), len(attitude_classes))), torch.zeros(
-        (len(trainset), len(action_classes)))
-    for i, data in enumerate(train_loader):
-        inputs, _ = data
-        int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        int_outputs = F.softmax(int_outputs / T, dim=1)
-        att_outputs = F.softmax(att_outputs / T, dim=1)
-        act_outputs = F.softmax(act_outputs / T, dim=1)
-        train_int_outputs[i * batch_size:i * batch_size + inputs.shape[0]] = int_outputs
-        train_att_outputs[i * batch_size:i * batch_size + inputs.shape[0]] = att_outputs
-        train_act_outputs[i * batch_size:i * batch_size + inputs.shape[0]] = act_outputs
-    return train_int_outputs, train_att_outputs, train_act_outputs
-
-
-def train_student(wandb, student_model, teacher_model, trainset, valset, testset, teacher_outputs, T):
-    if teacher_model == 'msgcn':
-        teacher_net = torch.load('models/jpl_msgcn_fps30.gt')
-    t_train_int_outputs, t_train_att_outputs, t_train_act_outputs = teacher_outputs
-    num_workers = 8
+    num_workers = 4
     if 'gcn_' in student_model:
         batch_size = gcn_batch_size
         student_net = GNN(body_part=[True, True, True], framework='chain', model=student_model,
-                          sequence_length=teacher_net.sequence_length, frame_sample_hop=teacher_net.frame_sample_hop)
+                          sequence_length=teacher_net.sequence_length, frame_sample_hop=teacher_net.frame_sample_hop,
+                          keypoint_hidden_dim=16, time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16)
     student_net.to(device)
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
@@ -57,8 +35,9 @@ def train_student(wandb, student_model, teacher_model, trainset, valset, testset
                                    sequence_length=teacher_net.sequence_length,
                                    frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=True,
                                    num_workers=num_workers)
-    val_loader = Pose_DataLoader(model=student_model, dataset=valset, sequence_length=teacher_net.sequence_length,
-                                 frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=True,
+    val_loader = Pose_DataLoader(model=student_model, dataset=valset, batch_size=batch_size,
+                                 sequence_length=teacher_net.sequence_length,
+                                 frame_sample_hop=teacher_net.frame_sample_hop, drop_last=False, shuffle=False,
                                  num_workers=num_workers)
     while True:
         student_net.train()
@@ -69,6 +48,8 @@ def train_student(wandb, student_model, teacher_model, trainset, valset, testset
             inputs, (int_labels, att_labels, act_labels) = data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
+            with torch.no_grad():
+                teacher_int_logits,teacher_att_logits,teacher_act_logits = teacher_net(inputs)
             int_outputs, att_outputs, act_outputs = student_net(inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = functional.cross_entropy(int_outputs, int_labels)
@@ -77,10 +58,10 @@ def train_student(wandb, student_model, teacher_model, trainset, valset, testset
             int_outputs = F.softmax(int_outputs / T, dim=1)
             att_outputs = F.softmax(att_outputs / T, dim=1)
             act_outputs = F.softmax(act_outputs / T, dim=1)
-            loss_4 = F.kl_div(int_outputs.log(), t_train_int_outputs, reduction="batchmean")
-            loss_5 = F.kl_div(att_outputs.log(), t_train_att_outputs, reduction="batchmean")
-            loss_6 = F.kl_div(act_outputs.log(), t_train_act_outputs, reduction="batchmean")
-            total_loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
+            loss_4 = F.kl_div(int_outputs.log(), teacher_int_logits, reduction="batchmean")
+            loss_5 = F.kl_div(att_outputs.log(), teacher_att_logits, reduction="batchmean")
+            loss_6 = F.kl_div(act_outputs.log(), teacher_act_logits, reduction="batchmean")
+            losses = [loss_1 + loss_2 + loss_3, loss_4 + loss_5 + loss_6]
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -213,8 +194,24 @@ def train_student(wandb, student_model, teacher_model, trainset, valset, testset
 
 
 if __name__ == '__main__':
-    trainset, valset, testset = get_jpl_dataset('gcn_lstm', [True, True, True], 1, 30,
-                                                augment_method='mixed')
-    T = 2.0
-    teacher_outputs = get_teacher_outputs('msgcn', trainset, T)
-    train_student(wandb, 'gcn_lstm', 'msgcn', trainset, valset, testset, teacher_outputs, T)
+    def train():
+        p_m = train_student(model=model, sequence_length=sequence_length, trainset=trainset, valset=valset,
+                            testset=testset)
+
+
+    sweep_config = {
+        'method': 'grid',
+        'metric': {
+            'name': 'avg_f1',
+            'goal': 'maximize',
+        },
+        'parameters': {
+            'epochs': {"values": [0, 5, 10, 15, 20]},
+            'loss_type': {"values": ['sum']},
+            'times': {'values': [ii for ii in range(10)]},
+            'new_classifier': {"values": [False]},
+            'pretrained': {"values": [True]}
+        }
+    }
+    sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_HARPER_fps%d' % int(sequence_length / frame_sample_hop))
+    wandb.agent(sweep_id, function=train)

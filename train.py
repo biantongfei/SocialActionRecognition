@@ -55,7 +55,7 @@ sweep_config = {
         'goal': 'maximize',
     },
     'parameters': {
-        'epochs': {"values": [0, 5, 10, 15, 20]},
+        'epochs': {"values": [25, 30, 35, 40, 45, 50]},
         'loss_type': {"values": ['sum']},
         'times': {'values': [ii for ii in range(10)]},
         'new_classifier': {"values": [False]},
