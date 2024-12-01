@@ -837,11 +837,9 @@ if __name__ == '__main__':
         if index == 0:
             total_params = sum(p.numel() for p in net.parameters())
         start_time = time.time()
-        inputs, (int_labels, att_labels, act_labels, contact_labels) = data
-        int_labels, att_labels, act_labels, contact_labels = int_labels.to(dtype=torch.int64,
-                                                                           device=device), att_labels.to(
-            dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device), contact_labels.to(
-            dtype=torch.int64, device=device)
+        inputs, (int_labels, att_labels, act_labels) = data
+        int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
+            dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
         int_outputs, att_outputs, act_outputs = net(inputs)
         torch.cuda.empty_cache()
     progress_bar.close()
