@@ -834,8 +834,6 @@ if __name__ == '__main__':
     progress_bar = tqdm(total=len(train_loader), desc='Progress')
     for index, data in enumerate(train_loader):
         progress_bar.update(1)
-        if index == 0:
-            total_params = sum(p.numel() for p in net.parameters())
         start_time = time.time()
         inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
