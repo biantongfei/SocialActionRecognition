@@ -26,6 +26,9 @@ def get_tra_test_files():
     tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
     val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
     test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
+    tra_files.sort()
+    val_files.sort()
+    test_files.sort()
     return tra_files, val_files, test_files
 
 
@@ -78,7 +81,7 @@ class JPL_Dataset(Dataset):
             self.data_path += 'validation/'
         elif subset == 'test':
             self.data_path += 'test/'
-        self.body_part = body_part  # 1 for only body, 2 for head and body, 3 for hands and body, 4 for head, hands and body
+        self.body_part = body_part
         self.model = model
         self.frame_sample_hop = frame_sample_hop
         self.sequence_length = sequence_length
@@ -270,7 +273,7 @@ class JPL_Dataset(Dataset):
 
 
 def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', subset='all'):
-    print('Loading data for JPL %s dataset' % augment_method)
+    print('Loading data from JPL %s dataset' % augment_method)
     subset_list = []
     result_str = ''
     if model != 'r3d':
@@ -478,7 +481,7 @@ class HARPER_Dataset(Dataset):
 
 
 def get_harper_dataset(body_part, sequence_length):
-    print('Loading data for HARPER dataset')
+    print('Loading data from HARPER dataset')
     data_path = '../HARPER/'
     train_files = os.listdir(data_path + 'train/pose_sequences/')
     val_files = os.listdir(data_path + 'validation/pose_sequences/')
