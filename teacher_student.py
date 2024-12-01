@@ -47,19 +47,22 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
 
-    indices = list(range(len(teacher_trainset)))
-    random.seed(random.randint(0, 100))
-    random.shuffle(indices)
-    sampler = SubsetRandomSampler(indices)
+    # indices = list(range(len(teacher_trainset)))
+    # random.seed(random.randint(0, 100))
+    # random.shuffle(indices)
+    # sampler = SubsetRandomSampler(indices)
+
+    g = torch.Generator()
+    g.manual_seed(random.randint(0, 100))
 
     teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
-                                           num_workers=num_workers, sampler=sampler)
+                                           num_workers=num_workers, worker_init_fn=seed_worker, generator=g)
     student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=True,
-                                           num_workers=num_workers, sampler=sampler)
+                                           num_workers=num_workers, worker_init_fn=seed_worker, generator=g)
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
