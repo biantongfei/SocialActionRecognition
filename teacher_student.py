@@ -67,7 +67,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
     prev_losses = [1, 1]
-    while True:
+    while epoch <= wandb.config.epochs:
         student_net.train()
         print('Training student model')
         progress_bar = tqdm(total=len(teacher_train_loader), desc='Progress')
@@ -183,12 +183,9 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         print(result_str + 'loss: %.4f' % total_loss)
         wandb.log(wandb_log)
         torch.cuda.empty_cache()
-        if epoch == wandb.config.epochs:
-            break
-        else:
-            epoch += 1
-            print('------------------------------------------')
-            break
+        epoch += 1
+        print('------------------------------------------')
+        break
     print('Testing student model')
     test_loader = Pose_DataLoader(model=student_model, dataset=student_testset, batch_size=128,
                                   sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
@@ -286,7 +283,7 @@ if __name__ == '__main__':
         },
         'parameters': {
             # 'epochs': {"values": [10, 20, 30, 40, 50]},
-            'epochs': {"values": [10]},
+            'epochs': {"values": [1]},
             'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
             # 'T': {'values': [2, 3, 4]},
             'T': {'values': [2]},
