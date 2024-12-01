@@ -833,11 +833,11 @@ if __name__ == '__main__':
         train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=30,
                                        frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=1)
         if model == 'stgcn':
-            net = STGCN(body_part=[True, True, True], framework='chain+contact')
+            net = STGCN(body_part=[True, True, True], framework='chain')
         elif model == 'msgcn':
-            net = MSGCN(body_part=[True, True, True], framework='chain+contact')
+            net = MSGCN(body_part=[True, True, True], framework='chain')
         elif model == 'dgstgcn':
-            net = DGSTGCN(body_part=[True, True, True], framework='chain+contact')
+            net = DGSTGCN(body_part=[True, True, True], framework='chain')
         elif model == 'r3d':
             net = R3D(framework='chain+contact')
         net.to(device)
