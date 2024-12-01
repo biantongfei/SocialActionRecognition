@@ -839,7 +839,7 @@ if __name__ == '__main__':
         elif model == 'dgstgcn':
             net = DGSTGCN(body_part=[True, True, True], framework='chain')
         elif model == 'r3d':
-            net = R3D(framework='chain+contact')
+            net = R3D(framework='chain')
         net.to(device)
         net.eval()
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
