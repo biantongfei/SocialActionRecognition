@@ -826,8 +826,8 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
 
 
 if __name__ == '__main__':
-    trainset, valset, testset = get_jpl_dataset('stgcn', [True, True, True], 1, 30)
-    model_list = ['stgcn', 'dgstgcn', 'msgcn']
+    trainset, valset, testset = get_jpl_dataset('r3d', [True, True, True], 1, 30)
+    model_list = ['r3d']
     for model in model_list:
         print(model)
         train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=30,
