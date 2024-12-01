@@ -46,9 +46,9 @@ def plot_confusion_matrix(y_true, y_pred, classes, sub_name):
 def draw_observe_window_plots():
     windows = [5, 10, 15, 20, 25, 30, 35, 40]
     # windows = [5, 10, 15, 20]
-    int_f1 = [82.02, 85.25, 87.1, 86.4, 87.31, 88.43, 90.19, 90.81]
-    att_f1 = [77.49, 80.54, 82.8, 83.78, 86.02, 87.15, 91.48, 92.49]
-    act_f1 = [53.56, 57.22, 60.68, 61.13, 63.67, 67.27, 72.51, 73.59]
+    int_f1 = [82.02, 85.25, 87.1, 86.4, 87.31, 88.43, 89.19, 89.81]
+    att_f1 = [77.49, 80.54, 82.8, 83.78, 86.02, 87.15, 88.98, 90.49]
+    act_f1 = [53.56, 57.22, 60.68, 61.13, 63.67, 67.27, 69.01, 70.59]
     # int_f1 = [0.868, 0.889, 0.894, 0.904]
     # att_f1 = [0.757, 0.795, 0.804, 0.810]
     # act_f1 = [0.558, 0.603, 0.652, 0.682]
@@ -63,7 +63,7 @@ def draw_observe_window_plots():
     x_major_locator = plt.MultipleLocator(5)
     ax.xaxis.set_major_locator(x_major_locator)
     plt.legend()
-    plt.savefig('plots/observation_window.png', transparent=True, bbox_inches="tight", pad_inches=0)
+    plt.savefig('presentation/observation_window.png', transparent=True, bbox_inches="tight", pad_inches=0.01)
     plt.show()
     plt.close()
 
