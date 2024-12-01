@@ -8,13 +8,15 @@ from Dataset import get_jpl_dataset
 import torch
 from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
+from torch.utils.data import SubsetRandomSampler
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 import time
 import wandb
+import random
 
 
-def train_student(student_model, teacher_model, trainset, valset, testset):
+def train_student(student_model, teacher_model, teacher_trainset, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
     student_body_part = wandb.config.student_body_part
@@ -40,22 +42,40 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-    train_loader = JPL_TeacherStudent_Datalodaer(dataset=trainset, batch_size=batch_size,
-                                                 student_sequence_length=student_sequence_length,
-                                                 student_frame_sample_hop=student_frame_sample_hop, drop_last=False,
-                                                 shuffle=True,
-                                                 num_workers=num_workers)
-    val_loader = Pose_DataLoader(model='gcn_lstm', dataset=valset, batch_size=128,
+
+    indices = list(range(len(teacher_trainset)))
+    random.seed(random.randint(0, 100))
+    random.shuffle(indices)
+    sampler = SubsetRandomSampler(indices)
+
+    teacher_train_loader = Pose_DataLoader(dataset=teacher_trainset, batch_size=batch_size,
+                                           sequence_length=student_sequence_length,
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False,
+                                           num_workers=num_workers, sampler=sampler)
+    student_train_loader = Pose_DataLoader(dataset=student_trainset, batch_size=batch_size,
+                                           sequence_length=student_sequence_length,
+                                           frame_sample_hop=student_frame_sample_hop, drop_last=False,
+                                           num_workers=num_workers, sampler=sampler)
+    val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
     prev_losses = [1, 1]
     while True:
         student_net.train()
         print('Training student model')
-        progress_bar = tqdm(total=len(train_loader), desc='Progress')
-        for data in train_loader:
+        progress_bar = tqdm(total=len(teacher_train_loader), desc='Progress')
+        for teacher_data, student_data in zip(teacher_train_loader, student_train_loader):
             progress_bar.update(1)
-            (teacher_inputs, student_inputs), (int_labels, att_labels, act_labels) = data
+            teacher_inputs, (int_labels1, att_labels1, act_labels1) = teacher_data
+            student_inputs, (int_labels2, att_labels2, act_labels2) = student_data
+            print(int_labels1)
+            print(int_labels2)
+            print('------------------------')
+            print(att_labels1)
+            print(att_labels2)
+            print('------------------------')
+            print(act_labels1)
+            print(act_labels2)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             with torch.no_grad():
@@ -163,22 +183,19 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
             print('------------------------------------------')
             # break
     print('Testing student model')
-    test_loader = Pose_DataLoader(model=student_model, dataset=valset, batch_size=128,
+    test_loader = Pose_DataLoader(model=student_model, dataset=student_testset, batch_size=128,
                                   sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                   drop_last=False, shuffle=False, num_workers=8)
     int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
-    process_time = 0
     student_net.eval()
     progress_bar = tqdm(total=len(test_loader), desc='Progress')
     for index, data in enumerate(test_loader):
         progress_bar.update(1)
         if index == 0:
             total_params = sum(p.numel() for p in student_net.parameters())
-        start_time = time.time()
         inputs, (int_labels, att_labels, act_labels) = data
         int_labels, att_labels, act_labels = int_labels.to(device), att_labels.to(device), act_labels.to(device)
         int_outputs, att_outputs, act_outputs = student_net(inputs)
-        process_time += time.time() - start_time
         int_outputs = torch.softmax(int_outputs, dim=1)
         pred = int_outputs.argmax(dim=1)
         int_y_true += int_labels.tolist()
@@ -221,12 +238,10 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
     wandb_log['test_act_f1'] = act_f1
     total_acc += act_acc
     total_f1 += act_f1
-    print(result_str + 'Params: %d, process_time_pre_sample: %.2f ms' % (
-        (total_params, process_time * 1000 / len(testset))))
+    print(result_str + 'Params: %d' % (total_params))
     wandb_log['avg_f1'] = total_f1 / 3
     wandb_log['avg_acc'] = total_acc / 3
     wandb_log['params'] = total_params
-    wandb_log['process_time'] = process_time * 1000 / len(testset)
     # model_name = 'jpl_t-%s&s-%s_fps%d.pt' % (
     #     teacher_model, student_model, int(teacher_net.sequence_length / teacher_net.frame_sample_hop))
     # torch.save(student_net, 'models/%s' % model_name)
@@ -239,18 +254,19 @@ def train_student(student_model, teacher_model, trainset, valset, testset):
 
 if __name__ == '__main__':
     body_part = [True, True, True]
-    model = 'gcn_lstm'
     framework = 'chain'
     frame_sample_hop = 1
     sequence_length = 30
 
-    trainset, valset, testset = get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length,
-                                                augment_method='mixed')
+    student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part, frame_sample_hop,
+                                                                        sequence_length, augment_method='mixed')
+    teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+                                       subset='train')
 
 
     def train():
-        train_student(student_model='gcn_lstm', teacher_model='msgcn', trainset=trainset, valset=valset,
-                      testset=testset)
+        train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_trainset=teacher_trainset,
+                      student_trainset=student_trainset, student_valset=student_valset, student_testset=student_testset)
 
 
     sweep_config = {

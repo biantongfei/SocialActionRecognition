@@ -1,5 +1,6 @@
 import csv
 from train_val import draw_confusion_martix
+import random
 
 # performance = {}
 # # with open('wandb_export_2024-11-20T17_23_33.230+00_00.csv') as csvfile:
@@ -13,4 +14,4 @@ from train_val import draw_confusion_martix
 # print(len(performance.keys()))
 # print(sorted(performance.items(), key=lambda kv: (kv[1], kv[0])))
 
-draw_confusion_martix('models/pretrained_jpl_gcn_lstm_fps30.pt')
+print(random.randint(0,100))

@@ -22,9 +22,9 @@ def rnn_collate_fn(data):
 
 class Pose_DataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, sequence_length, frame_sample_hop, drop_last=True, shuffle=False,
-                 num_workers=1, contact=False):
+                 num_workers=1, contact=False, sampler=None):
         super(Pose_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                              drop_last=drop_last, num_workers=num_workers)
+                                              drop_last=drop_last, num_workers=num_workers, sampler=sampler)
         if model in ['lstm', 'gru']:
             self.collate_fn = rnn_collate_fn
         elif model in ['conv1d', 'tran']:
