@@ -111,6 +111,7 @@ class Pose_DataLoader(DataLoader):
         lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
                   torch.Tensor(contact_label)) if self.contact else (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+        print(act_label)
         return (x_tensors_list, edge_index_list, batch), lables
 
     def stgcn_collate_fn(self, data):
@@ -130,6 +131,7 @@ class Pose_DataLoader(DataLoader):
             act_label.append(d[1][2])
             if self.contact:
                 contact_label.append(d[1][2])
+        print(act_label)
         return input, (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
             torch.Tensor(contact_label)) if self.contact else (
