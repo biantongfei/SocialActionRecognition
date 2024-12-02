@@ -265,7 +265,7 @@ if __name__ == '__main__':
     for body_part, frame_sample_hop in zip(student_body_part, student_frame_sample_hop):
         print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (str(body_part), frame_sample_hop))
         student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part,
-                                                                            frame_sample_hop, sequence_length,
+                                                                            frame_sample_hop, student_sequence_length,
                                                                             augment_method='mixed', randnum=randnum)
 
 
@@ -276,7 +276,8 @@ if __name__ == '__main__':
 
 
         sweep_config = {
-            'method': 'random',
+            'method': 'bayes',
+            # 'method': 'random',
             # 'method': 'grid',
             'metric': {
                 'name': 'avg_f1',
