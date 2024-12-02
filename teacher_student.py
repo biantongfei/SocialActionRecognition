@@ -224,8 +224,8 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
     att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
     result_str += 'att_acc: %.2f, att_f1: %.2f, ' % (att_acc * 100, att_f1 * 100)
-    wandb_log['test_int_acc'] = att_acc
-    wandb_log['test_int_f1'] = att_f1
+    wandb_log['test_att_acc'] = att_acc
+    wandb_log['test_att_f1'] = att_f1
     total_acc += att_acc
     total_f1 += att_f1
     act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
@@ -274,7 +274,8 @@ if __name__ == '__main__':
 
 
     sweep_config = {
-        'method': 'random',
+        # 'method': 'random',
+        'method': 'grid',
         'metric': {
             'name': 'avg_f1',
             'goal': 'maximize',
@@ -282,7 +283,7 @@ if __name__ == '__main__':
         'parameters': {
             'epochs': {"values": [10, 20, 30, 40]},
             # 'epochs': {"values": [10]},
-            'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
+            'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain']},
             'T': {'values': [2, 3, 4]},
             # 'T': {'values': [2]},
             'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
@@ -293,7 +294,7 @@ if __name__ == '__main__':
             'student_body_part': {'values': [[True, False, False]]},
             'student_sequence_length': {'values': [30]},
             'student_frame_sample_hop': {'values': [1]},
-            # 'times': {'values': [ii for ii in range(5)]},
+            'times': {'values': [ii for ii in range(5)]},
         }
     }
     sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d' % int(sequence_length / frame_sample_hop))
