@@ -251,53 +251,55 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
 
 
 if __name__ == '__main__':
-    body_part = [True, True, True]
-    framework = 'chain'
-    frame_sample_hop = 1
-    sequence_length = 30
 
-    # randnum = random.randint(0, 100)
-    randnum = 25
-
-    print('Loading data for student')
-    student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part, frame_sample_hop,
-                                                                        sequence_length, augment_method='mixed',
-                                                                        randnum=randnum)
+    randnum = random.randint(0, 100)
+    # randnum = 25
     print('Loading data for teacher')
-    teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
+    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
 
+    student_body_part = [[True, False, False], [True, True, True], [True, False, False]]
+    student_frame_sample_hop = [1, 3, 3]
+    student_sequence_length = 30
 
-    def train():
-        train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_trainset=teacher_trainset,
-                      student_trainset=student_trainset, student_valset=student_valset, student_testset=student_testset)
+    for body_part, frame_sample_hop in zip(student_body_part, student_frame_sample_hop):
+        print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (str(body_part), frame_sample_hop))
+        student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part,
+                                                                            frame_sample_hop, sequence_length,
+                                                                            augment_method='mixed', randnum=randnum)
 
 
-    sweep_config = {
-        # 'method': 'random',
-        'method': 'grid',
-        'metric': {
-            'name': 'avg_f1',
-            'goal': 'maximize',
-        },
-        'parameters': {
-            # 'epochs': {"values": [10, 20, 30, 40]},
-            'epochs': {"values": [1]},
-            # 'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain']},
-            'loss_type': {"values": ['sum']},
-            # 'T': {'values': [2, 3, 4]},
-            'T': {'values': [2]},
-            # 'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
-            'learning_rate': {'values': [1e-2]},
-            'keypoint_hidden_dim': {'values': [16]},
-            'time_hidden_dim': {'values': [4]},
-            'fc_hidden1': {'values': [64]},
-            'fc_hidden2': {'values': [16]},
-            'student_body_part': {'values': [[True, False, False]]},
-            'student_sequence_length': {'values': [30]},
-            'student_frame_sample_hop': {'values': [1]},
-            'times': {'values': [ii for ii in range(5)]},
+        def train():
+            train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_trainset=teacher_trainset,
+                          student_trainset=student_trainset, student_valset=student_valset,
+                          student_testset=student_testset)
+
+
+        sweep_config = {
+            'method': 'random',
+            # 'method': 'grid',
+            'metric': {
+                'name': 'avg_f1',
+                'goal': 'maximize',
+            },
+            'parameters': {
+                'epochs': {"values": [20, 30, 40]},
+                # 'epochs': {"values": [1]},
+                'loss_type': {"values": ['sum', 'dynamic', 'uncertain']},
+                # 'loss_type': {"values": ['sum']},
+                'T': {'values': [2, 3, 4]},
+                # 'T': {'values': [2]},
+                'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
+                # 'learning_rate': {'values': [1e-2]},
+                'keypoint_hidden_dim': {'values': [16]},
+                'time_hidden_dim': {'values': [4]},
+                'fc_hidden1': {'values': [64]},
+                'fc_hidden2': {'values': [16]},
+                'student_body_part': {'values': [body_part]},
+                'student_frame_sample_hop': {'values': [frame_sample_hop]},
+                'student_sequence_length': {'values': [student_sequence_length]},
+                # 'times': {'values': [ii for ii in range(5)]},
+            }
         }
-    }
-    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d' % int(sequence_length / frame_sample_hop))
-    wandb.agent(sweep_id, function=train, count=40)
+        sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
+        wandb.agent(sweep_id, function=train, count=30)
