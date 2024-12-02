@@ -296,5 +296,5 @@ if __name__ == '__main__':
             # 'times': {'values': [ii for ii in range(5)]},
         }
     }
-    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d_test' % int(sequence_length / frame_sample_hop))
+    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d' % int(sequence_length / frame_sample_hop))
     wandb.agent(sweep_id, function=train, count=40)
