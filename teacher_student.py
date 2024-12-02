@@ -157,21 +157,23 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
         int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
         int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-        result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
+        result_str += 'int_acc: %.2f, int_f1: %.2f, ' % (int_acc * 100, int_f1 * 100)
         wandb_log['val_int_acc'] = int_acc
         wandb_log['val_int_f1'] = int_f1
         att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
         att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
         att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-        result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
+        result_str += 'att_acc: %.2f, att_f1: %.2f, ' % (att_acc * 100, att_f1 * 100)
         wandb_log['val_att_acc'] = att_acc
         wandb_log['val_att_f1'] = att_f1
         act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
         act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
         act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-        result_str += 'act_acc: %.2f%%, act_f1: %.4f, ' % (act_acc * 100, act_f1)
+        result_str += 'act_acc: %.2f, act_f1: %.2f, ' % (act_acc * 100, act_f1 * 100)
         wandb_log['val_act_acc'] = act_acc
         wandb_log['val_act_f1'] = act_f1
+        result_str += 'avg_acc: %.2f, avg_f1: %.2f, ' % (
+            (int_acc + att_acc + act_acc) * 100 / 3, (int_f1 + att_f1 + act_f1) * 100 / 3)
         print(result_str + 'loss: %.4f' % total_loss)
         wandb.log(wandb_log)
         torch.cuda.empty_cache()
@@ -213,7 +215,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
     int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
     int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
-    result_str += 'int_acc: %.2f, int_f1: %.4f, ' % (int_acc * 100, int_f1)
+    result_str += 'int_acc: %.2f, int_f1: %.2f, ' % (int_acc * 100, int_f1 * 100)
     wandb_log['test_int_acc'] = int_acc
     wandb_log['test_int_f1'] = int_f1
     total_acc += int_acc
@@ -221,7 +223,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
     att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
     att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
-    result_str += 'att_acc: %.2f, att_f1: %.4f, ' % (att_acc * 100, att_f1)
+    result_str += 'att_acc: %.2f, att_f1: %.2f, ' % (att_acc * 100, att_f1 * 100)
     wandb_log['test_int_acc'] = att_acc
     wandb_log['test_int_f1'] = att_f1
     total_acc += att_acc
@@ -229,7 +231,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
     act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
     act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
-    result_str += 'act_acc: %.2f, act_f1: %.4f, ' % (act_acc * 100, act_f1)
+    result_str += 'act_acc: %.2f, act_f1: %.2f, ' % (act_acc * 100, act_f1 * 100)
     wandb_log['test_act_acc'] = act_acc
     wandb_log['test_act_f1'] = act_f1
     total_acc += act_acc
@@ -254,7 +256,8 @@ if __name__ == '__main__':
     frame_sample_hop = 1
     sequence_length = 30
 
-    randnum = random.randint(0, 100)
+    # randnum = random.randint(0, 100)
+    randnum = 25
 
     print('Loading data for student')
     student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part, frame_sample_hop,
@@ -271,17 +274,18 @@ if __name__ == '__main__':
 
 
     sweep_config = {
-        'method': 'grid',
+        'method': 'random',
         'metric': {
             'name': 'avg_f1',
             'goal': 'maximize',
         },
         'parameters': {
-            # 'epochs': {"values": [10, 20, 30, 40, 50]},
-            'epochs': {"values": [10]},
+            'epochs': {"values": [10, 20, 30, 40]},
+            # 'epochs': {"values": [10]},
             'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
-            # 'T': {'values': [2, 3, 4]},
-            'T': {'values': [2]},
+            'T': {'values': [2, 3, 4]},
+            # 'T': {'values': [2]},
+            'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
             'keypoint_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [4]},
             'fc_hidden1': {'values': [64]},
@@ -293,4 +297,4 @@ if __name__ == '__main__':
         }
     }
     sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_fps%d_test' % int(sequence_length / frame_sample_hop))
-    wandb.agent(sweep_id, function=train)
+    wandb.agent(sweep_id, function=train, count=40)

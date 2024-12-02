@@ -34,7 +34,6 @@ msgcn_batch_size = 8
 dgstgcn_batch_size = 16
 r3d_batch_size = 16
 learning_rate = 1e-3
-attn_learning_rate = 1e-2
 
 if torch.cuda.is_available():
     print('Using CUDA for training')
