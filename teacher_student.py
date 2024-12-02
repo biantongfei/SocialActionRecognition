@@ -47,14 +47,6 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
 
-    # indices = list(range(len(teacher_trainset)))
-    # random.seed(random.randint(0, 100))
-    # random.shuffle(indices)
-    # sampler = SubsetRandomSampler(indices)
-
-    g = torch.Generator()
-    g.manual_seed(25)
-
     teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
@@ -185,7 +177,7 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         torch.cuda.empty_cache()
         epoch += 1
         print('------------------------------------------')
-        break
+        # break
     print('Testing student model')
     test_loader = Pose_DataLoader(model=student_model, dataset=student_testset, batch_size=128,
                                   sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
