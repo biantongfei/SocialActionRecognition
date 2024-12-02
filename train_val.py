@@ -5,8 +5,8 @@ from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D
 from draw_utils import plot_confusion_matrix
 from DataLoader import Pose_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
-    gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, attn_learning_rate, \
-    intention_classes, attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
+    gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, intention_classes, \
+    attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
 
 import torch
 from torch.nn import functional
