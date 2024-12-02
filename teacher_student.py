@@ -285,7 +285,7 @@ if __name__ == '__main__':
             },
             'parameters': {
                 # 'epochs': {"values": [20, 30, 40]},
-                'epochs': {"values": [30]},
+                'epochs': {"values": [40]},
                 'loss_type': {"values": ['sum', 'dynamic', 'uncertain']},
                 # 'loss_type': {"values": ['sum']},
                 'T': {'values': [2, 3, 4]},
