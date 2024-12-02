@@ -66,15 +66,15 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
         for teacher_data, student_data in zip(teacher_train_loader, student_train_loader):
             progress_bar.update(1)
             teacher_inputs, (int_labels, att_labels, act_labels) = teacher_data
-            student_inputs, (int_labels2, att_labels2, act_labels2) = student_data
-            print(int_labels)
-            print(int_labels2)
-            print('------------------------')
-            print(att_labels)
-            print(att_labels2)
-            print('------------------------')
-            print(act_labels)
-            print(act_labels2)
+            student_inputs, _ = student_data
+            # print(int_labels)
+            # print(int_labels2)
+            # print('------------------------')
+            # print(att_labels)
+            # print(att_labels2)
+            # print('------------------------')
+            # print(act_labels)
+            # print(act_labels2)
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             with torch.no_grad():
@@ -278,7 +278,7 @@ if __name__ == '__main__':
         },
         'parameters': {
             # 'epochs': {"values": [10, 20, 30, 40, 50]},
-            'epochs': {"values": [1]},
+            'epochs': {"values": [10]},
             'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain', 'dwa', 'pareto']},
             # 'T': {'values': [2, 3, 4]},
             'T': {'values': [2]},
