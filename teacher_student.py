@@ -276,22 +276,22 @@ if __name__ == '__main__':
 
 
         sweep_config = {
-            'method': 'bayes',
+            # 'method': 'bayes',
             # 'method': 'random',
-            # 'method': 'grid',
+            'method': 'grid',
             'metric': {
                 'name': 'avg_f1',
                 'goal': 'maximize',
             },
             'parameters': {
-                'epochs': {"values": [20, 30, 40]},
-                # 'epochs': {"values": [1]},
+                # 'epochs': {"values": [20, 30, 40]},
+                'epochs': {"values": [30]},
                 'loss_type': {"values": ['sum', 'dynamic', 'uncertain']},
                 # 'loss_type': {"values": ['sum']},
                 'T': {'values': [2, 3, 4]},
-                # 'T': {'values': [2]},
-                'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
-                # 'learning_rate': {'values': [1e-2]},
+                # 'T': {'values': [3]},
+                # 'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
+                'learning_rate': {'values': [1e-3]},
                 'keypoint_hidden_dim': {'values': [16]},
                 'time_hidden_dim': {'values': [4]},
                 'fc_hidden1': {'values': [64]},
@@ -303,4 +303,5 @@ if __name__ == '__main__':
             }
         }
         sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
-        wandb.agent(sweep_id, function=train, count=30)
+        # wandb.agent(sweep_id, function=train, count=20)
+        wandb.agent(sweep_id, function=train)
