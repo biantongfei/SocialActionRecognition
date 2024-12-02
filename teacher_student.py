@@ -262,12 +262,15 @@ if __name__ == '__main__':
     frame_sample_hop = 1
     sequence_length = 30
 
+    randnum = random.randint(0, 100)
+
     print('Loading data for student')
     student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part, frame_sample_hop,
-                                                                        sequence_length, augment_method='mixed')
+                                                                        sequence_length, augment_method='mixed',
+                                                                        randnum=randnum)
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', body_part, frame_sample_hop, sequence_length, augment_method='mixed',
-                                       subset='train')
+                                       subset='train', randnum=randnum)
 
 
     def train():

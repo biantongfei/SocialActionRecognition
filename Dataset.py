@@ -22,11 +22,14 @@ def get_data_path(augment_method):
     return data_path
 
 
-def get_tra_test_files():
+def get_tra_test_files(randnum=None):
     tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
     val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
     test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
     tra_files = [i for i in tra_files if 'ori_' in i]
+    if randnum:
+        random.seed(randnum)
+        random.shuffle(tra_files)
     tra_files.sort()
     val_files.sort()
     test_files.sort()
@@ -273,12 +276,13 @@ class JPL_Dataset(Dataset):
             return len(self.features)
 
 
-def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', subset='all'):
+def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', subset='all',
+                    randnum=None):
     print('Loading data from JPL %s dataset' % augment_method)
     subset_list = []
     result_str = ''
     if model != 'r3d':
-        tra_files, val_files, test_files = get_tra_test_files()
+        tra_files, val_files, test_files = get_tra_test_files(randnum)
         if subset != 'test':
             trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part,
                                    model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
@@ -299,7 +303,7 @@ def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment
             result_str += 'Test_set_size: %d.' % len(test_set)
 
     else:
-        tra_files, val_files, test_files = get_tra_test_files()
+        tra_files, val_files, test_files = get_tra_test_files(randnum)
         tra_files = [i for i in tra_files if 'noise' not in i]
         if subset != 'test':
             trainset = ImagesDataset(data_files=tra_files, frame_sample_hop=frame_sample_hop,
