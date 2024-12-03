@@ -36,6 +36,7 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     print('Loading teacher logist')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
+        print(index,inputs[0].shape[0])
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
         teacher_logist[0][index * batch_size:index * batch_size + inputs[0].shape[0]] = int_outputs
