@@ -8,7 +8,6 @@ from Dataset import get_jpl_dataset
 import torch
 from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
-from torch.utils.data import SubsetRandomSampler
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 import wandb
@@ -30,7 +29,7 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
         teacher_net.eval()
     teacher_dataloader = Pose_DataLoader('msgcn', dataset=dataset, batch_size=batch_size,
                                          sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
-                                         drop_last=False)
+                                         drop_last=False,num_workers=1)
     teacher_logist = (
         torch.zeros(len(dataset), len(intention_classes)), torch.zeros(len(dataset), len(attitude_classes)),
         torch.zeros(len(dataset), len(action_classes)))
@@ -39,7 +38,6 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     for index, data in enumerate(teacher_dataloader):
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        print(index, inputs[0].shape[0])
         teacher_logist[0][index * batch_size:index * batch_size + int_outputs.shape[0]] = int_outputs
         teacher_logist[1][index * batch_size:index * batch_size + att_outputs.shape[0]] = att_outputs
         teacher_logist[2][index * batch_size:index * batch_size + act_outputs.shape[0]] = act_outputs
