@@ -36,12 +36,12 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     print('Loading teacher logist')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
-        print(index,inputs[0].shape[0])
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        teacher_logist[0][index * batch_size:index * batch_size + inputs[0].shape[0]] = int_outputs
-        teacher_logist[1][index * batch_size:index * batch_size + inputs[0].shape[0]] = att_outputs
-        teacher_logist[2][index * batch_size:index * batch_size + inputs[0].shape[0]] = act_outputs
+        print(index, inputs[0].shape[0])
+        teacher_logist[0][index * batch_size:index * batch_size + int_outputs.shape[0]] = int_outputs
+        teacher_logist[1][index * batch_size:index * batch_size + att_outputs.shape[0]] = att_outputs
+        teacher_logist[2][index * batch_size:index * batch_size + act_outputs.shape[0]] = act_outputs
         progress_bar.update(1)
     progress_bar.close()
     return teacher_logist
