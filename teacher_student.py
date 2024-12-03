@@ -1,4 +1,4 @@
-from DataLoader import Pose_DataLoader
+from DataLoader import Pose_DataLoader, TeacherDataloader
 from constants import device, msgcn_batch_size, gcn_batch_size, learning_rate
 from Models import GNN, MSGCN
 from train_val import filter_not_interacting_sample, dynamic_weight_average
@@ -20,22 +20,12 @@ def seed_worker(worker_id):
     torch.manual_seed(worker_seed)
 
 
-def train_student(student_model, teacher_model, teacher_trainset, student_trainset, student_valset, student_testset):
+def train_student(student_model, teacher_dataloader, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
     student_body_part = wandb.config.student_body_part
     student_sequence_length = wandb.config.student_sequence_length
     student_frame_sample_hop = wandb.config.student_frame_sample_hop
-    if teacher_model == 'msgcn':
-        teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
-        teacher_net = MSGCN([True, True, True], 'chain')
-        teacher_net.load_state_dict(teacher_dict)
-        teacher_net.to(device)
-        batch_size = 32
-        num_workers = 1
-    for param in teacher_net.parameters():
-        param.requires_grad = False
-    teacher_net.eval()
     if 'gcn_' in student_model:
         student_net = GNN(body_part=student_body_part, framework='chain', model=student_model,
                           sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
@@ -47,14 +37,10 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
 
-    teacher_train_loader = Pose_DataLoader(model='msgcn', dataset=teacher_trainset, batch_size=batch_size,
+    student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=32,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
-                                           num_workers=num_workers)
-    student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
-                                           sequence_length=student_sequence_length,
-                                           frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
-                                           num_workers=num_workers)
+                                           num_workers=8)
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
@@ -62,23 +48,13 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
     while epoch <= wandb.config.epochs:
         student_net.train()
         print('Training student model')
-        progress_bar = tqdm(total=len(teacher_train_loader), desc='Progress')
-        for teacher_data, student_data in zip(teacher_train_loader, student_train_loader):
+        progress_bar = tqdm(total=len(student_train_loader), desc='Progress')
+        for teacher_data, student_data in zip(teacher_dataloader, student_train_loader):
             progress_bar.update(1)
-            teacher_inputs, (int_labels, att_labels, act_labels) = teacher_data
-            student_inputs, _ = student_data
-            # print(int_labels)
-            # print(int_labels2)
-            # print('------------------------')
-            # print(att_labels)
-            # print(att_labels2)
-            # print('------------------------')
-            # print(act_labels)
-            # print(act_labels2)
+            student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
-            with torch.no_grad():
-                teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_net(teacher_inputs)
+            teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_data
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
@@ -251,57 +227,58 @@ def train_student(student_model, teacher_model, teacher_trainset, student_trains
 
 
 if __name__ == '__main__':
-
     randnum = random.randint(0, 100)
     # randnum = 25
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
+    teacher_dataloader = TeacherDataloader('msgcn', teacher_trainset, 32)
 
-    student_body_part = [[True, False, False], [True, True, True], [True, False, False]]
-    student_frame_sample_hop = [1, 3, 3]
+    student_body_part = [True, False, False]
+    student_frame_sample_hop = 1
     student_sequence_length = 30
 
-    for body_part, frame_sample_hop in zip(student_body_part, student_frame_sample_hop):
-        print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (str(body_part), frame_sample_hop))
-        student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', body_part,
-                                                                            frame_sample_hop, student_sequence_length,
-                                                                            augment_method='mixed', randnum=randnum)
+    print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (
+        str(student_body_part), student_frame_sample_hop))
+    student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', student_body_part,
+                                                                        student_frame_sample_hop,
+                                                                        student_sequence_length,
+                                                                        augment_method='mixed', randnum=randnum)
 
 
-        def train():
-            train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_trainset=teacher_trainset,
-                          student_trainset=student_trainset, student_valset=student_valset,
-                          student_testset=student_testset)
+    def train():
+        train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_dataloader=teacher_dataloader,
+                      student_trainset=student_trainset, student_valset=student_valset,
+                      student_testset=student_testset)
 
 
-        sweep_config = {
-            # 'method': 'bayes',
-            # 'method': 'random',
-            'method': 'grid',
-            'metric': {
-                'name': 'avg_f1',
-                'goal': 'maximize',
-            },
-            'parameters': {
-                # 'epochs': {"values": [20, 30, 40]},
-                'epochs': {"values": [40]},
-                'loss_type': {"values": ['sum', 'weighted', 'dynamic', 'uncertain']},
-                # 'loss_type': {"values": ['sum']},
-                'T': {'values': [2, 3, 4]},
-                # 'T': {'values': [3]},
-                # 'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
-                'learning_rate': {'values': [1e-3]},
-                'keypoint_hidden_dim': {'values': [16]},
-                'time_hidden_dim': {'values': [4]},
-                'fc_hidden1': {'values': [64]},
-                'fc_hidden2': {'values': [16]},
-                'student_body_part': {'values': [body_part]},
-                'student_frame_sample_hop': {'values': [frame_sample_hop]},
-                'student_sequence_length': {'values': [student_sequence_length]},
-                # 'times': {'values': [ii for ii in range(5)]},
-            }
+    sweep_config = {
+        # 'method': 'bayes',
+        # 'method': 'random',
+        'method': 'grid',
+        'metric': {
+            'name': 'avg_f1',
+            'goal': 'maximize',
+        },
+        'parameters': {
+            # 'epochs': {"values": [20, 30, 40]},
+            'epochs': {"values": [1]},
+            'loss_type': {"values": ['sum', 'weighted', 'uncertain']},
+            # 'loss_type': {"values": ['sum']},
+            'T': {'values': [2, 3, 4]},
+            # 'T': {'values': [3]},
+            'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
+            # 'learning_rate': {'values': [1e-3]},
+            'keypoint_hidden_dim': {'values': [16]},
+            'time_hidden_dim': {'values': [4]},
+            'fc_hidden1': {'values': [64]},
+            'fc_hidden2': {'values': [16]},
+            'student_body_part': {'values': [student_body_part]},
+            'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
+            'student_sequence_length': {'values': [student_sequence_length]},
+            # 'times': {'values': [ii for ii in range(5)]},
         }
-        sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
-        # wandb.agent(sweep_id, function=train, count=20)
-        wandb.agent(sweep_id, function=train)
+    }
+    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_test')
+    # wandb.agent(sweep_id, function=train, count=20)
+    wandb.agent(sweep_id, function=train)

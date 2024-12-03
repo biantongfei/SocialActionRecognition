@@ -3,7 +3,8 @@ import torch
 import torch.nn.utils.rnn as rnn_utils
 from torch_geometric.utils import add_self_loops
 
-from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair
+from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair, device
+from Models import MSGCN
 
 
 def rnn_collate_fn(data):
@@ -132,3 +133,30 @@ class Pose_DataLoader(DataLoader):
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
             torch.Tensor(contact_label)) if self.contact else (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+
+
+class TeacherDataloader(DataLoader):
+    def __init__(self, teacher_model, dataset, batch_size, drop_last=False, shuffle=False, num_workers=1):
+        super(TeacherDataloader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
+                                                drop_last=drop_last, num_workers=num_workers)
+        if teacher_model == 'msgcn':
+            teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+            self.teacher_net = MSGCN([True, True, True], 'chain')
+            self.teacher_net.load_state_dict(teacher_dict)
+            self.teacher_net.to(device)
+            self.teacher_net.eval()
+
+    def teacher_collate_fn(self, data):
+        input = []
+        for index, d in enumerate(data):
+            if index == 0:
+                for i in range(len(d[0])):
+                    if type(d[0][i]) != int:
+                        input.append(torch.zeros((len(data), 3, d[0][i].shape[1], d[0][i].shape[2], 1)))
+                        input[i][0] = torch.Tensor(d[0][i])
+            else:
+                for i in range(len(d[0])):
+                    if type(d[0][i]) != int:
+                        input[i][index] = torch.Tensor(d[0][i])
+        teacher_logits = self.teacher_net(input)
+        return teacher_logits
