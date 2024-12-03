@@ -50,18 +50,18 @@ def load_teacher_outputs(index, student_batch_size):
             teacher_att_outputs = torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))
             teacher_act_outputs = torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))
         else:
-            # try:
-            torch.cat(
-                (teacher_int_outputs, torch.load('./teacher_tensor/teacher_int_outputs_%d.pt' % (start_index + i))),
-                0)
-            torch.cat(
-                (teacher_att_outputs, torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))),
-                0)
-            torch.cat(
-                (teacher_act_outputs, torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))),
-                0)
-            # except FileNotFoundError:
-            #     break
+            try:
+                torch.cat(
+                    (teacher_int_outputs, torch.load('./teacher_tensor/teacher_int_outputs_%d.pt' % (start_index + i))),
+                    0)
+                torch.cat(
+                    (teacher_att_outputs, torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))),
+                    0)
+                torch.cat(
+                    (teacher_act_outputs, torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))),
+                    0)
+            except FileNotFoundError:
+                break
     return teacher_int_outputs, teacher_att_outputs, teacher_act_outputs
 
 
@@ -102,6 +102,9 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             teacher_int_outputs, teacher_att_outputs, teacher_act_outputs = load_teacher_outputs(index, batch_size)
+            print(teacher_int_outputs.shape)
+            print(teacher_att_outputs.shape)
+            print(teacher_act_outputs.shape)
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
