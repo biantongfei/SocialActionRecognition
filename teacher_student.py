@@ -96,6 +96,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
         print('Training student model')
         progress_bar = tqdm(total=len(student_train_loader), desc='Progress')
         for index, student_data in enumerate(student_train_loader):
+            print(index)
             progress_bar.update(1)
             student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
