@@ -30,9 +30,9 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
         teacher_net.eval()
     teacher_dataloader = Pose_DataLoader('msgcn', dataset, batch_size, sequence_length, frame_sample_hop,
                                          drop_last=False)
-    teacher_logist = (torch.zeros(len(teacher_dataloader), len(intention_classes)),
-                      torch.zeros(len(teacher_dataloader), len(attitude_classes)),
-                      torch.zeros(len(teacher_dataloader), len(action_classes)))
+    teacher_logist = (torch.zeros(len(dataset), len(intention_classes)),
+                      torch.zeros(len(dataset), len(attitude_classes)),
+                      torch.zeros(len(dataset), len(action_classes)))
     print('Loading teacher logist')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
