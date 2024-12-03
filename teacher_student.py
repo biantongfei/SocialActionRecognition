@@ -1,5 +1,6 @@
-from DataLoader import Pose_DataLoader, TeacherDataloader
-from constants import device, msgcn_batch_size, gcn_batch_size, learning_rate
+from DataLoader import Pose_DataLoader
+from constants import device, msgcn_batch_size, gcn_batch_size, learning_rate, intention_classes, attitude_classes, \
+    action_classes
 from Models import GNN, MSGCN
 from train_val import filter_not_interacting_sample, dynamic_weight_average
 from Dataset import get_jpl_dataset
@@ -20,7 +21,32 @@ def seed_worker(worker_id):
     torch.manual_seed(worker_seed)
 
 
-def train_student(student_model, teacher_dataloader, student_trainset, student_valset, student_testset):
+def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, frame_sample_hop):
+    if teacher_model == 'msgcn':
+        teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
+        teacher_net = MSGCN([True, True, True], 'chain')
+        teacher_net.load_state_dict(teacher_dict)
+        teacher_net.to(device)
+        teacher_net.eval()
+    teacher_dataloader = Pose_DataLoader('msgcn', dataset, batch_size, sequence_length, frame_sample_hop,
+                                         drop_last=False)
+    teacher_logist = (torch.zeros(len(teacher_dataloader), len(intention_classes)),
+                      torch.zeros(len(teacher_dataloader), len(attitude_classes)),
+                      torch.zeros(len(teacher_dataloader), len(action_classes)))
+    print('Loading teacher logist')
+    progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
+    for index, data in enumerate(teacher_dataloader):
+        inputs, _ = data
+        int_outputs, att_outputs, act_outputs = teacher_net(inputs)
+        teacher_logist[0][index * batch_size:index * batch_size + inputs.shape[0]] = int_outputs
+        teacher_logist[1][index * batch_size:index * batch_size + inputs.shape[0]] = att_outputs
+        teacher_logist[2][index * batch_size:index * batch_size + inputs.shape[0]] = act_outputs
+        progress_bar.update(1)
+    progress_bar.close()
+    return teacher_logist
+
+
+def train_student(student_model, teacher_logist, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
     student_body_part = wandb.config.student_body_part
@@ -32,12 +58,13 @@ def train_student(student_model, teacher_dataloader, student_trainset, student_v
                           keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
                           time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=wandb.config.fc_hidden1,
                           fc_hidden2=wandb.config.fc_hidden2)
+        batch_size = gcn_batch_size
     student_net.to(device)
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
 
-    student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=32,
+    student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
                                            num_workers=8)
@@ -49,16 +76,14 @@ def train_student(student_model, teacher_dataloader, student_trainset, student_v
         student_net.train()
         print('Training student model')
         progress_bar = tqdm(total=len(student_train_loader), desc='Progress')
-        for teacher_data, student_data in zip(teacher_dataloader, student_train_loader):
+        for index, student_data in enumerate(student_train_loader):
             progress_bar.update(1)
             student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
-            print(type(teacher_data[0]), type(teacher_data[1]), type(teacher_data))
-            print(len(teacher_data[0]), len(teacher_data[1]))
-            print(teacher_data[0][0].shape,teacher_data[0][1].shape,teacher_data[0][2].shape)
-            print(teacher_data[1][0].shape,teacher_data[1][1].shape,teacher_data[1][2].shape)
-            teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_data
+            teacher_int_logits = teacher_logist[0][index * batch_size:index * batch_size + student_inputs.shape[0]]
+            teacher_att_logits = teacher_logist[1][index * batch_size:index * batch_size + student_inputs.shape[0]]
+            teacher_act_logits = teacher_logist[2][index * batch_size:index * batch_size + student_inputs.shape[0]]
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
@@ -236,7 +261,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    teacher_dataloader = TeacherDataloader('msgcn', teacher_trainset, 32)
+    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 32, 30, 1)
 
     student_body_part = [True, False, False]
     student_frame_sample_hop = 1
@@ -251,9 +276,8 @@ if __name__ == '__main__':
 
 
     def train():
-        train_student(student_model='gcn_lstm', teacher_dataloader=teacher_dataloader,
-                      student_trainset=student_trainset, student_valset=student_valset,
-                      student_testset=student_testset)
+        train_student(student_model='gcn_lstm', teacher_logist=teacher_logist, student_trainset=student_trainset,
+                      student_valset=student_valset, student_testset=student_testset)
 
 
     sweep_config = {
