@@ -1,6 +1,7 @@
+import os
+
 from DataLoader import Pose_DataLoader
-from constants import device, msgcn_batch_size, gcn_batch_size, learning_rate, intention_classes, attitude_classes, \
-    action_classes
+from constants import device, gcn_batch_size, learning_rate
 from Models import GNN, MSGCN
 from train_val import filter_not_interacting_sample, dynamic_weight_average
 from Dataset import get_jpl_dataset
@@ -13,14 +14,12 @@ from sklearn.metrics import f1_score
 import wandb
 import random
 
-
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2 ** 32
-    random.seed(worker_seed)
-    torch.manual_seed(worker_seed)
+teacher_batch_size = 16
 
 
-def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, frame_sample_hop):
+def calculate_teacher_outputs(teacher_model, dataset, batch_size, sequence_length, frame_sample_hop):
+    for pt_file in os.listdir('./teacher_tensor/'):
+        os.system('rm -rf ./teacher_tensor/%s' % pt_file)
     if teacher_model == 'msgcn':
         teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
         teacher_net = MSGCN([True, True, True], 'chain')
@@ -30,25 +29,43 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     teacher_dataloader = Pose_DataLoader(model='msgcn', dataset=dataset, batch_size=batch_size,
                                          sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                          drop_last=False, num_workers=1)
-    teacher_logist = [[], [], []]
-    print('Loading teacher logist')
+    print('Loading teacher outputs')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        torch.save(int_outputs, "./teacher_int_logist_%d.pt" % index)
-        torch.save(att_outputs, "./teacher_int_logist_%d.pt" % index)
-        torch.save(act_outputs, "./teacher_int_logist_%d.pt" % index)
-        # teacher_logist[0] += int_outputs.tolist()
-        # teacher_logist[1] += att_outputs.tolist()
-        # teacher_logist[2] += act_outputs.tolist()
+        torch.save(int_outputs, "./teacher_tensor/teacher_int_outputs_%d.pt" % index)
+        torch.save(att_outputs, "./teacher_tensor/teacher_att_outputs_%d.pt" % index)
+        torch.save(act_outputs, "./teacher_tensor/teacher_act_outputs_%d.pt" % index)
         progress_bar.update(1)
     torch.cuda.empty_cache()
     progress_bar.close()
-    return teacher_logist
 
 
-def train_student(student_model, teacher_logist, student_trainset, student_valset, student_testset):
+def load_teacher_outputs(index, student_batch_size):
+    start_index = int(index * student_batch_size / teacher_batch_size)
+    for i in range(int(student_batch_size / teacher_batch_size)):
+        if i == 0:
+            teacher_int_outputs = torch.load('./teacher_tensor/teacher_int_outputs_%d.pt' % (start_index + i))
+            teacher_att_outputs = torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))
+            teacher_act_outputs = torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))
+        else:
+            try:
+                torch.cat(
+                    (teacher_int_outputs, torch.load('./teacher_tensor/teacher_int_outputs_%d.pt' % (start_index + i))),
+                    0)
+                torch.cat(
+                    (teacher_att_outputs, torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))),
+                    0)
+                torch.cat(
+                    (teacher_act_outputs, torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))),
+                    0)
+            except FileNotFoundError:
+                break
+    return teacher_int_outputs, teacher_att_outputs, teacher_act_outputs
+
+
+def train_student(student_model, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
     student_body_part = wandb.config.student_body_part
@@ -83,12 +100,7 @@ def train_student(student_model, teacher_logist, student_trainset, student_valse
             student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
-            teacher_int_logits = teacher_logist[0][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
-                device)
-            teacher_att_logits = teacher_logist[1][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
-                device)
-            teacher_act_logits = teacher_logist[2][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
-                device)
+            teacher_int_outputs, teacher_att_outputs, teacher_act_outputs = load_teacher_outputs(index, batch_size)
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
@@ -96,9 +108,9 @@ def train_student(student_model, teacher_logist, student_trainset, student_valse
             loss_3 = F.cross_entropy(student_act_outputs, act_labels)
             loss_ce = loss_1 + loss_2 + loss_3
 
-            teacher_int_soft = F.softmax(teacher_int_logits / T, dim=1)
-            teacher_att_soft = F.softmax(teacher_att_logits / T, dim=1)
-            teacher_act_soft = F.softmax(teacher_act_logits / T, dim=1)
+            teacher_int_soft = F.softmax(teacher_int_outputs / T, dim=1)
+            teacher_att_soft = F.softmax(teacher_att_outputs / T, dim=1)
+            teacher_act_soft = F.softmax(teacher_act_outputs / T, dim=1)
             student_int_log_soft = F.log_softmax(student_int_outputs / T, dim=1)
             student_att_log_soft = F.log_softmax(student_att_outputs / T, dim=1)
             student_act_log_soft = F.log_softmax(student_act_outputs / T, dim=1)
@@ -266,7 +278,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 16, 30, 1)
+    calculate_teacher_outputs('msgcn', teacher_trainset, 16, 30, 1)
     del teacher_trainset
 
     student_body_part = [True, False, False]
@@ -282,8 +294,8 @@ if __name__ == '__main__':
 
 
     def train():
-        train_student(student_model='gcn_lstm', teacher_logist=teacher_logist, student_trainset=student_trainset,
-                      student_valset=student_valset, student_testset=student_testset)
+        train_student(student_model='gcn_lstm', student_trainset=student_trainset, student_valset=student_valset,
+                      student_testset=student_testset)
 
 
     sweep_config = {
