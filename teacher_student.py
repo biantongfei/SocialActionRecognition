@@ -28,7 +28,8 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
         teacher_net.load_state_dict(teacher_dict)
         teacher_net.to(device)
         teacher_net.eval()
-    teacher_dataloader = Pose_DataLoader('msgcn', dataset, batch_size, sequence_length, frame_sample_hop,
+    teacher_dataloader = Pose_DataLoader('msgcn', dataset=dataset, batch_size=batch_size,
+                                         sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                          drop_last=False)
     teacher_logist = (
         torch.zeros(len(dataset), len(intention_classes)), torch.zeros(len(dataset), len(attitude_classes)),
