@@ -31,8 +31,9 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
                                          sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                          drop_last=False, num_workers=1)
     teacher_logist = (
-        torch.zeros(len(dataset), len(intention_classes)), torch.zeros(len(dataset), len(attitude_classes)),
-        torch.zeros(len(dataset), len(action_classes)))
+        torch.zeros(len(dataset), len(intention_classes)).to(device=torch.device('cpu')),
+        torch.zeros(len(dataset), len(attitude_classes)).to(device=torch.device('cpu')),
+        torch.zeros(len(dataset), len(action_classes)).to(device=torch.device('cpu')))
     print('Loading teacher logist')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
