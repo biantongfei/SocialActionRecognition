@@ -266,7 +266,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 64, 30, 1)
+    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 32, 30, 1)
     del teacher_trainset
 
     student_body_part = [True, False, False]
