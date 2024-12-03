@@ -44,6 +44,7 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
         teacher_logist[1][index * batch_size:index * batch_size + att_outputs.shape[0]] = att_outputs
         teacher_logist[2][index * batch_size:index * batch_size + act_outputs.shape[0]] = act_outputs
         progress_bar.update(1)
+        torch.cuda.empty_cache()
     progress_bar.close()
     return teacher_logist
 
@@ -263,7 +264,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 8, 30, 1)
+    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 32, 30, 1)
 
     student_body_part = [True, False, False]
     student_frame_sample_hop = 1
