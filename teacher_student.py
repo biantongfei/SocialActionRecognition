@@ -39,12 +39,12 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     for index, data in enumerate(teacher_dataloader):
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        teacher_logist[0][index * batch_size:index * batch_size + int_outputs.shape[0]] = int_outputs.to(
-            device=torch.device('cpu'))
-        teacher_logist[1][index * batch_size:index * batch_size + att_outputs.shape[0]] = att_outputs.to(
-            device=torch.device('cpu'))
-        teacher_logist[2][index * batch_size:index * batch_size + act_outputs.shape[0]] = act_outputs.to(
-            device=torch.device('cpu'))
+        # teacher_logist[0][index * batch_size:index * batch_size + int_outputs.shape[0]] = int_outputs.to(
+        #     device=torch.device('cpu'))
+        # teacher_logist[1][index * batch_size:index * batch_size + att_outputs.shape[0]] = att_outputs.to(
+        #     device=torch.device('cpu'))
+        # teacher_logist[2][index * batch_size:index * batch_size + act_outputs.shape[0]] = act_outputs.to(
+        #     device=torch.device('cpu'))
         progress_bar.update(1)
     torch.cuda.empty_cache()
     progress_bar.close()
