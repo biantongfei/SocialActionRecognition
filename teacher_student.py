@@ -311,8 +311,8 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            # 'epochs': {"values": [20, 30, 40]},
-            'epochs': {"values": [1]},
+            'epochs': {"values": [20, 30, 40]},
+            # 'epochs': {"values": [1]},
             'loss_type': {"values": ['sum', 'weighted', 'uncertain']},
             # 'loss_type': {"values": ['sum']},
             'T': {'values': [2, 3, 4]},
@@ -326,7 +326,7 @@ if __name__ == '__main__':
             'student_body_part': {'values': [student_body_part]},
             'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
             'student_sequence_length': {'values': [student_sequence_length]},
-            # 'times': {'values': [ii for ii in range(5)]},
+            'times': {'values': [ii for ii in range(10)]},
         }
     }
     sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL_test')
