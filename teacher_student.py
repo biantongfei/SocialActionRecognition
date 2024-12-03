@@ -247,7 +247,7 @@ if __name__ == '__main__':
 
 
     def train():
-        train_student(student_model='gcn_lstm', teacher_model='msgcn', teacher_dataloader=teacher_dataloader,
+        train_student(student_model='gcn_lstm', teacher_dataloader=teacher_dataloader,
                       student_trainset=student_trainset, student_valset=student_valset,
                       student_testset=student_testset)
 
