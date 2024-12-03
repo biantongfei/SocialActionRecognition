@@ -56,7 +56,8 @@ def train_student(student_model, teacher_dataloader, student_trainset, student_v
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             print(type(teacher_data[0]), type(teacher_data[1]), type(teacher_data))
             print(len(teacher_data[0]), len(teacher_data[1]))
-            print(teacher_data[0][1].shape)
+            print(teacher_data[0][0].shape,teacher_data[0][1].shape,teacher_data[0][2].shape)
+            print(teacher_data[1][0].shape,teacher_data[1][1].shape,teacher_data[1][2].shape)
             teacher_int_logits, teacher_att_logits, teacher_act_logits = teacher_data
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
