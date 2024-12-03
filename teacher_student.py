@@ -36,10 +36,12 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     for index, data in enumerate(teacher_dataloader):
         inputs, _ = data
         int_outputs, att_outputs, act_outputs = teacher_net(inputs)
-        print(int_outputs.tolist())
-        teacher_logist[0] += int_outputs.tolist()
-        teacher_logist[1] += att_outputs.tolist()
-        teacher_logist[2] += act_outputs.tolist()
+        torch.save(int_outputs, "./teacher_int_logist_%d.pt" % index)
+        torch.save(att_outputs, "./teacher_int_logist_%d.pt" % index)
+        torch.save(act_outputs, "./teacher_int_logist_%d.pt" % index)
+        # teacher_logist[0] += int_outputs.tolist()
+        # teacher_logist[1] += att_outputs.tolist()
+        # teacher_logist[2] += act_outputs.tolist()
         progress_bar.update(1)
     torch.cuda.empty_cache()
     progress_bar.close()
@@ -81,9 +83,12 @@ def train_student(student_model, teacher_logist, student_trainset, student_valse
             student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
-            teacher_int_logits = teacher_logist[0][index * batch_size:index * batch_size + student_inputs.shape[0]].to(device)
-            teacher_att_logits = teacher_logist[1][index * batch_size:index * batch_size + student_inputs.shape[0]].to(device)
-            teacher_act_logits = teacher_logist[2][index * batch_size:index * batch_size + student_inputs.shape[0]].to(device)
+            teacher_int_logits = teacher_logist[0][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
+                device)
+            teacher_att_logits = teacher_logist[1][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
+                device)
+            teacher_act_logits = teacher_logist[2][index * batch_size:index * batch_size + student_inputs.shape[0]].to(
+                device)
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
             # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
@@ -261,7 +266,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 32, 30, 1)
+    teacher_logist = get_teacher_logist('msgcn', teacher_trainset, 128, 30, 1)
     del teacher_trainset
 
     student_body_part = [True, False, False]
