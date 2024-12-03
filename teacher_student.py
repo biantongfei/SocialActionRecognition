@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score
 import wandb
 import random
 
-teacher_batch_size = 16
+teacher_batch_size = 8
 
 
 def calculate_teacher_outputs(teacher_model, dataset, batch_size, sequence_length, frame_sample_hop):
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     print('Loading data for teacher')
     teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum)
-    calculate_teacher_outputs('msgcn', teacher_trainset, 16, 30, 1)
+    calculate_teacher_outputs('msgcn', teacher_trainset, teacher_batch_size, 30, 1)
     del teacher_trainset
 
     student_body_part = [True, False, False]
