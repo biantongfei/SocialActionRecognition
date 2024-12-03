@@ -51,13 +51,13 @@ def load_teacher_outputs(index, student_batch_size):
             teacher_act_outputs = torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))
         else:
             try:
-                torch.cat(
+                teacher_int_outputs = torch.cat(
                     (teacher_int_outputs, torch.load('./teacher_tensor/teacher_int_outputs_%d.pt' % (start_index + i))),
                     0)
-                torch.cat(
+                teacher_att_outputs = torch.cat(
                     (teacher_att_outputs, torch.load('./teacher_tensor/teacher_att_outputs_%d.pt' % (start_index + i))),
                     0)
-                torch.cat(
+                teacher_act_outputs = torch.cat(
                     (teacher_act_outputs, torch.load('./teacher_tensor/teacher_act_outputs_%d.pt' % (start_index + i))),
                     0)
             except FileNotFoundError:
