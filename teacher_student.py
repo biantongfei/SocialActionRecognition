@@ -30,7 +30,7 @@ def get_teacher_logist(teacher_model, dataset, batch_size, sequence_length, fram
     teacher_dataloader = Pose_DataLoader(model='msgcn', dataset=dataset, batch_size=batch_size,
                                          sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                                          drop_last=False, num_workers=1)
-    teacher_logist = ([], [], [])
+    teacher_logist = [[], [], []]
     print('Loading teacher logist')
     progress_bar = tqdm(total=len(teacher_dataloader), desc='Progress')
     for index, data in enumerate(teacher_dataloader):
