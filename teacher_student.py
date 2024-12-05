@@ -68,6 +68,7 @@ def load_teacher_outputs(index, student_batch_size):
 def train_student(student_model, student_trainset, student_valset, student_testset):
     run = wandb.init()
     T = wandb.config.T
+    learning_rate = wandb.config.learning_rate
     student_body_part = wandb.config.student_body_part
     student_sequence_length = wandb.config.student_sequence_length
     student_frame_sample_hop = wandb.config.student_frame_sample_hop
@@ -126,33 +127,9 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             if wandb.config.loss_type == 'sum':
                 total_loss = loss_ce + loss_kd
             elif wandb.config.loss_type == 'weighted':
-                total_loss = loss_ce + 0.5 * loss_kd
-            elif wandb.config.loss_type == 'dynamic':
-                weights = 1.0 / (torch.tensor([loss_ce, loss_kd]) + 1e-8)
-                weights = weights / weights.sum()
-                total_loss = weights[0] * loss_ce + weights[1] * loss_kd
-            elif wandb.config.loss_type == 'uncertain':
-                total_loss = (torch.exp(-student_net.log_sigma1) * loss_ce + student_net.log_sigma1 + torch.exp(
-                    -student_net.log_sigma2) * loss_kd + student_net.log_sigma2)
-            elif wandb.config.loss_type == 'pareto':
-                optimizer.zero_grad()
-                loss_ce.backward(retain_graph=True)  # 保留计算图
-                g1 = [p.grad.clone() if p.grad is not None else torch.zeros_like(p) for p in student_net.parameters()]
-                optimizer.zero_grad()
-                loss_kd.backward(retain_graph=True)
-                g2 = [p.grad.clone() if p.grad is not None else torch.zeros_like(p) for p in student_net.parameters()]
-                # 合并梯度（例如使用简单加权或 MGDA）
-                combined_grad = [g1[i] + g2[i] for i in range(len(g1))]
-                for i, p in enumerate(student_net.parameters()):
-                    p.grad = combined_grad[i]
-                total_loss = loss_ce + loss_kd
-            elif wandb.config.loss_type == 'dwa':
-                weights = dynamic_weight_average(prev_losses, [loss_ce, loss_kd])
-                total_loss = weights[0] * loss_ce + weights[1] * loss_kd
-                prev_losses = [loss_ce.item(), loss_kd.item()]
-            if wandb.config.loss_type != 'pareto':
-                optimizer.zero_grad()
-                total_loss.backward()
+                total_loss = loss_ce + wandb.config.loss_weight * loss_kd
+            optimizer.zero_grad()
+            total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
         scheduler.step()
@@ -311,11 +288,12 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [20, 30, 40]},
+            'epochs': {"values": [40, 50]},
             # 'epochs': {"values": [1]},
-            'loss_type': {"values": ['sum', 'weighted', 'uncertain']},
+            'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'T': {'values': [2, 3, 4]},
+            'loss_weight': {'values': [0.25, 0.5, 0.75]},
+            'T': {'values': [4, 6, 8]},
             # 'T': {'values': [3]},
             'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
             # 'learning_rate': {'values': [1e-3]},
