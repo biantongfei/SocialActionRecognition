@@ -288,6 +288,8 @@ class JPL_Dataset(Dataset):
 
     def __getitem__(self, idx):
         print(idx)
+        self.features[idx]
+        self.labels[idx]
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
