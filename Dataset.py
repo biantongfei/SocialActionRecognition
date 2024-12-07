@@ -196,27 +196,28 @@ class JPL_Dataset(Dataset):
                         frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
-                            print(hop, frame['frame_id'], first_id, frame_num)
-                            x_tensor[frame_num] = x
-                            frame_num += 1
-                        else:
-                            index += 1
-                            if frame['frame_id'] - first_id > self.sequence_length:
-                                break
-                            elif frame['frame_id'] % self.frame_sample_hop == hop:
-                                frame_feature = np.array(frame['keypoints'])
-                                frame_feature = get_body_part(frame_feature, b_p)
-                                frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
-                                frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
-                                # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-                                # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-                                if self.only_visible_point:
-                                    binary_result = (frame_feature[:, 2] > visible_threshold_score).astype(int)
-                                    frame_feature[:, 2] = binary_result
-                                x = torch.tensor(frame_feature)
+                        if frame['frame_id'] % self.frame_sample_hop == hop:
+                            if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
+                                print(hop, frame['frame_id'], first_id, frame_num)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
+                            else:
+                                index += 1
+                                if frame['frame_id'] - first_id > self.sequence_length:
+                                    break
+                                else:
+                                    frame_feature = np.array(frame['keypoints'])
+                                    frame_feature = get_body_part(frame_feature, b_p)
+                                    frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+                                    frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+                                    # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+                                    # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                    if self.only_visible_point:
+                                        binary_result = (frame_feature[:, 2] > visible_threshold_score).astype(int)
+                                        frame_feature[:, 2] = binary_result
+                                    x = torch.tensor(frame_feature)
+                                    x_tensor[frame_num] = x
+                                    frame_num += 1
                 if frame_num == 0:
                     return 0, 0
                 x_list[index_body] = x_tensor
