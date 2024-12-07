@@ -196,8 +196,8 @@ class JPL_Dataset(Dataset):
                         frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
-                        if frame['frame_id'] > first_id+hop and frame['frame_id'] > frame_num * self.frame_sample_hop+hop:
-                            print(frame['frame_id'], first_id, frame_num)
+                        if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
+                            print(hop, frame['frame_id'], first_id, frame_num)
                             x_tensor[frame_num] = x
                             frame_num += 1
                         else:
