@@ -181,7 +181,7 @@ class JPL_Dataset(Dataset):
         x_list = [0, 0, 0]
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        first_id = feature_json['frames'][0]['frame_id']
+        first_id = feature_json['frames'][hop]['frame_id']
         for index_body, body in enumerate(self.body_part):
             if body:
                 index = 0
