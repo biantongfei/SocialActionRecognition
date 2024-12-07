@@ -6,7 +6,7 @@ from draw_utils import plot_confusion_matrix
 from DataLoader import Pose_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, intention_classes, \
-    attitude_classes, action_classes, dgstgcn_batch_size, r3d_batch_size
+    attitude_classes, jpl_action_classes, dgstgcn_batch_size, r3d_batch_size
 
 import torch
 from torch.nn import functional
@@ -61,7 +61,7 @@ def draw_confusion_martix(model_path):
     act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
     act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
     print('act_acc: %.2f, act_f1: %.4f' % (act_acc * 100, act_f1))
-    plot_confusion_matrix(act_y_true, act_y_pred, action_classes, sub_name="cm_action")
+    plot_confusion_matrix(act_y_true, act_y_pred, jpl_action_classes, sub_name="cm_action")
 
 
 def transform_preframe_result(y_true, y_pred, sequence_length):
