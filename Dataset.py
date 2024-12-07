@@ -208,7 +208,6 @@ class JPL_Dataset(Dataset):
                         frame = feature_json['frames'][index]
                         if frame['frame_id'] % self.frame_sample_hop == hop:
                             if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
-                                print(hop, frame['frame_id'], first_id, frame_num)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
                             else:
@@ -288,6 +287,7 @@ class JPL_Dataset(Dataset):
         return x_list, label
 
     def __getitem__(self, idx):
+        print(idx)
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
