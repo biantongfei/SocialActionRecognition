@@ -73,6 +73,13 @@ def get_l_pair(body_part):
     return l_pair
 
 
+def get_first_id(feature_json, frame_sample_hop, hop):
+    for frame in feature_json['frames']:
+        if frame['frame_id'] % frame_sample_hop == hop:
+            return frame['frame_id']
+    return -1
+
+
 class JPL_Dataset(Dataset):
     def __init__(self, data_files, augment_method, body_part, model, frame_sample_hop, subset, only_visible_point=False,
                  sequence_length=99999):
@@ -175,16 +182,17 @@ class JPL_Dataset(Dataset):
         return features, label
 
     def get_graph_data_from_file(self, file, hop):
-        print(file, hop)
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
         x_list = [0, 0, 0]
         frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
         video_frame_num = len(feature_json['frames'])
-        first_id = feature_json['frames'][hop]['frame_id']
+        # first_id = feature_json['frames'][hop]['frame_id']
+        first_id = get_first_id(feature_json, self.frame_sample_hop, hop)
+        if first_id == -1:
+            return 0, 0
         for index_body, body in enumerate(self.body_part):
-            print(body)
             if body:
                 index = 0
                 b_p = [False, False, False]
