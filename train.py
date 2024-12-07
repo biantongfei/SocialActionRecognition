@@ -11,7 +11,7 @@ model = 'gcn_lstm'
 # framework = 'tree'
 framework = 'chain'
 ori_video = False
-frame_sample_hop = 3
+frame_sample_hop = 1
 sequence_length = 30
 
 # JPL Dataset
@@ -38,9 +38,9 @@ sweep_config = {
         'goal': 'maximize',
     },
     'parameters': {
-        'epochs': {"values": [5]},
+        'epochs': {"values": [50]},
         'loss_type': {"values": ['sum']},
-        'times': {'values': [ii for ii in range(1)]},
+        'times': {'values': [ii for ii in range(10)]},
         'keypoints_hidden_dim': {"values": [16]},
         'time_hidden_dim': {"values": [4]}
     }
