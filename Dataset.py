@@ -184,6 +184,7 @@ class JPL_Dataset(Dataset):
         video_frame_num = len(feature_json['frames'])
         first_id = feature_json['frames'][hop]['frame_id']
         for index_body, body in enumerate(self.body_part):
+            print(body)
             if body:
                 index = 0
                 b_p = [False, False, False]
@@ -219,6 +220,8 @@ class JPL_Dataset(Dataset):
                                     x = torch.tensor(frame_feature)
                                     x_tensor[frame_num] = x
                                     frame_num += 1
+                        else:
+                            frame_num += 1
                 if frame_num == 0:
                     return 0, 0
                 x_list[index_body] = x_tensor
