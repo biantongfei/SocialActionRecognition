@@ -13,11 +13,11 @@ from Dataset import get_inputs_size, body_point_num, head_point_num, hands_point
 from graph import Graph, ConvTemporalGraphical
 from MSG3D.msg3d import Model as MsG3d
 from DGSTGCN.dgstgcn import Model as DG_Model
-from constants import intention_classes, attitude_classes, action_classes, device, dtype
+from constants import intention_classes, attitude_classes, jpl_action_classes, device, dtype
 
 intention_class_num = len(intention_classes)
 attitude_class_num = len(attitude_classes)
-action_class_num = len(action_classes)
+action_class_num = len(jpl_action_classes)
 
 
 class Classifier(nn.Module):
