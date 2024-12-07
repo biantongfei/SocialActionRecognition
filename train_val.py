@@ -121,10 +121,10 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 
 def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     run = wandb.init()
-        # sequence_length = wandb.config.sequence_length
-        # print(
-        #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
-        #                                                               wandb.config.times))
+    # sequence_length = wandb.config.sequence_length
+    # print(
+    #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
+    #                                                               wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     performance_model = {}
     num_workers = 8
@@ -164,11 +164,11 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length, tr
             net = GNN(body_part=body_part, framework=framework, model=model,
                       sequence_length=sequence_length, frame_sample_hop=frame_sample_hop,
                       keypoint_hidden_dim=wandb.config.keypoints_hidden_dim,
-                      time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=64, fc_hidden2=16)
+                      time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=64, fc_hidden2=16, is_harper=False)
         else:
             net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
                       frame_sample_hop=frame_sample_hop, keypoint_hidden_dim=16, time_hidden_dim=2, fc_hidden1=32,
-                      fc_hidden2=16)
+                      fc_hidden2=16, is_harper=False)
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
