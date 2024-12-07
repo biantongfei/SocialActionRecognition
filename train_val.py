@@ -119,7 +119,7 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
     return weights / weights.sum()
 
 
-def train_jpl(wandb, model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
+def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     run = wandb.init()
         # sequence_length = wandb.config.sequence_length
         # print(
