@@ -50,8 +50,11 @@ else:
 dtype = torch.float32
 intention_classes = ['Interacting', 'Interested', 'Not_Interested']
 attitude_classes = ['Positive', 'Negative', 'Not_Interacting']
-action_classes = ['Handshake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Point', 'Gaze', 'Leave',
-                  'No_Response']
+jpl_action_classes = ['Handshake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Point', 'Gaze', 'Leave',
+                      'No_Response']
+harper_action_class = ['Walk_Crash', 'Walk_Stop', 'Walk_Avoid', 'Walk_Touch', 'Walk_Kick', 'Walk_Punch',
+                       'Circular_Walk', 'Circular_Follow_Touch', 'Circular_Follow_Avoid', 'Circular_Follow_Crash']
+attack_class = ['Attack', 'Normal', 'Danger', 'Not_Interacting']
 
 body_point_num = 23
 halpe_body_point_num = 26
@@ -85,3 +88,5 @@ hand_l_pair = [[91, 92], [92, 93], [93, 94], [94, 95], [91, 96], [96, 97], [97, 
                [121, 122], [122, 123],
                [123, 124], [112, 125], [125, 126], [126, 127], [127, 128], [112, 129], [129, 130], [130, 131],
                [131, 132]]
+visible_threshold_score = 0.5
+# visible_threshold_score = 0.7

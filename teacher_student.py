@@ -3,7 +3,7 @@ import os
 from DataLoader import Pose_DataLoader
 from constants import device, gcn_batch_size, learning_rate
 from Models import GNN, MSGCN
-from train_val import filter_not_interacting_sample, dynamic_weight_average
+from train_val import filter_not_interacting_sample
 from Dataset import get_jpl_dataset
 
 import torch
@@ -91,23 +91,17 @@ def train_student(student_model, student_trainset, student_valset, student_tests
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
-    prev_losses = [1, 1]
     while epoch <= wandb.config.epochs:
         student_net.train()
         print('Training student model')
         progress_bar = tqdm(total=len(student_train_loader), desc='Progress')
         for index, student_data in enumerate(student_train_loader):
-            print(index)
             progress_bar.update(1)
             student_inputs, (int_labels, att_labels, act_labels) = student_data
             int_labels, att_labels, act_labels = int_labels.to(dtype=torch.long, device=device), att_labels.to(
                 dtype=torch.long, device=device), act_labels.to(dtype=torch.long, device=device)
             teacher_int_outputs, teacher_att_outputs, teacher_act_outputs = load_teacher_outputs(index, batch_size)
-            print(teacher_int_outputs.shape)
-            print(teacher_att_outputs.shape)
-            print(teacher_act_outputs.shape)
             student_int_outputs, student_att_outputs, student_act_outputs = student_net(student_inputs)
-            # int_outputs, att_outputs, act_outputs, _ = net(inputs)
             loss_1 = F.cross_entropy(student_int_outputs, int_labels)
             loss_2 = F.cross_entropy(student_att_outputs, att_labels)
             loss_3 = F.cross_entropy(student_act_outputs, act_labels)
@@ -288,19 +282,19 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [40, 50]},
+            'epochs': {"values": [50]},
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.25, 0.5, 0.75]},
-            'T': {'values': [4, 6, 8]},
+            'loss_weight': {'values': [0.5, 0.6, 0.7, 0.8]},
+            'T': {'values': [6]},
             # 'T': {'values': [3]},
-            'learning_rate': {'values': [1e-2, 1e-3, 1e-4]},
+            'learning_rate': {'values': [1e-2]},
             # 'learning_rate': {'values': [1e-3]},
             'keypoint_hidden_dim': {'values': [16]},
-            'time_hidden_dim': {'values': [4]},
-            'fc_hidden1': {'values': [64]},
-            'fc_hidden2': {'values': [16]},
+            'time_hidden_dim': {'values': [2, 4]},
+            'fc_hidden1': {'values': [32, 64]},
+            'fc_hidden2': {'values': [8, 16]},
             'student_body_part': {'values': [student_body_part]},
             'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
             'student_sequence_length': {'values': [student_sequence_length]},

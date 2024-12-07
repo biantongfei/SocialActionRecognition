@@ -7,7 +7,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair
+from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair, \
+    visible_threshold_score
 
 video_path = '../jpl_augmented_videos/'
 
@@ -73,7 +74,8 @@ def get_l_pair(body_part):
 
 
 class JPL_Dataset(Dataset):
-    def __init__(self, data_files, augment_method, body_part, model, frame_sample_hop, subset, sequence_length=99999):
+    def __init__(self, data_files, augment_method, body_part, model, frame_sample_hop, subset, only_visible_point=False,
+                 sequence_length=99999):
         super(Dataset, self).__init__()
         self.files = data_files
         self.data_path = get_data_path(augment_method=augment_method)
@@ -83,37 +85,40 @@ class JPL_Dataset(Dataset):
             self.data_path += 'validation/'
         elif subset == 'test':
             self.data_path += 'test/'
+        self.subset = subset
         self.body_part = body_part
         self.model = model
         self.frame_sample_hop = frame_sample_hop
+        self.only_visible_point = only_visible_point
         self.sequence_length = sequence_length
         self.features, self.labels = [], []
         index = 0
         for file in self.files:
-            if self.model in ['stgcn', 'msgcn', 'dgstgcn']:
-                x, label = self.get_stgraph_data_from_file(file)
-                self.features.append(x)
-            elif 'gcn_' in self.model:
-                x_list, label = self.get_graph_data_from_file(file)
-                if type(x_list) == int:
-                    continue
+            for hop in range(self.frame_sample_hop):
+                if self.model in ['stgcn', 'msgcn', 'dgstgcn']:
+                    x, label = self.get_stgraph_data_from_file(file, hop)
+                    self.features.append(x)
+                elif 'gcn_' in self.model:
+                    x_list, label = self.get_graph_data_from_file(file, hop)
+                    if type(x_list) == int:
+                        continue
+                    else:
+                        self.features.append(x_list)
                 else:
-                    self.features.append(x_list)
-            else:
-                feature, label = self.get_data_from_file(file)
-                if type(feature) == int or feature.size == 0 or feature.ndim == 0:
-                    continue
-                elif index == 0:
-                    index += 1
-                    if self.model in ['avg', 'perframe']:
-                        self.features = feature
-                    elif self.model in ['lstm', 'conv1d', 'tran']:
-                        self.features = [feature]
-                else:
-                    if self.model in ['avg', 'perframe']:
-                        self.features = np.append(self.features, feature, axis=0)
-                    elif self.model in ['lstm', 'conv1d', 'tran']:
-                        self.features.append(feature)
+                    feature, label = self.get_data_from_file(file)
+                    if type(feature) == int or feature.size == 0 or feature.ndim == 0:
+                        continue
+                    elif index == 0:
+                        index += 1
+                        if self.model in ['avg', 'perframe']:
+                            self.features = feature
+                        elif self.model in ['lstm', 'conv1d', 'tran']:
+                            self.features = [feature]
+                    else:
+                        if self.model in ['avg', 'perframe']:
+                            self.features = np.append(self.features, feature, axis=0)
+                        elif self.model in ['lstm', 'conv1d', 'tran']:
+                            self.features.append(feature)
             if model == 'perframe':
                 self.labels += label
             else:
@@ -169,7 +174,7 @@ class JPL_Dataset(Dataset):
             features = torch.from_numpy(features)
         return features, label
 
-    def get_graph_data_from_file(self, file):
+    def get_graph_data_from_file(self, file, hop):
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
             f.close()
@@ -196,17 +201,18 @@ class JPL_Dataset(Dataset):
                             frame_num += 1
                         else:
                             index += 1
-                            if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
+                            if frame['frame_id'] - first_id > self.sequence_length:
                                 break
-                            else:
-                                box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
-                                    frame['box'][3]
+                            elif frame['frame_id'] % self.frame_sample_hop == hop:
                                 frame_feature = np.array(frame['keypoints'])
                                 frame_feature = get_body_part(frame_feature, b_p)
                                 frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                                 frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                                 # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
                                 # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                if self.only_visible_point:
+                                    binary_result = (frame_feature[:, 2] > visible_threshold_score).astype(int)
+                                    frame_feature[:, 2] = binary_result
                                 x = torch.tensor(frame_feature)
                                 x_tensor[frame_num] = x
                                 frame_num += 1
@@ -216,7 +222,7 @@ class JPL_Dataset(Dataset):
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
         return x_list, label
 
-    def get_stgraph_data_from_file(self, file):
+    def get_stgraph_data_from_file(self, file, hop):
         x_list = [0, 0, 0]
         with open(self.data_path + file, 'r') as f:
             feature_json = json.load(f)
@@ -249,7 +255,7 @@ class JPL_Dataset(Dataset):
                             index += 1
                             if frame['frame_id'] - first_id > int(self.sequence_length / self.frame_sample_hop):
                                 break
-                            elif frame['frame_id'] % self.frame_sample_hop == 0:
+                            elif frame['frame_id'] % self.frame_sample_hop == hop:
                                 box_x, box_y, box_width, box_height = frame['box'][0], frame['box'][1], frame['box'][2], \
                                     frame['box'][3]
                                 frame_feature = np.array(frame['keypoints'])
@@ -258,6 +264,9 @@ class JPL_Dataset(Dataset):
                                 frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                                 # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
                                 # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+                                if self.only_visible_point:
+                                    binary_result = (frame_feature[:, 2] > visible_threshold_score).astype(int)
+                                    frame_feature[:, 2] = binary_result
                                 x_l[:, frame_num, :, 0] = frame_feature.T
                                 frame_num += 1
                 x_list[index_body] = x_l
@@ -483,7 +492,7 @@ class HARPER_Dataset(Dataset):
                 self.labels.append(label)
 
 
-def get_harper_dataset(body_part, sequence_length):
+def get_harper_dataset(body_part, sequence_length, GT=False):
     print('Loading data from HARPER dataset')
     data_path = '../HARPER/'
     train_files = os.listdir(data_path + 'train/pose_sequences/')
