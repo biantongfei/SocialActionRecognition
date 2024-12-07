@@ -1,6 +1,6 @@
 import sys
 from Dataset import get_inputs_size, get_l_pair
-from constants import body_point_num, head_point_num
+from constants import coco_body_point_num, head_point_num
 
 sys.path.insert(0, '')
 

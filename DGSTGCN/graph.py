@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from constants import body_point_num, head_point_num
+from constants import coco_body_point_num, head_point_num
 from Dataset import get_inputs_size, get_l_pair
 
 

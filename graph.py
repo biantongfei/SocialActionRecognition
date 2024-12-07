@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from Dataset import get_l_pair, get_inputs_size, body_point_num, head_point_num
+from Dataset import get_l_pair, get_inputs_size, coco_body_point_num, head_point_num
 
 
 class Graph():

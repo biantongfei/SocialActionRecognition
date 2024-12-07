@@ -202,13 +202,19 @@ class JPL_Dataset(Dataset):
                 frame_num = 0
                 while frame_num < int(self.sequence_length / self.frame_sample_hop):
                     if index == video_frame_num:
-                        x_tensor[frame_num] = x
+                        if self.only_visible_point:
+                            x_tensor[frame_num] = torch.zeros((int(input_size / 3), 3))
+                        else:
+                            x_tensor[frame_num] = x
                         frame_num += 1
                     else:
                         frame = feature_json['frames'][index]
                         if frame['frame_id'] % self.frame_sample_hop == hop:
                             if frame['frame_id'] > first_id and frame['frame_id'] > frame_num * self.frame_sample_hop:
-                                x_tensor[frame_num] = x
+                                if self.only_visible_point:
+                                    x_tensor[frame_num] = torch.zeros((int(input_size / 3), 3))
+                                else:
+                                    x_tensor[frame_num] = x
                                 frame_num += 1
                             else:
                                 index += 1
@@ -414,89 +420,89 @@ class ImagesDataset(Dataset):
 
             self.videos[index] = images
 
-
-# # class HARPER_Dataset(Dataset):
-# #     def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle, train=False):
-# #         self.data_path = data_path
-# #         self.files = files
-# #         self.sequence_length = sequence_length
-# #         self.frames_before_event = frames_before_event
-# #         self.multi_angle = multi_angle
-# #         self.train = train
-# #         self.features = []
-# #         self.labels = []
-# #         self.get_pose_sequences()
-# #
-# #     def __getitem__(self, item):
-# #         return self.features[item], self.labels[item]
-# #
-# #     def __len__(self):
-# #         return len(self.files) * 2 if self.train else len(self.files)
-# #
-# #     def get_pose_sequences(self):
-# #         for file in self.files:
-# #             with open(self.data_path + file, 'r') as f:
-# #                 feature_json = json.load(f)
-# #                 f.close()
-# #             frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-# #             x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
-# #             frame_num = 0
-# #             while frame_num < self.sequence_length:
-# #                 frame = feature_json['frames'][index]
-# #                 frame_feature = np.array(frame['keypoints'])
-# #                 frame_feature = frame_feature.reshape((133, 3))
-# #                 index += 1
-# #                 frame_feature = get_body_part(frame_feature, b_p)
-# #                 frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
-# #                 frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
-# #                 # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-# #                 # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-# #                 x = torch.tensor(frame_feature)
-# #                 x_tensor[frame_num] = x
-# #                 frame_num += 1
-# #             if frame_num == 0:
-# #                 return 0, 0
-# #             x_list[index_body] = x_tensor
-# #             label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class'], \
-# #                 feature_json['will_contact']
-# #             self.features.append(x_list)
-# #             self.labels.append(label)
-# #
-# #         if self.train:
-# #             for file in self.files:
-# #                 with open(self.data_path + file, 'r') as f:
-# #                     feature_json = json.load(f)
-# #                     f.close()
-# #                 x_list = [0, 0, 0]
-# #                 frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
-# #                 for index_body, body in enumerate(self.body_part):
-# #                     if body:
-# #                         index = 0
-# #                         b_p = [False, False, False]
-# #                         b_p[index_body] = True
-# #                         input_size = get_inputs_size(b_p)
-# #                         x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
-# #                         frame_num = 0
-# #                         while frame_num < self.sequence_length:
-# #                             frame = feature_json['frames'][index]
-# #                             frame_feature = np.array(frame['keypoints'])
-# #                             frame_feature = frame_feature.reshape((133, 3))
-# #                             index += 1
-# #                             frame_feature = get_body_part(frame_feature, b_p)
-# #                             frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
-# #                             frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
-# #                             # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
-# #                             # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
-# #                             x = torch.tensor(frame_feature)
-# #                             x_tensor[frame_num] = x
-# #                             frame_num += 1
-# #                         if frame_num == 0:
-# #                             return 0, 0
-# #                         x_list[index_body] = x_tensor
-# #                 label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class'], \
-# #                     feature_json['will_contact']
-# #                 self.features.append(x_list)
-# #                 self.labels.append(label)
+# class HARPER_Dataset(Dataset):
+#     def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle, train=False):
+#         self.data_path = data_path
+#         self.files = files
+#         self.sequence_length = sequence_length
+#         self.frames_before_event = frames_before_event
+#         self.multi_angle = multi_angle
+#         self.train = train
+#         self.features = []
+#         self.labels = []
+#         self.get_pose_sequences()
+#
+#     def __getitem__(self, item):
+#         return self.features[item], self.labels[item]
+#
+#     def __len__(self):
+#         return len(self.features)
+#
+#     def get_pose_sequences(self):
+#         for file in self.files:
+#             with open(self.data_path + file, 'r') as f:
+#                 feature_json = json.load(f)
+#                 f.close()
+#             if self.multi_angle:
+#                 frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+#             x_tensor = torch.zeros((self.sequence_length, harper_body_point_num, 3))
+#             frame_num = 0
+#             while frame_num < self.sequence_length:
+#                 frame = feature_json['frames'][index]
+#                 frame_feature = np.array(frame['keypoints'])
+#                 frame_feature = frame_feature.reshape((133, 3))
+#                 index += 1
+#                 frame_feature = get_body_part(frame_feature, b_p)
+#                 frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+#                 frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+#                 # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+#                 # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+#                 x = torch.tensor(frame_feature)
+#                 x_tensor[frame_num] = x
+#                 frame_num += 1
+#             if frame_num == 0:
+#                 return 0, 0
+#             x_list[index_body] = x_tensor
+#             label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class'], \
+#                 feature_json['will_contact']
+#             self.features.append(x_list)
+#             self.labels.append(label)
+#
+#         if self.train:
+#             for file in self.files:
+#                 with open(self.data_path + file, 'r') as f:
+#                     feature_json = json.load(f)
+#                     f.close()
+#                 x_list = [0, 0, 0]
+#                 frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+#                 for index_body, body in enumerate(self.body_part):
+#                     if body:
+#                         index = 0
+#                         b_p = [False, False, False]
+#                         b_p[index_body] = True
+#                         input_size = get_inputs_size(b_p)
+#                         x_tensor = torch.zeros((self.sequence_length, int(input_size / 3), 3))
+#                         frame_num = 0
+#                         while frame_num < self.sequence_length:
+#                             frame = feature_json['frames'][index]
+#                             frame_feature = np.array(frame['keypoints'])
+#                             frame_feature = frame_feature.reshape((133, 3))
+#                             index += 1
+#                             frame_feature = get_body_part(frame_feature, b_p)
+#                             frame_feature[:, 0] = 2 * (0.5 - frame_feature[:, 0] / frame_width)
+#                             frame_feature[:, 1] = 2 * (0.5 - frame_feature[:, 1] / frame_height)
+#                             # frame_feature[:, 0] = (frame_feature[:, 0] - box_x) / box_width
+#                             # frame_feature[:, 1] = (frame_feature[:, 1] - box_y) / box_height
+#                             x = torch.tensor(frame_feature)
+#                             x_tensor[frame_num] = x
+#                             frame_num += 1
+#                         if frame_num == 0:
+#                             return 0, 0
+#                         x_list[index_body] = x_tensor
+#                 label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class'], \
+#                     feature_json['will_contact']
+#                 self.features.append(x_list)
+#                 self.labels.append(label)
 #
 #
 # def get_harper_dataset(body_part, sequence_length, multi_angle=False):

@@ -3,7 +3,8 @@ import torch
 import torch.nn.utils.rnn as rnn_utils
 from torch_geometric.utils import add_self_loops
 
-from constants import body_point_num, head_point_num, hands_point_num, body_l_pair, head_l_pair, hand_l_pair, device
+from constants import coco_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, head_l_pair, hand_l_pair, \
+    device
 from Models import MSGCN
 
 
@@ -36,10 +37,9 @@ class Pose_DataLoader(DataLoader):
             self.collate_fn = self.stgcn_collate_fn
         self.sequence_length = sequence_length
         self.frame_sample_hop = frame_sample_hop
-        self.body_l_pair_num = len(body_l_pair)
+        self.body_l_pair_num = len(coco_body_l_pair)
         self.head_l_pair_num = len(head_l_pair)
         self.hand_l_pair_num = len(hand_l_pair)
-        self.contact = contact
 
     def conv1d_collate_fn(self, data):
         input, int_label, att_label, act_label, contact_label = None, [], [], [], []
@@ -59,21 +59,21 @@ class Pose_DataLoader(DataLoader):
 
     def gcn_collate_fn(self, data):
         x_tensors_list = [
-            torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * body_point_num, 3)),
+            torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * coco_body_point_num, 3)),
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num, 3)),
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num, 3))]
         edge_index_list = [torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
-                2 * self.body_l_pair_num + body_point_num))).to(torch.int64), torch.zeros((2, len(data) * int(
+                2 * self.body_l_pair_num + coco_body_point_num))).to(torch.int64), torch.zeros((2, len(data) * int(
             self.sequence_length / self.frame_sample_hop) * (2 * self.head_l_pair_num + head_point_num))).to(
             torch.int64), torch.zeros((2, len(data) * int(self.sequence_length / self.frame_sample_hop) * (
                 2 * self.hand_l_pair_num + hands_point_num))).to(torch.int64)]
-        batch = [torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * body_point_num)).to(
+        batch = [torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * coco_body_point_num)).to(
             torch.int64),
             torch.zeros(len(data) * int(self.sequence_length / self.frame_sample_hop) * head_point_num).to(torch.int64),
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * hands_point_num)).to(
                 torch.int64)]
-        point_nums = [body_point_num, head_point_num, hands_point_num]
-        edge_nums = [2 * (self.body_l_pair_num) + (body_point_num), 2 * self.head_l_pair_num + head_point_num,
+        point_nums = [coco_body_point_num, head_point_num, hands_point_num]
+        edge_nums = [2 * (self.body_l_pair_num) + (coco_body_point_num), 2 * self.head_l_pair_num + head_point_num,
                      2 * self.hand_l_pair_num + hands_point_num]
         int_label, att_label, act_label, contact_label = [], [], [], []
         frame_num = 0
@@ -81,13 +81,13 @@ class Pose_DataLoader(DataLoader):
             for ii in range(int(self.sequence_length / self.frame_sample_hop)):
                 for i in range(len(d[0])):
                     if i == 0:
-                        edge_index = torch.Tensor(body_l_pair).t()
+                        edge_index = torch.Tensor(coco_body_l_pair).t()
                     elif i == 1:
                         edge_index = torch.Tensor(head_l_pair).t() - torch.full((2, len(head_l_pair)),
-                                                                                fill_value=body_point_num)
+                                                                                fill_value=coco_body_point_num)
                     else:
                         edge_index = torch.Tensor(hand_l_pair).t() - torch.full((2, len(hand_l_pair)),
-                                                                                fill_value=head_point_num + body_point_num)
+                                                                                fill_value=head_point_num + coco_body_point_num)
                     if type(d[0][i]) == int:
                         continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
@@ -105,11 +105,8 @@ class Pose_DataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-            if self.contact:
-                contact_label.append(d[1][3])
         lables = (torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
-                  torch.Tensor(contact_label)) if self.contact else (
-            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
+                  torch.Tensor(contact_label))
         return (x_tensors_list, edge_index_list, batch), lables
 
     def stgcn_collate_fn(self, data):
@@ -127,9 +124,5 @@ class Pose_DataLoader(DataLoader):
             int_label.append(d[1][0])
             att_label.append(d[1][1])
             act_label.append(d[1][2])
-            if self.contact:
-                contact_label.append(d[1][2])
         return input, (
-            torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label),
-            torch.Tensor(contact_label)) if self.contact else (
             torch.Tensor(int_label), torch.Tensor(att_label), torch.Tensor(act_label))
