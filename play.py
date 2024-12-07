@@ -26,16 +26,16 @@ for file in files:
             # center2 = np.mean(seq2, axis=0)
             # min_distance = ((center1[0] - center2[0]) ** 2 + (center1[2] - center2[2]) ** 2) ** 0.5
             # distance = ((center1[0]) ** 2 + (center1[2]) ** 2) ** 0.5
-            min_distance = float('inf')
-            for point1 in seq1:
-                for point2 in seq2:
-                    distance = ((point1[0] - point2[0]) ** 2 + (point1[2] - point2[2]) ** 2) ** 0.5
-                    if distance < min_distance:
-                        min_distance = distance
-            print(file, i, min_distance)
+            # min_distance = float('inf')
+            # for point1 in seq1:
+            #     for point2 in seq2:
+            #         distance = ((point1[0] - point2[0]) ** 2 + (point1[2] - point2[2]) ** 2) ** 0.5
+            #         if distance < min_distance:
+            #             min_distance = distance
+            # print(file, i, min_distance)
             # print(data[i].keys())
             # print(data[i])
-            # print(data[20]['spot_joints_3d'])
+            print(len(data[i]['human_joints_2d']))
             # print(file, len(data.keys()))
             # print(data[0]['rgb_camera_name'])
         break

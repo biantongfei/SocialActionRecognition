@@ -56,20 +56,19 @@ harper_action_class = ['Walk_Crash', 'Walk_Stop', 'Walk_Avoid', 'Walk_Touch', 'W
                        'Circular_Walk', 'Circular_Follow_Touch', 'Circular_Follow_Avoid', 'Circular_Follow_Crash']
 attack_class = ['Attack', 'Normal', 'Danger', 'Not_Interacting']
 
-body_point_num = 23
-halpe_body_point_num = 26
+coco_body_point_num = 23
 head_point_num = 68
 hands_point_num = 42
-valset_rate = 0.1
-testset_rate = 0.4
-video_fps = 30
+harper_body_point_num = 23
+jpl_video_fps = 30
+harper_video_fps = 10
 
-body_l_pair = [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
-               [5, 7], [7, 9], [6, 8], [8, 10],  # Body
-               [5, 6], [11, 12], [5, 11], [6, 12],
-               # [0, 5], [0, 6], [1, 2],
-               [11, 13], [12, 14], [13, 15], [14, 16],
-               [15, 17], [15, 18], [15, 19], [16, 20], [16, 21], [16, 22]]
+coco_body_l_pair = [[0, 1], [0, 2], [1, 3], [2, 4],  # Head
+                    [5, 7], [7, 9], [6, 8], [8, 10],  # Body
+                    [5, 6], [11, 12], [5, 11], [6, 12],
+                    # [0, 5], [0, 6], [1, 2],
+                    [11, 13], [12, 14], [13, 15], [14, 16],
+                    [15, 17], [15, 18], [15, 19], [16, 20], [16, 21], [16, 22]]
 head_l_pair = [[23, 24], [24, 25], [25, 26], [26, 27], [27, 28], [28, 29], [29, 30], [30, 31], [31, 32],
                [32, 33], [33, 34], [34, 35],
                [35, 36], [36, 37], [37, 38], [38, 39], [40, 41], [41, 42], [42, 43], [43, 44], [45, 46],
@@ -88,5 +87,29 @@ hand_l_pair = [[91, 92], [92, 93], [93, 94], [94, 95], [91, 96], [96, 97], [97, 
                [121, 122], [122, 123],
                [123, 124], [112, 125], [125, 126], [126, 127], [127, 128], [112, 129], [129, 130], [130, 131],
                [131, 132]]
+harper_l_pair = [
+    [0, 1],  # hip -> ab
+    [1, 2],  # ab -> chest
+    [2, 3],  # chest -> neck
+    [3, 4],  # neck -> head
+    [3, 5],  # neck, L shoulder
+    [5, 6],  # L shoulder, L U arm
+    [6, 7],  # L u arm, L l f arm
+    [7, 8],  # L f arm, L hand
+    [3, 9],  # neck, R shoulder
+    [9, 10],  # R shoulder, R U arm
+    [10, 11],  # R u arm, R l f arm
+    [11, 12],  # R f arm, R hand
+    [0, 13],  # hip, LShin
+    [13, 14],  # LShin, LTigh
+    [14, 15],  # LTigh, LFoot
+    [15, 16],  # LFoot, Ltoe
+    [0, 17],  # hip, RShin
+    [17, 18],  # RShin, RTigh
+    [18, 19],  # RTigh, RFoot
+    [19, 20],  # RFoot,RLtoe
+    [6, 13],  # LShin to L u arm  (hip to shoulder)
+    [10, 17],  # RShin to R u arm  (hip to shoulder)
+]
 visible_threshold_score = 0.5
 # visible_threshold_score = 0.7

@@ -9,7 +9,7 @@ from torch_geometric.nn import GCN, TopKPooling
 from torch_geometric.utils import add_self_loops
 import torchvision.models.video as models
 
-from Dataset import get_inputs_size, body_point_num, head_point_num, hands_point_num
+from Dataset import get_inputs_size, coco_body_point_num, head_point_num, hands_point_num, harper_body_point_num
 from graph import Graph, ConvTemporalGraphical
 from MSG3D.msg3d import Model as MsG3d
 from DGSTGCN.dgstgcn import Model as DG_Model
@@ -244,7 +244,7 @@ class Transformer(nn.Module):
 
 class GNN(nn.Module):
     def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
-                 time_hidden_dim, fc_hidden1, fc_hidden2, train_classifier=True):
+                 time_hidden_dim, fc_hidden1, fc_hidden2, is_harper, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
@@ -259,6 +259,7 @@ class GNN(nn.Module):
         self.fc_hidden2 = fc_hidden2
         self.pooling = False
         self.pooling_rate = 0.6 if self.pooling else 1
+        self.body_point_num = harper_body_point_num if is_harper else coco_body_point_num
         self.log_sigma1 = nn.Parameter(torch.tensor(0.0))
         self.log_sigma2 = nn.Parameter(torch.tensor(0.0))
         self.log_sigma3 = nn.Parameter(torch.tensor(0.0))
@@ -374,7 +375,7 @@ class GNN(nn.Module):
                 # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
             x_body = x_body.view(-1, int(self.sequence_length / self.frame_sample_hop), self.keypoint_hidden_dim * (
-                body_point_num))
+                self.body_point_num))
             x_list.append(x_body)
         if self.body_part[1]:
             x_head, edge_index_head, batch_head = data[0][1].to(dtype=dtype, device=device), data[1][1].to(device), \
