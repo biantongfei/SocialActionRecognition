@@ -126,10 +126,10 @@ class JPL_Dataset(Dataset):
                             self.features = np.append(self.features, feature, axis=0)
                         elif self.model in ['lstm', 'conv1d', 'tran']:
                             self.features.append(feature)
-            if model == 'perframe':
-                self.labels += label
-            else:
-                self.labels.append(label)
+                if model == 'perframe':
+                    self.labels += label
+                else:
+                    self.labels.append(label)
 
     def get_data_from_file(self, file):
         with open(self.data_path + file, 'r') as f:
@@ -287,9 +287,6 @@ class JPL_Dataset(Dataset):
         return x_list, label
 
     def __getitem__(self, idx):
-        print(idx)
-        self.features[idx]
-        self.labels[idx]
         return self.features[idx], self.labels[idx]
 
     def __len__(self):
