@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 
 from constants import coco_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, head_l_pair, hand_l_pair, \
-    visible_threshold_score, harper_l_pair, harper_body_point_num
+    visible_threshold_score, harper_l_pair, harper_body_point_num, camera_name_list, contact_min_distance
 
 video_path = '../jpl_augmented_videos/'
 
@@ -192,6 +192,7 @@ class JPL_Dataset(Dataset):
         first_id = get_first_id(feature_json, self.frame_sample_hop, hop)
         if first_id == -1:
             return 0, 0
+        useful_frame = 0
         for index_body, body in enumerate(self.body_part):
             if body:
                 index = 0
@@ -235,9 +236,10 @@ class JPL_Dataset(Dataset):
                                     x = torch.tensor(frame_feature)
                                     x_tensor[frame_num] = x
                                     frame_num += 1
+                                    useful_frame += 1
                         else:
                             frame_num += 1
-                if frame_num == 0:
+                if frame_num == 0 or useful_frame < 4:
                     return 0, 0
                 x_list[index_body] = x_tensor
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
@@ -444,10 +446,13 @@ class ImagesDataset(Dataset):
 #             with open(self.data_path + file, 'r') as f:
 #                 feature_json = json.load(f)
 #                 f.close()
+#             for i in range(len(feature_json['min_distance'])):
+#
+#             action_start_frame =
 #             if self.multi_angle:
 #                 x_tensor = torch.zeros((6, self.sequence_length, harper_body_point_num, 3))
-#
-#                 frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
+#                 for camera_index, camera in enumerate(camera_name_list):
+#                     frame_width, frame_height = feature_json['frame_size'][0], feature_json['frame_size'][1]
 #
 #                 while frame_num < self.sequence_length:
 #                     frame = feature_json['frames'][index]

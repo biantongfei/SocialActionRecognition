@@ -55,6 +55,7 @@ jpl_action_classes = ['Handshake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Poin
 harper_action_class = ['Walk_Crash', 'Walk_Stop', 'Walk_Avoid', 'Walk_Touch', 'Walk_Kick', 'Walk_Punch',
                        'Circular_Walk', 'Circular_Follow_Touch', 'Circular_Follow_Avoid', 'Circular_Follow_Crash']
 attack_class = ['Attack', 'Normal', 'Danger', 'Not_Interacting']
+camera_name_list = ['hand', 'frontleft', 'frontright', 'left', 'right', 'back']
 
 coco_body_point_num = 23
 head_point_num = 68
@@ -113,3 +114,4 @@ harper_l_pair = [
 ]
 visible_threshold_score = 0.5
 # visible_threshold_score = 0.7
+contact_min_distance = 0.1
