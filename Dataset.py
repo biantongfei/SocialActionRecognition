@@ -192,7 +192,6 @@ class JPL_Dataset(Dataset):
         first_id = get_first_id(feature_json, self.frame_sample_hop, hop)
         if first_id == -1:
             return 0, 0
-        useful_frame = 0
         for index_body, body in enumerate(self.body_part):
             if body:
                 index = 0
@@ -236,11 +235,10 @@ class JPL_Dataset(Dataset):
                                     x = torch.tensor(frame_feature)
                                     x_tensor[frame_num] = x
                                     frame_num += 1
-                                    useful_frame += 1
                         else:
                             index += 1
                             frame_num += 1
-                if frame_num == 0 or useful_frame < 3:
+                if frame_num == 0:
                     return 0, 0
                 x_list[index_body] = x_tensor
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
