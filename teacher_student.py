@@ -77,7 +77,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
                           sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                           keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
                           time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=wandb.config.fc_hidden1,
-                          fc_hidden2=wandb.config.fc_hidden2)
+                          fc_hidden2=wandb.config.fc_hidden2, is_harper=False)
         batch_size = gcn_batch_size
     student_net.to(device)
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
@@ -282,7 +282,7 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [50]},
+            'epochs': {"values": [50, 60]},
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
