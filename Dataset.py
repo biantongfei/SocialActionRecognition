@@ -27,7 +27,7 @@ def get_tra_test_files(randnum=None):
     tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
     val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
     test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
-    # tra_files = [i for i in tra_files if 'ori_' in i]
+    tra_files = [i for i in tra_files if 'ori_' in i]
 
     if randnum:
         random.seed(randnum)
@@ -238,8 +238,9 @@ class JPL_Dataset(Dataset):
                                     frame_num += 1
                                     useful_frame += 1
                         else:
+                            index += 1
                             frame_num += 1
-                if frame_num == 0 or useful_frame < 2:
+                if frame_num == 0 or useful_frame < 3:
                     return 0, 0
                 x_list[index_body] = x_tensor
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
@@ -421,7 +422,6 @@ class ImagesDataset(Dataset):
                 images[:, i, :, :] = cropped_frame
 
             self.videos[index] = images
-
 
 # class HARPER_Dataset(Dataset):
 #     def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle, train=False):
