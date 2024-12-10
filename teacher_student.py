@@ -286,7 +286,7 @@ if __name__ == '__main__':
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.3, 0.5, 0.7]},
+            'loss_weight': {'values': [0.5]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
             'learning_rate': {'values': [1e-2, 1e-3]},
