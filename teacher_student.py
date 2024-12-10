@@ -256,8 +256,8 @@ if __name__ == '__main__':
     calculate_teacher_outputs('msgcn', teacher_trainset, teacher_batch_size, 30, 1)
     del teacher_trainset
 
-    student_body_part = [True, False, False]
-    student_frame_sample_hop = 1
+    student_body_part = [True, True, True]
+    student_frame_sample_hop = 3
     student_sequence_length = 30
 
     print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (
@@ -286,15 +286,15 @@ if __name__ == '__main__':
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.5, 0.6, 0.7, 0.8]},
+            'loss_weight': {'values': [0.5]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
-            'learning_rate': {'values': [1e-2]},
+            'learning_rate': {'values': [1e-2, 1e-3]},
             # 'learning_rate': {'values': [1e-3]},
             'keypoint_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [2, 4]},
-            'fc_hidden1': {'values': [32, 64]},
-            'fc_hidden2': {'values': [8, 16]},
+            'fc_hidden1': {'values': [64]},
+            'fc_hidden2': {'values': [8]},
             'student_body_part': {'values': [student_body_part]},
             'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
             'student_sequence_length': {'values': [student_sequence_length]},

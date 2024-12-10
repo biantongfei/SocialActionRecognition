@@ -53,7 +53,10 @@ attitude_classes = ['Positive', 'Negative', 'Not_Interacting']
 jpl_action_classes = ['Handshake', 'Hug', 'Pet', 'Wave', 'Punch', 'Throw', 'Point', 'Gaze', 'Leave',
                       'No_Response']
 harper_action_class = ['Walk_Crash', 'Walk_Stop', 'Walk_Avoid', 'Walk_Touch', 'Walk_Kick', 'Walk_Punch',
-                       'Circular_Walk', 'Circular_Follow_Touch', 'Circular_Follow_Avoid', 'Circular_Follow_Crash']
+                       'Circular_Walk', 'Circular_Follow_Touch', 'Circular_Follow_Avoid', 'Circular_Follow_Crash',
+                       'Not_Interacting']
+contact_class = ['No', 'Yes']
+harper_intent_class = ['No', 'Yes']
 attack_class = ['Attack', 'Normal', 'Danger', 'Not_Interacting']
 camera_name_list = ['hand', 'frontleft', 'frontright', 'left', 'right', 'back']
 

@@ -1,1 +1,2 @@
-print(2.0%1==0)
+for i in range(5,5):
+    print(i)
