@@ -27,7 +27,7 @@ def get_tra_test_files(randnum=None):
     tra_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/train/') if 'json' in i]
     val_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/validation/') if 'json' in i]
     test_files = [i for i in os.listdir('../JPL_Augmented_Posefeatures/mixed/coco_wholebody/test/') if 'json' in i]
-    # tra_files = [i for i in tra_files if 'ori_' in i]
+    tra_files = [i for i in tra_files if 'ori_' in i]
 
     if randnum:
         random.seed(randnum)
@@ -99,6 +99,7 @@ class JPL_Dataset(Dataset):
         self.only_visible_point = only_visible_point
         self.sequence_length = sequence_length
         self.features, self.labels = [], []
+        self.out_files = []
         index = 0
         for file in self.files:
             for hop in range(self.frame_sample_hop):
@@ -242,6 +243,7 @@ class JPL_Dataset(Dataset):
                     return 0, 0
                 x_list[index_body] = x_tensor
         label = feature_json['intention_class'], feature_json['attitude_class'], feature_json['action_class']
+        self.out_files.append(file)
         return x_list, label
 
     def get_stgraph_data_from_file(self, file, hop):
@@ -304,11 +306,17 @@ class JPL_Dataset(Dataset):
 
 
 def get_jpl_dataset(model, body_part, frame_sample_hop, sequence_length, augment_method='mixed', subset='all',
-                    randnum=None):
+                    randnum=None, fixed_files=None):
     print('Loading data from JPL %s dataset' % augment_method)
     subset_list = []
     result_str = ''
-    if model != 'r3d':
+    if fixed_files:
+        trainset = JPL_Dataset(data_files=fixed_files, augment_method=augment_method, body_part=body_part,
+                               model=model, frame_sample_hop=frame_sample_hop, sequence_length=sequence_length,
+                               subset='train')
+        subset_list.append(trainset)
+        result_str += 'Train_set_size: %d, ' % len(trainset)
+    elif model != 'r3d':
         tra_files, val_files, test_files = get_tra_test_files(randnum)
         if subset != 'test':
             trainset = JPL_Dataset(data_files=tra_files, augment_method=augment_method, body_part=body_part,
