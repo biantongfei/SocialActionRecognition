@@ -283,17 +283,17 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [50, 60]},
+            'epochs': {"values": [40, 50, 60, 70, 80]},
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.5]},
+            'loss_weight': {'values': [0.5, 0.6, 0.7, 0.8]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
-            'learning_rate': {'values': [1e-2, 1e-3]},
+            'learning_rate': {'values': [1e-2]},
             # 'learning_rate': {'values': [1e-3]},
             'keypoint_hidden_dim': {'values': [16]},
-            'time_hidden_dim': {'values': [2, 4]},
+            'time_hidden_dim': {'values': [4]},
             'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [8]},
             'student_body_part': {'values': [student_body_part]},
@@ -302,6 +302,26 @@ if __name__ == '__main__':
             'times': {'values': [ii for ii in range(10)]},
         }
     }
+    sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
+    # wandb.agent(sweep_id, function=train, count=20)
+    wandb.agent(sweep_id, function=train)
+
+    student_body_part = [True, False, False]
+    student_frame_sample_hop = 3
+    student_sequence_length = 30
+
+    print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (
+        str(student_body_part), student_frame_sample_hop))
+    student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', student_body_part,
+                                                                        student_frame_sample_hop,
+                                                                        student_sequence_length,
+                                                                        augment_method='mixed', randnum=randnum)
+
+    print('Loading data for teacher')
+    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
+                                       subset='train', randnum=randnum, fixed_files=student_trainset.out_files)
+    calculate_teacher_outputs('msgcn', teacher_trainset, teacher_batch_size, 30, 1)
+    del teacher_trainset
     sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
     # wandb.agent(sweep_id, function=train, count=20)
     wandb.agent(sweep_id, function=train)

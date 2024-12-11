@@ -172,7 +172,7 @@ def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length, tr
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
-        net = MSGCN(body_part=body_part, framework=framework)
+        net = MSGCN(body_part=body_part, framework=framework, keypoint_hidden_dim=wandb.config.keypoints_hidden_dim)
     elif model == 'dgstgcn':
         net = DGSTGCN(body_part=body_part, framework=framework)
     elif model == 'r3d':

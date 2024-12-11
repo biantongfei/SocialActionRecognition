@@ -4,10 +4,10 @@ import pickle
 import numpy as np
 
 performance = {}
-with open('wandb_export_2024-12-10T13_38_55.893+00_00.csv') as csvfile:
+with open('wandb_export_2024-12-11T13_48_26.111+00_00.csv') as csvfile:
     for row in csv.DictReader(csvfile):
-        key = 'e%s_lossweight%s_fc1%s_fc2%s_time%s' % (
-        row['epoch'], row['loss_weight'], row['fc_hidden1'], row['fc_hidden2'], row['time_hidden_dim'])
+        key = 'e%s_lr%s_time%s' % (
+            row['epochs'], row['learning_rate'], row['time_hidden_dim'])
         if key in performance.keys():
             performance[key] += float(row['avg_f1']) / 10
         else:

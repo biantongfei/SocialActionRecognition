@@ -3,14 +3,14 @@ from Dataset import get_jpl_dataset
 import wandb
 
 body_part = [True, True, True]
-model = 'gcn_lstm'
+model = 'msgcn'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
 # framework = 'parallel'
 # framework = 'tree'
 framework = 'chain'
-frame_sample_hop = 3
+frame_sample_hop = 1
 sequence_length = 30
 
 # JPL Dataset
@@ -37,11 +37,10 @@ sweep_config = {
         'goal': 'maximize',
     },
     'parameters': {
-        'epochs': {"values": [40]},
+        'epochs': {"values": [20, 30, 40, 50, 60, 70]},
         'loss_type': {"values": ['sum']},
         'times': {'values': [ii for ii in range(10)]},
-        'keypoints_hidden_dim': {"values": [16]},
-        'time_hidden_dim': {"values": [4]}
+        'keypoints_hidden_dim': {"values": [8, 16, 32]},
     }
 }
 sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))

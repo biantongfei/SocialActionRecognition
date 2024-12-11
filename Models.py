@@ -679,19 +679,19 @@ class STGCN(nn.Module):
 
 
 class MSGCN(nn.Module):
-    def __init__(self, body_part, framework):
+    def __init__(self, body_part, framework, keypoint_hidden_dim):
         super(MSGCN, self).__init__()
         super().__init__()
         self.body_part = body_part
         self.input_size = get_inputs_size(body_part)
         self.framework = framework
         if self.body_part[0]:
-            self.MSGCN_body = MsG3d(0, 16).to(device)
+            self.MSGCN_body = MsG3d(0, keypoint_hidden_dim).to(device)
         if self.body_part[1]:
-            self.MSGCN_head = MsG3d(1, 16).to(device)
+            self.MSGCN_head = MsG3d(1, keypoint_hidden_dim).to(device)
         if self.body_part[2]:
-            self.MSGCN_hand = MsG3d(2, 16).to(device)
-        self.classifier = Classifier(framework, 16 * self.body_part.count(True))
+            self.MSGCN_hand = MsG3d(2, keypoint_hidden_dim).to(device)
+        self.classifier = Classifier(framework, keypoint_hidden_dim * self.body_part.count(True))
 
     def forward(self, x):
         y_list = []
