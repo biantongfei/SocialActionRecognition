@@ -22,7 +22,7 @@ def calculate_teacher_outputs(teacher_model, dataset, batch_size, sequence_lengt
         os.system('rm -rf ./teacher_tensor/%s' % pt_file)
     if teacher_model == 'msgcn':
         teacher_dict = torch.load('models/pretrained_jpl_msgcn_fps30.pt')
-        teacher_net = MSGCN([True, True, True], 'chain')
+        teacher_net = MSGCN([True, True, True], 'chain', 16)
         teacher_net.load_state_dict(teacher_dict)
         teacher_net.to(device)
         teacher_net.eval()
