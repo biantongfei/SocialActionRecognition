@@ -456,12 +456,15 @@ class HARPER_Dataset(Dataset):
             contact_frame = 0
             contact_time = 0
             for i in range(first_id, first_id + self.frames_before_event + self.sequence_length + check_duration):
-                min_distance = feature_json['min_distance'][i]
-                if min_distance < contact_min_distance:
-                    contact_frame += 1
-                elif min_distance > contact_min_distance:
-                    contact_time += 1 if contact_frame >= 5 else 0
-                    contact_frame = 0
+                if i < len(feature_json['min_distance']):
+                    min_distance = feature_json['min_distance'][i]
+                    if min_distance < contact_min_distance:
+                        contact_frame += 1
+                    elif min_distance > contact_min_distance:
+                        contact_time += 1 if contact_frame >= 5 else 0
+                        contact_frame = 0
+                else:
+                    break
             return 3 if contact_time == 0 else 2
         else:
             return attack_label
@@ -472,9 +475,9 @@ class HARPER_Dataset(Dataset):
                 feature_json = json.load(f)
                 f.close()
             interact_start_frame = feature_json['interact_start_frame'] if feature_json['interact_start_frame'] else \
-                feature_json['video_frames_num']
+                feature_json['video_frames_number']
             interact_end_frame = feature_json['interact_end_frame'] if feature_json['interact_end_frame'] else \
-                feature_json['video_frames_num']
+                feature_json['video_frames_number']
             if not self.multi_angle:
                 for camera in camera_name_list:
                     if feature_json['cameras'][camera]['frames']:
@@ -482,9 +485,10 @@ class HARPER_Dataset(Dataset):
                             feature_json['cameras'][camera]['frame_size'][1]
                         frames = feature_json['cameras'][camera]['frames']
                         down_sample_count = 0
-                        for frame_index in range(interact_start_frame - self.sequence_length - self.frames_before_event,
-                                                 interact_start_frame - self.sequence_length):
+                        for frame_index in range(0,
+                                                 interact_start_frame - self.sequence_length - self.frames_before_event):
                             if down_sample_count % 1 == 0:
+                                print(frame_index, frames[frame_index]['frame_id'])
                                 first_id = frames[frame_index]['frame_id']
                                 frame_num = 0
                                 useful_num = 0
@@ -497,20 +501,21 @@ class HARPER_Dataset(Dataset):
                                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                                         x = torch.tensor(frame_feature)
                                         x_tensor[frame_num] = x
-                                        distance.append(feature_json['min_distance'][first_id + frame_num])
+                                        # print(len(feature_json['min_distance']), first_id, useful_num)
+                                        distance.append(feature_json['min_distance'][first_id + useful_num])
                                         useful_num += 1
                                     frame_num += 1
                                 contact_label = feature_json[
-                                    'contact_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                    'contact_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
                                 intent_label = feature_json[
-                                    'intent_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                    'intent_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
                                 attitude_label = feature_json[
-                                    'attitude_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 2
+                                    'attitude_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 2
                                 attack_label = feature_json[
-                                    'attack_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 3
+                                    'attack_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 3
                                 attack_label = self.check_attack(attack_label, first_id, feature_json)
                                 action_label = feature_json[
-                                    'action_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 10
+                                    'action_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 10
                                 distance = torch.tensor(distance)
                                 self.features.append(x_tensor)
                                 self.distances.append(distance)
@@ -566,17 +571,22 @@ class HARPER_Dataset(Dataset):
                             down_sample_count += self.down_sample_rate
 
 
-def get_harper_dataset(body_part, sequence_length, multi_angle=False):
+def get_harper_dataset(sequence_length, multi_angle=False):
     print('Loading data from HARPER dataset')
     data_path = '../HARPER/'
     train_files = os.listdir(data_path + 'train/pose_sequences/')
     val_files = os.listdir(data_path + 'validation/pose_sequences/')
     test_files = os.listdir(data_path + 'test/pose_sequences/')
-    trainset = HARPER_Dataset(data_path=data_path + 'train/pose_sequences/', files=train_files, body_part=body_part,
+    trainset = HARPER_Dataset(data_path=data_path + 'train/pose_sequences/', files=train_files,
                               sequence_length=sequence_length, multi_angle=multi_angle, train=True)
-    valset = HARPER_Dataset(data_path=data_path + 'validation/pose_sequences/', files=val_files, body_part=body_part,
+    valset = HARPER_Dataset(data_path=data_path + 'validation/pose_sequences/', files=val_files,
                             sequence_length=sequence_length, multi_angle=multi_angle)
-    testset = HARPER_Dataset(data_path=data_path + 'test/pose_sequences/', files=test_files, body_part=body_part,
+    testset = HARPER_Dataset(data_path=data_path + 'test/pose_sequences/', files=test_files,
                              sequence_length=sequence_length, multi_angle=multi_angle)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     return trainset, valset, testset
+
+
+if __name__ == '__main__':
+    trainset, valset, testset = get_harper_dataset(10)
+    print(len(trainset), len(valset), len(testset))

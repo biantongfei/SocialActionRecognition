@@ -251,7 +251,7 @@ if __name__ == '__main__':
     randnum = random.randint(0, 100)
     # randnum = 25
 
-    student_body_part = [True, True, True]
+    student_body_part = [True, False, False]
     student_frame_sample_hop = 3
     student_sequence_length = 30
 
@@ -287,7 +287,7 @@ if __name__ == '__main__':
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.5, 0.6, 0.7, 0.8]},
+            'loss_weight': {'values': [0.5]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
             'learning_rate': {'values': [1e-2]},

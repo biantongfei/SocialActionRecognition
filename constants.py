@@ -63,7 +63,7 @@ camera_name_list = ['hand', 'frontleft', 'frontright', 'left', 'right', 'back']
 coco_body_point_num = 23
 head_point_num = 68
 hands_point_num = 42
-harper_body_point_num = 23
+harper_body_point_num = 21
 jpl_video_fps = 30
 harper_video_fps = 10
 

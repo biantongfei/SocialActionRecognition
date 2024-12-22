@@ -39,8 +39,8 @@ sweep_config = {
     'parameters': {
         'epochs': {"values": [20, 30, 40, 50, 60, 70]},
         'loss_type': {"values": ['sum']},
-        'times': {'values': [ii for ii in range(10)]},
-        'keypoints_hidden_dim': {"values": [8, 16, 32]},
+        'times': {'values': [ii for ii in range(5)]},
+        'keypoints_hidden_dim': {"values": [8, 32]},
     }
 }
 sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
