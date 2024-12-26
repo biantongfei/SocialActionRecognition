@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 
 from constants import coco_body_point_num, head_point_num, hands_point_num, coco_body_l_pair, head_l_pair, hand_l_pair, \
-    visible_threshold_score, harper_l_pair, harper_body_point_num, camera_name_list, contact_min_distance
+    visible_threshold_score, harper_l_pair, harper_body_point_num, camera_name_list, contact_min_distance, attack_class
 
 video_path = '../jpl_augmented_videos/'
 
@@ -431,7 +431,7 @@ class ImagesDataset(Dataset):
 
 
 class HARPER_Dataset(Dataset):
-    def __init__(self, data_path, files, sequence_length, frames_before_event=1, multi_angle=False, train=False):
+    def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle=False, train=False):
         self.data_path = data_path
         self.files = files
         self.sequence_length = sequence_length
@@ -441,7 +441,7 @@ class HARPER_Dataset(Dataset):
         self.features = []
         self.distances = []
         self.labels = []
-        self.down_sample_rate = 0.5
+        self.not_interact_downsample_rate = 0.1
         self.get_pose_sequences()
 
     def __getitem__(self, item):
@@ -450,143 +450,170 @@ class HARPER_Dataset(Dataset):
     def __len__(self):
         return len(self.features)
 
-    def check_attack(self, attack_label, first_id, feature_json):
+    def check_future_attack(self, attack_label, first_id, frames):
         check_duration = 5
         if attack_label == 3:
-            contact_frame = 0
-            contact_time = 0
-            for i in range(first_id, first_id + self.frames_before_event + self.sequence_length + check_duration):
-                if i < len(feature_json['min_distance']):
-                    min_distance = feature_json['min_distance'][i]
-                    if min_distance < contact_min_distance:
-                        contact_frame += 1
-                    elif min_distance > contact_min_distance:
-                        contact_time += 1 if contact_frame >= 5 else 0
-                        contact_frame = 0
-                else:
-                    break
-            return 3 if contact_time == 0 else 2
-        else:
-            return attack_label
+            for i in range(first_id + self.sequence_length,
+                           first_id + self.frames_before_event + self.sequence_length - check_duration):
+                if str(i) in frames.keys():
+                    if frames[str(i)]['min_distance'] < contact_min_distance:
+                        for ii in range(i, i + check_duration):
+                            if str(ii) in frames.keys():
+                                if frames[str(ii)]['min_distance'] < contact_min_distance:
+                                    if ii == i + check_duration - 1:
+                                        return 2
+        return attack_label
+
+    def check_current_attack(self, attack_label, first_id, frames):
+        check_duration = 5
+        if attack_label == 3:
+            for i in range(first_id, first_id + self.sequence_length - check_duration):
+                if str(i) in frames.keys():
+                    if frames[str(i)]['min_distance'] < contact_min_distance:
+                        for ii in range(i, i + check_duration):
+                            if str(ii) in frames.keys():
+                                if frames[str(ii)]['min_distance'] < contact_min_distance:
+                                    if ii == i + check_duration - 1:
+                                        return 2
+        return attack_label
 
     def get_pose_sequences(self):
         for file in self.files:
-            with open(self.data_path + file, 'r') as f:
-                feature_json = json.load(f)
-                f.close()
-            interact_start_frame = feature_json['interact_start_frame'] if feature_json['interact_start_frame'] else \
-                feature_json['video_frames_number']
-            interact_end_frame = feature_json['interact_end_frame'] if feature_json['interact_end_frame'] else \
-                feature_json['video_frames_number']
-            if not self.multi_angle:
-                for camera in camera_name_list:
-                    if feature_json['cameras'][camera]['frames']:
-                        frame_width, frame_height = feature_json['cameras'][camera]['frame_size'][0], \
-                            feature_json['cameras'][camera]['frame_size'][1]
-                        frames = feature_json['cameras'][camera]['frames']
-                        down_sample_count = 0
-                        for frame_index in range(0,
-                                                 interact_start_frame - self.sequence_length - self.frames_before_event):
-                            if down_sample_count % 1 == 0:
-                                print(frame_index, frames[frame_index]['frame_id'])
-                                first_id = frames[frame_index]['frame_id']
+            if 'json' in file:
+                with open(self.data_path + file, 'r') as f:
+                    feature_json = json.load(f)
+                    f.close()
+                interact_start_frame = feature_json['interact_start_frame'] if feature_json['interact_start_frame'] else \
+                    feature_json['video_frames_number']
+                interact_end_frame = feature_json['interact_end_frame'] if feature_json['interact_end_frame'] else \
+                    feature_json['video_frames_number']
+                if not self.multi_angle:
+                    for camera in camera_name_list:
+                        if feature_json['cameras'][camera]['frames']:
+                            frame_width, frame_height = feature_json['cameras'][camera]['frame_size'][0], \
+                                feature_json['cameras'][camera]['frame_size'][1]
+                            frames = feature_json['cameras'][camera]['frames']
+                            down_sample_count = 0
+                            for frame_index in range(0, int(
+                                    list(frames.keys())[-1]) - self.sequence_length - self.frames_before_event):
                                 frame_num = 0
                                 useful_num = 0
                                 x_tensor = torch.zeros((self.sequence_length, harper_body_point_num, 3))
                                 distance = [-1 for _ in range(self.sequence_length)]
                                 while frame_num < self.sequence_length:
-                                    if first_id + frame_num == frames[frame_index + useful_num]['frame_id']:
-                                        frame_feature = np.array(frames[frame_index + useful_num]['keypoints'])
+                                    if str(frame_index + frame_num) in frames.keys():
+                                        frame_feature = np.array(frames[str(frame_index + frame_num)]['keypoints'])
                                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
                                         frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
                                         x = torch.tensor(frame_feature)
                                         x_tensor[frame_num] = x
-                                        # print(len(feature_json['min_distance']), first_id, useful_num)
-                                        distance.append(feature_json['min_distance'][first_id + useful_num])
+                                        distance[frame_num] = frames[str(frame_index + frame_num)]['min_distance']
+                                        useful_num += 1
+                                    elif useful_num > 0:
+                                        x_tensor[frame_num] = x_tensor[frame_num - 1]
+                                        distance[frame_num] = distance[frame_num - 1]
+                                    frame_num += 1
+                                if useful_num == 0:
+                                    continue
+                                # contact_label = feature_json[
+                                #     'contact_class'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                # intent_label = feature_json[
+                                #     'intent_class'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                # attitude_label = feature_json[
+                                #     'attitude_class'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 2
+                                attack_label = feature_json['attack_class']
+                                attack_current_label = attack_label if frame_index + self.sequence_length > interact_start_frame and frame_index < interact_end_frame else 3
+                                attack_current_label = self.check_current_attack(attack_current_label, frame_index,
+                                                                                 frames)
+                                attack_future_label = attack_label if frame_index + self.sequence_length + self.frames_before_event > interact_start_frame and frame_index + self.sequence_length <= interact_start_frame else 3
+                                attack_future_label = self.check_future_attack(attack_future_label, frame_index,
+                                                                               frames)
+                                # action_label = feature_json[
+                                #     'action_class'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 10
+                                distance = torch.tensor(distance)
+                                down_sample_count += self.not_interact_downsample_rate
+                                if attack_current_label == 3 and attack_future_label == 3 and down_sample_count % 1 != 0:
+                                    continue
+                                self.features.append([x_tensor])
+                                self.distances.append(distance)
+                                self.labels.append((attack_current_label, attack_future_label))
+                                if self.train:
+                                    x_tensor[:, :2] = -x_tensor[:, :2]
+                                    self.features.append([x_tensor])
+                                    self.distances.append(distance)
+                                    self.labels.append((attack_current_label, attack_future_label))
+
+                else:
+                    down_sample_count = 0
+                    for frame_index in range(interact_start_frame - self.sequence_length - self.frames_before_event,
+                                             interact_start_frame - self.sequence_length):
+                        x_tensor = torch.zeros((6, self.sequence_length, harper_body_point_num, 3))
+                        for camera in camera_name_list:
+                            frame_width, frame_height = feature_json['cameras'][camera]['frame_size'][0], \
+                                feature_json['cameras'][camera]['frame_size'][1]
+                            frames = feature_json['cameras'][camera]['frames']
+                            if frames:
+                                distance = [-1 for _ in range(self.sequence_length)]
+                                frame_num = 0
+                                useful_num = 0
+                                while frame_num < self.sequence_length:
+                                    if frame_index + frame_num == frames[frame_index + useful_num]['frame_id']:
+                                        frame_feature = np.array(frames[frame_index + useful_num]['keypoints'])
+                                        frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
+                                        frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
+                                        x = torch.tensor(frame_feature)
+                                        x_tensor[camera_name_list.index(camera), frame_num, :, :] = x
+                                        distance.append(feature_json['min_distance'][frame_index + frame_num])
                                         useful_num += 1
                                     frame_num += 1
                                 contact_label = feature_json[
-                                    'contact_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                    'contact_label'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 0
                                 intent_label = feature_json[
-                                    'intent_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
+                                    'intent_label'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 0
                                 attitude_label = feature_json[
-                                    'attitude_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 2
+                                    'attitude_label'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 2
                                 attack_label = feature_json[
-                                    'attack_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 3
-                                attack_label = self.check_attack(attack_label, first_id, feature_json)
+                                    'attack_label'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 3
+                                attack_label = self.check_attack(attack_label, frame_index, frames)
                                 action_label = feature_json[
-                                    'action_class'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 10
+                                    'action_label'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 10
                                 distance = torch.tensor(distance)
                                 self.features.append(x_tensor)
                                 self.distances.append(distance)
                                 self.labels.append(
                                     (contact_label, intent_label, attitude_label, attack_label, action_label))
-                                if self.train:
-                                    x_tensor[:, :2] = -x_tensor[:, :2]
-                                    self.features.append(x_tensor)
-                                    self.distances.append(distance)
-                                    self.labels.append(
-                                        (contact_label, intent_label, attitude_label, attack_label, action_label))
                                 down_sample_count += self.down_sample_rate
-            else:
-                down_sample_count = 0
-                for frame_index in range(interact_start_frame - self.sequence_length - self.frames_before_event,
-                                         interact_start_frame - self.sequence_length):
-                    x_tensor = torch.zeros((6, self.sequence_length, harper_body_point_num, 3))
-                    for camera in camera_name_list:
-                        frame_width, frame_height = feature_json['cameras'][camera]['frame_size'][0], \
-                            feature_json['cameras'][camera]['frame_size'][1]
-                        frames = feature_json['cameras'][camera]['frames']
-                        if frames:
-                            distance = [-1 for _ in range(self.sequence_length)]
-                            first_id = frames[frame_index]['frame_id']
-                            frame_num = 0
-                            useful_num = 0
-                            while frame_num < self.sequence_length:
-                                if first_id + frame_num == frames[frame_index + useful_num]['frame_id']:
-                                    frame_feature = np.array(frames[frame_index + useful_num]['keypoints'])
-                                    frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
-                                    frame_feature[:, 1] = 2 * (frame_feature[:, 1] / frame_height - 0.5)
-                                    x = torch.tensor(frame_feature)
-                                    x_tensor[camera_name_list.index(camera), frame_num, :, :] = x
-                                    distance.append(feature_json['min_distance'][first_id + frame_num])
-                                    useful_num += 1
-                                frame_num += 1
-                            contact_label = feature_json[
-                                'contact_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
-                            intent_label = feature_json[
-                                'intent_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 0
-                            attitude_label = feature_json[
-                                'attitude_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 2
-                            attack_label = feature_json[
-                                'attack_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 3
-                            attack_label = self.check_attack(attack_label, first_id, feature_json)
-                            action_label = feature_json[
-                                'action_label'] if first_id + self.sequence_length + self.frames_before_event < interact_start_frame else 10
-                            distance = torch.tensor(distance)
-                            self.features.append(x_tensor)
-                            self.distances.append(distance)
-                            self.labels.append(
-                                (contact_label, intent_label, attitude_label, attack_label, action_label))
-                            down_sample_count += self.down_sample_rate
 
 
-def get_harper_dataset(sequence_length, multi_angle=False):
+def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
     print('Loading data from HARPER dataset')
     data_path = '../HARPER/'
     train_files = os.listdir(data_path + 'train/pose_sequences/')
     val_files = os.listdir(data_path + 'validation/pose_sequences/')
     test_files = os.listdir(data_path + 'test/pose_sequences/')
     trainset = HARPER_Dataset(data_path=data_path + 'train/pose_sequences/', files=train_files,
-                              sequence_length=sequence_length, multi_angle=multi_angle, train=True)
+                              sequence_length=sequence_length, frames_before_event=frames_before_event,
+                              multi_angle=multi_angle, train=True)
     valset = HARPER_Dataset(data_path=data_path + 'validation/pose_sequences/', files=val_files,
-                            sequence_length=sequence_length, multi_angle=multi_angle)
+                            sequence_length=sequence_length, frames_before_event=frames_before_event,
+                            multi_angle=multi_angle)
     testset = HARPER_Dataset(data_path=data_path + 'test/pose_sequences/', files=test_files,
-                             sequence_length=sequence_length, multi_angle=multi_angle)
+                             sequence_length=sequence_length, frames_before_event=frames_before_event,
+                             multi_angle=multi_angle)
     print('Train_set_size: %d, Validation_set_size: %d, Test_set_size: %d' % (len(trainset), len(valset), len(testset)))
     return trainset, valset, testset
 
 
 if __name__ == '__main__':
-    trainset, valset, testset = get_harper_dataset(10)
-    print(len(trainset), len(valset), len(testset))
+    trainset, valset, testset = get_harper_dataset(10,5)
+    attack_current_dict = {}
+    attack_future_dict = {}
+    for attack in attack_class:
+        attack_current_dict[attack] = 0
+        attack_future_dict[attack] = 0
+    for dataset in [trainset, valset, testset]:
+        for data in dataset:
+            attack_current_dict[attack_class[data[1][0]]] += 1
+            attack_future_dict[attack_class[data[1][1]]] += 1
+    print('current', attack_current_dict)
+    print('future', attack_future_dict)

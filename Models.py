@@ -13,11 +13,12 @@ from Dataset import get_inputs_size, coco_body_point_num, head_point_num, hands_
 from graph import Graph, ConvTemporalGraphical
 from MSG3D.msg3d import Model as MsG3d
 from DGSTGCN.dgstgcn import Model as DG_Model
-from constants import intention_classes, attitude_classes, jpl_action_classes, device, dtype
+from constants import intention_classes, attitude_classes, jpl_action_classes, device, dtype, attack_class
 
 intention_class_num = len(intention_classes)
 attitude_class_num = len(attitude_classes)
 action_class_num = len(jpl_action_classes)
+attack_class_num = len(attack_class)
 
 
 class Classifier(nn.Module):
@@ -98,6 +99,29 @@ class Classifier(nn.Module):
             y3 = self.action_head(torch.cat((y, y1, y2), dim=1))
             y4 = self.contact_head(y)
             return y1, y2, y3, y4
+
+
+class Attack_Classifier(nn.Module):
+    def __init__(self, framework, in_feature_size=16):
+        super(Attack_Classifier, self).__init__()
+        super().__init__()
+        self.framework = framework
+        self.attack_current_head = nn.Sequential(nn.ReLU(),
+                                                 nn.Linear(in_feature_size, attack_class_num)
+                                                 )
+        self.attack_future_head = nn.Sequential(nn.ReLU(),
+                                                nn.Linear(in_feature_size, attack_class_num)
+                                                )
+        # self.attack_future_head = nn.Sequential(nn.ReLU(),
+        #                                         nn.Linear(in_feature_size + attack_class_num, attack_class_num)
+        #                                         )
+
+    def forward(self, y):
+        if self.framework in ['attack']:
+            y1 = self.attack_current_head(y)
+            y2 = self.attack_future_head(y)
+            # y2 = self.attack_future_head(torch.cat((y, y1), dim=1))
+            return y1, y2
 
 
 class DNN(nn.Module):
@@ -244,11 +268,11 @@ class Transformer(nn.Module):
 
 class GNN(nn.Module):
     def __init__(self, body_part, framework, model, sequence_length, frame_sample_hop, keypoint_hidden_dim,
-                 time_hidden_dim, fc_hidden1, fc_hidden2, is_harper, train_classifier=True):
+                 time_hidden_dim, fc_hidden1, fc_hidden2, is_harper=False, is_attack=False, train_classifier=True):
         super(GNN, self).__init__()
         super().__init__()
         self.body_part = body_part
-        self.input_size = get_inputs_size(body_part)
+        self.input_size = harper_body_point_num * 3 if is_harper else get_inputs_size(body_part)
         self.framework = framework
         self.model = model
         self.sequence_length = sequence_length
@@ -257,45 +281,31 @@ class GNN(nn.Module):
         self.time_hidden_dim = self.keypoint_hidden_dim * time_hidden_dim
         self.fc_hidden1 = fc_hidden1
         self.fc_hidden2 = fc_hidden2
-        self.pooling = False
-        self.pooling_rate = 0.6 if self.pooling else 1
         self.body_point_num = harper_body_point_num if is_harper else coco_body_point_num
-        self.log_sigma1 = nn.Parameter(torch.tensor(0.0))
-        self.log_sigma2 = nn.Parameter(torch.tensor(0.0))
-        self.log_sigma3 = nn.Parameter(torch.tensor(0.0))
-        # self.other_parameters = []
-        # self.attn_parameters = []
         if body_part[0]:
             self.GCN_body = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_body = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.other_parameters += self.GCN_body.parameters()
         if body_part[1]:
             self.GCN_head = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_head = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.other_parameters += self.GCN_head.parameters()
         if body_part[2]:
             self.GCN_hand = GCN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GAT(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
             # self.GCN_hand = GIN(in_channels=3, hidden_channels=self.keypoint_hidden_dim, num_layers=3)
-            # self.other_parameters += self.GCN_hand.parameters()
         self.gcn_attention = nn.Linear(int(self.keypoint_hidden_dim * self.input_size / 3), 1)
         # self.gcn_attention = nn.MultiheadAttention(embed_dim=self.keypoint_hidden_dim, num_heads=1, batch_first=True)
-        # self.attn_parameters += self.gcn_attention.parameters()
         if self.model == 'gcn_lstm':
-            # self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-            #                           hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            self.time_model = nn.LSTM(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                      hidden_size=128, num_layers=3, bidirectional=True, batch_first=True)
-            # self.other_parameters += self.time_model.parameters()
-            self.fc_input_size = 128 * 2
+            self.time_model = nn.LSTM(math.ceil(self.input_size / 3) * self.keypoint_hidden_dim,
+                                      hidden_size=self.time_hidden_dim, num_layers=3, bidirectional=True,
+                                      batch_first=True)
+            self.fc_input_size = self.time_hidden_dim * 2
             self.lstm_attention = nn.Linear(self.fc_input_size, 1)
-            # self.attn_parameters += self.lstm_attention.parameters()
         elif self.model == 'gcn_conv1d':
             self.time_model = nn.Sequential(
-                nn.Conv1d(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim, 64,
-                          kernel_size=7, stride=3, padding=3),
+                nn.Conv1d(math.ceil(self.input_size / 3) * self.keypoint_hidden_dim, 64, kernel_size=7, stride=3,
+                          padding=3),
                 nn.BatchNorm1d(64),
                 nn.ReLU(),
                 nn.Dropout(0.5),
@@ -323,8 +333,7 @@ class GNN(nn.Module):
             self.fc_input_size = 256 * math.ceil(math.ceil(sequence_length / frame_sample_hop / 3) / 2)
         elif model == 'gcn_tran':
             model_dim, num_heads, num_layers, num_classes = 256, 8, 3, 16
-            self.embedding = nn.Linear(math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
-                                       model_dim)
+            self.embedding = nn.Linear(math.ceil(self.input_size / 3) * self.keypoint_hidden_dim, model_dim)
             self.positional_encoding = nn.Parameter(torch.zeros(1, int(sequence_length / frame_sample_hop), model_dim))
 
             encoder_layer = nn.TransformerEncoderLayer(d_model=model_dim, nhead=num_heads)
@@ -339,7 +348,7 @@ class GNN(nn.Module):
             self.time_edge_index, _ = add_self_loops(self.time_edge_index,
                                                      num_nodes=int(self.sequence_length / self.frame_sample_hop))
             self.GCN_time = GCN(
-                in_channels=math.ceil(self.pooling_rate * self.input_size / 3) * self.keypoint_hidden_dim,
+                in_channels=math.ceil(self.input_size / 3) * self.keypoint_hidden_dim,
                 hidden_channels=self.time_hidden_dim, num_layers=2)
             # self.GCN_time = GAT(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
             #                     hidden_channels=self.keypoint_hidden_dim,
@@ -347,8 +356,7 @@ class GNN(nn.Module):
             # self.GCN_time = GIN(in_channels=int(self.keypoint_hidden_dim * self.input_size / 3),
             #                     hidden_channels=self.keypoint_hidden_dim,
             #                     num_layers=2)
-            self.pool = TopKPooling(self.keypoint_hidden_dim, ratio=self.pooling_rate)
-            self.fc_input_size = int(self.pooling_rate * self.time_hidden_dim * sequence_length / frame_sample_hop)
+            self.fc_input_size = int(self.time_hidden_dim * sequence_length / frame_sample_hop)
             # self.other_parameters += self.GCN_time.parameters()
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, self.fc_hidden1),
@@ -358,7 +366,8 @@ class GNN(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(self.fc_hidden2),
         )
-        self.classifier = Classifier(framework, self.fc_hidden2)
+        self.classifier = Attack_Classifier(framework, self.fc_hidden2) if is_attack else Classifier(framework,
+                                                                                                     self.fc_hidden2)
         self.train_classifier = train_classifier
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()
@@ -370,9 +379,6 @@ class GNN(nn.Module):
                 device=device), data[2][0].to(device)
             x_body = self.GCN_body(x=x_body, edge_index=edge_index_body, batch=batch_body).to(dtype=dtype,
                                                                                               device=device)
-            if self.pooling:
-                x_body, _, _, _, _, _ = self.pool(x_body, edge_index_body)
-                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_body = global_mean_pool(x_body, batch_body)
             x_body = x_body.view(-1, int(self.sequence_length / self.frame_sample_hop), self.keypoint_hidden_dim * (
                 self.body_point_num))
@@ -382,9 +388,6 @@ class GNN(nn.Module):
                 data[2][1].to(device)
             x_head = self.GCN_head(x=x_head, edge_index=edge_index_head, batch=batch_head).to(dtype=dtype,
                                                                                               device=device)
-            if self.pooling:
-                x_head, _, _, _, _, _ = self.pool(x_head, edge_index_head)
-                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_head = global_mean_pool(x_head, batch_head)
             x_head = x_head.view(-1, int(self.sequence_length / self.frame_sample_hop),
                                  self.keypoint_hidden_dim * head_point_num)
@@ -394,9 +397,6 @@ class GNN(nn.Module):
                 data[2][2].to(device)
             x_hand = self.GCN_hand(x=x_hand, edge_index=edge_index_hand, batch=batch_hand).to(dtype=dtype,
                                                                                               device=device)
-            if self.pooling:
-                x_hand, _, _, _, _, _ = self.pool(x_hand, edge_index_hand)
-                # x_t, _, _, _, _ = self.pool(x_t, new_edge_index)
             # x_hand = global_mean_pool(x_hand, batch_hand)
             x_hand = x_hand.view(-1, int(self.sequence_length / self.frame_sample_hop),
                                  self.keypoint_hidden_dim * hands_point_num)
@@ -433,8 +433,6 @@ class GNN(nn.Module):
                 x_t = x[i]
                 x_t = self.GCN_time(x=x_t, edge_index=self.time_edge_index).to(dtype=dtype, device=device)
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
-                if self.pooling:
-                    x_t, _, _, _, _, _ = self.pool(x_t, self.time_edge_index)
                 x_time[i] = x_t.view(1, -1)[0]
             x = x_time.flatten(1)
         y = self.fc(x)

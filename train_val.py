@@ -1,9 +1,9 @@
 import os
 
-from Dataset import get_jpl_dataset
+from Dataset import get_jpl_dataset, get_harper_dataset
 from Models import DNN, RNN, Cnn1D, GNN, STGCN, MSGCN, Transformer, DGSTGCN, R3D, Classifier
 from draw_utils import plot_confusion_matrix
-from DataLoader import Pose_DataLoader
+from DataLoader import Pose_DataLoader, Attack_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, intention_classes, \
     attitude_classes, jpl_action_classes, dgstgcn_batch_size, r3d_batch_size
@@ -825,30 +825,213 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
     return performance_model
 
 
-if __name__ == '__main__':
-    trainset = get_jpl_dataset('r3d', [True, True, True], 1, 30, subset='train')
-    model_list = ['r3d']
-    for model in model_list:
-        print(model)
-        train_loader = Pose_DataLoader(model=model, dataset=trainset, batch_size=16, sequence_length=30,
-                                       frame_sample_hop=1, drop_last=True, shuffle=True, num_workers=1)
-        if model == 'stgcn':
-            net = STGCN(body_part=[True, True, True], framework='chain')
-        elif model == 'msgcn':
-            net = MSGCN(body_part=[True, True, True], framework='chain')
-        elif model == 'dgstgcn':
-            net = DGSTGCN(body_part=[True, True, True], framework='chain')
-        elif model == 'r3d':
-            net = R3D(framework='chain')
-        net.to(device)
-        net.eval()
+def train_attack(model, frame_before_event, sequence_length, framework, body_part, trainset, valset, testset):
+    run = wandb.init()
+    # sequence_length = wandb.config.sequence_length
+    # print(
+    #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
+    #                                                               wandb.config.times))
+    tasks = ['attack']
+    performance_model = {}
+    num_workers = 8
+    if 'gcn_' in model:
+        batch_size = gcn_batch_size
+    elif model == 'stgcn':
+        batch_size = stgcn_batch_size
+        num_workers = 1
+    elif model == 'msgcn':
+        batch_size = msgcn_batch_size
+        num_workers = 1
+    elif model == 'dgstgcn':
+        batch_size = dgstgcn_batch_size
+        num_workers = 1
+    elif model == 'r3d':
+        batch_size = r3d_batch_size
+    if 'gcn_' in model:
+        net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
+                  frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16,
+                  is_harper=True, is_attack=True)
+    elif model == 'stgcn':
+        net = STGCN(body_part=body_part, framework=framework)
+    elif model == 'msgcn':
+        net = MSGCN(body_part=body_part, framework=framework,
+                    keypoint_hidden_dim=wandb.config.keypoints_hidden_dim)
+    elif model == 'dgstgcn':
+        net = DGSTGCN(body_part=body_part, framework=framework)
+    elif model == 'r3d':
+        net = R3D(framework=framework)
+    net.to(device)
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+    epoch = 1
+    train_loader = Attack_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
+                                     sequence_length=sequence_length, frame_sample_hop=1, drop_last=True, shuffle=True,
+                                     num_workers=num_workers)
+    val_loader = Attack_DataLoader(model=model, dataset=valset, sequence_length=sequence_length,
+                                   frame_sample_hop=1, drop_last=False, batch_size=batch_size, num_workers=num_workers)
+    while epoch <= wandb.config.epochs:
+        net.train()
+        print('Training')
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
-        for index, data in enumerate(train_loader):
+        for data in train_loader:
             progress_bar.update(1)
-            inputs, (int_labels, att_labels, act_labels) = data
-            inputs = inputs.to(dtype=dtype, device=device)
-            int_labels, att_labels, act_labels = int_labels.to(dtype=torch.int64, device=device), att_labels.to(
-                dtype=torch.int64, device=device), act_labels.to(dtype=torch.int64, device=device)
-            int_outputs, att_outputs, act_outputs = net(inputs)
-        torch.cuda.empty_cache()
+            inputs, (attack_current_labels, attack_future_labels) = data
+            attack_current_labels, attack_future_labels = attack_current_labels.to(dtype=torch.long,
+                                                                                   device=device), attack_future_labels.to(
+                dtype=torch.long, device=device)
+            if framework == 'attack':
+                attack_current_outputs, attack_future_outputs = net(inputs)
+                loss_1 = functional.cross_entropy(attack_current_outputs, attack_current_labels)
+                loss_2 = functional.cross_entropy(attack_future_outputs, attack_future_labels)
+                total_loss = loss_1 + wandb.config.loss_weight * loss_2
+            optimizer.zero_grad()
+            total_loss.backward()
+            optimizer.step()
+            torch.cuda.empty_cache()
+        scheduler.step()
         progress_bar.close()
+        print('Validating')
+        attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
+        net.eval()
+        for data in val_loader:
+            inputs, (attack_current_labels, attack_future_labels) = data
+            attack_current_labels, attack_future_labels = attack_current_labels.to(dtype=torch.long,
+                                                                                   device=device), attack_future_labels.to(
+                dtype=torch.long, device=device)
+            if framework == 'attack':
+                attack_current_outputs, attack_future_outputs = net(inputs)
+            if 'attack' in tasks:
+                attack_current_outputs = torch.softmax(attack_current_outputs, dim=1)
+                score, pred = torch.max(attack_current_outputs, dim=1)
+                attack_current_y_true += attack_current_labels.tolist()
+                attack_current_y_pred += pred.tolist()
+                attack_future_outputs = torch.softmax(attack_future_outputs, dim=1)
+                score, pred = torch.max(attack_future_outputs, dim=1)
+                attack_future_y_true += attack_future_labels.tolist()
+                attack_future_y_pred += pred.tolist()
+        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
+        wandb_log = {'epoch': epoch}
+        if 'attack' in tasks:
+            attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
+                attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
+                attack_future_y_true), torch.Tensor(attack_future_y_pred)
+            acc = attack_current_y_pred.eq(attack_current_y_true).sum().float().item() / attack_current_y_pred.size(
+                dim=0)
+            f1 = f1_score(attack_current_y_true, attack_current_y_pred, average='weighted')
+            result_str += 'attack_current_acc: %.2f, attack_future_f1: %.2f, ' % (
+                acc * 100, f1 * 100)
+            wandb_log['val_attack_current_acc'] = acc
+            wandb_log['val_attack_current_f1'] = f1
+            acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(
+                dim=0)
+            f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
+            result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (
+                acc * 100, f1 * 100)
+            wandb_log['val_attack_future_acc'] = acc
+            wandb_log['val_attack_future_f1'] = f1
+        print(result_str + 'loss: %.4f' % total_loss)
+        wandb.log(wandb_log)
+        torch.cuda.empty_cache()
+        epoch += 1
+        print('------------------------------------------')
+        # break
+
+    print('Testing')
+    test_loader = Attack_DataLoader(model=model, dataset=testset, sequence_length=sequence_length,
+                                    frame_sample_hop=1, batch_size=batch_size, drop_last=False,
+                                    num_workers=num_workers)
+    attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
+    process_time = 0
+    net.eval()
+    progress_bar = tqdm(total=len(test_loader), desc='Progress')
+    for index, data in enumerate(test_loader):
+        progress_bar.update(1)
+        inputs, (attack_current_labels, attack_future_labels) = data
+        attack_current_labels, attack_future_labels = attack_current_labels.to(device), attack_future_labels.to(device)
+        if framework == 'attack':
+            attack_current_outputs, attack_future_outputs = net(inputs)
+        if 'attack' in tasks:
+            attack_current_outputs = torch.softmax(attack_current_outputs, dim=1)
+            score, pred = torch.max(attack_current_outputs, dim=1)
+            attack_current_y_true += attack_current_labels.tolist()
+            attack_current_y_pred += pred.tolist()
+            attack_future_outputs = torch.softmax(attack_future_outputs, dim=1)
+            score, pred = torch.max(attack_future_outputs, dim=1)
+            attack_future_y_true += attack_future_labels.tolist()
+            attack_future_y_pred += pred.tolist()
+        torch.cuda.empty_cache()
+    progress_bar.close()
+    result_str = ''
+    wandb_log = {}
+    params = sum(p.numel() for p in net.parameters())
+    total_f1, total_acc = 0, 0
+    if 'attack' in tasks:
+        attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
+            attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
+            attack_future_y_true), torch.Tensor(attack_future_y_pred)
+        acc = attack_current_y_pred.eq(attack_current_y_true).sum().float().item() / attack_current_y_pred.size(dim=0)
+        f1 = f1_score(attack_current_y_true, attack_current_y_pred, average='weighted')
+        performance_model['attack_current_accuracy'] = acc
+        performance_model['attack_future_f1'] = f1
+        performance_model['attack_current_y_true'] = attack_current_y_true
+        performance_model['attack_current_y_pred'] = attack_current_y_pred
+        result_str += 'attack_current_acc: %.2f, attack_current_f1: %.2f, ' % (acc * 100, f1 * 100)
+        wandb_log['test_attack_current_acc'] = acc
+        wandb_log['test_attack_current_f1'] = f1
+        total_acc += acc
+        total_f1 += f1
+        acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(dim=0)
+        f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
+        performance_model['attack_future_accuracy'] = acc
+        performance_model['attack_future_f1'] = f1
+        performance_model['attack_future_y_true'] = attack_future_y_true
+        performance_model['attack_future_y_pred'] = attack_future_y_pred
+        result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (acc * 100, f1 * 100)
+        wandb_log['test_attack_future_acc'] = acc
+        wandb_log['test_attack_future_f1'] = f1
+        total_acc += acc
+        total_f1 += f1
+    print(result_str + 'Params: %d' % params)
+    performance_model['params'] = params
+    wandb_log['avg_f1'] = total_f1 / len(tasks)
+    wandb_log['avg_acc'] = total_acc / len(tasks)
+    wandb_log['params'] = params
+    model_name = 'HarperAttack_fbe%s.pt' % (frame_before_event)
+    # torch.save(net.state_dict(), 'models/%s' % model_name)
+    # artifact = wandb.Artifact(model_name, type="model")
+    # artifact.add_file("models/%s" % model_name)
+    # wandb.log_artifact(artifact)
+    # wandb.log(wandb_log)
+    # os.remove('models/%s' % model_name)
+
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    return performance_model
+
+
+if __name__ == '__main__':
+    frame_before_event = 5
+    sequence_length = 10
+    trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
+                                                   frames_before_event=frame_before_event)
+
+
+    def train():
+        p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event, sequence_length=sequence_length,
+                           framework='attack', body_part=[True, False, False], trainset=trainset, valset=valset,
+                           testset=testset)
+
+
+    sweep_config = {
+        'method': 'grid',
+        'metric': {
+            'name': 'avg_f1',
+            'goal': 'maximize',
+        },
+        'parameters': {
+            'epochs': {"values": [20, 30, 40, 50, 60, 70]},
+            'loss_weight': {"values": [0.2, 0.4, 0.6, 0.8, 1]},
+            'times': {'values': [ii for ii in range(10)]},
+        }
+    }
+    sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_fbe%d_test' % frame_before_event)
+    wandb.agent(sweep_id, function=train)
