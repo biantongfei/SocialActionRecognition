@@ -531,8 +531,9 @@ class HARPER_Dataset(Dataset):
                                 # action_label = feature_json[
                                 #     'action_class'] if frame_index + self.sequence_length + self.frames_before_event < interact_start_frame else 10
                                 distance = torch.tensor(distance)
-                                down_sample_count += self.not_interact_downsample_rate
-                                if attack_current_label == 3 and attack_future_label == 3 and down_sample_count % 1 != 0:
+                                down_sample_count += 1
+                                if attack_current_label == 3 and attack_future_label == 3 and down_sample_count % int(
+                                        1 / self.not_interact_downsample_rate) != 0:
                                     continue
                                 self.features.append([x_tensor])
                                 self.distances.append(distance)
@@ -605,13 +606,13 @@ def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
 
 
 if __name__ == '__main__':
-    trainset, valset, testset = get_harper_dataset(10,5)
+    trainset, valset, testset = get_harper_dataset(10, 5)
     attack_current_dict = {}
     attack_future_dict = {}
     for attack in attack_class:
         attack_current_dict[attack] = 0
         attack_future_dict[attack] = 0
-    for dataset in [trainset, valset, testset]:
+    for dataset in [testset]:
         for data in dataset:
             attack_current_dict[attack_class[data[1][0]]] += 1
             attack_future_dict[attack_class[data[1][1]]] += 1
