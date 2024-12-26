@@ -127,7 +127,7 @@ class Attack_DataLoader(DataLoader):
     def __init__(self, model, dataset, batch_size, sequence_length, frame_sample_hop, drop_last=True, shuffle=False,
                  num_workers=1):
         super(Attack_DataLoader, self).__init__(dataset=dataset, batch_size=batch_size, shuffle=shuffle,
-                                               drop_last=drop_last, num_workers=num_workers)
+                                                drop_last=drop_last, num_workers=num_workers)
         if model == 'gcn_lstm':
             self.collate_fn = self.gcn_collate_fn
         elif model in ['stgcn', 'msgcn', 'dgstgcn']:
@@ -144,7 +144,6 @@ class Attack_DataLoader(DataLoader):
         batch = [
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * harper_body_point_num)).to(
                 torch.int64)]
-        print(x_tensors_list[0].shape)
         point_nums = [harper_body_point_num]
         edge_nums = [2 * self.body_l_pair_num + harper_body_point_num]
         attack_current_label, attack_future_label = [], []
@@ -153,7 +152,7 @@ class Attack_DataLoader(DataLoader):
             for ii in range(int(self.sequence_length / self.frame_sample_hop)):
                 for i in range(len(d[0])):
                     if i == 0:
-                        edge_index = torch.Tensor(coco_body_l_pair).t()
+                        edge_index = torch.Tensor(harper_l_pair).t()
                     if type(d[0][i]) == int:
                         continue
                     edge_index = torch.cat([edge_index, edge_index.flip([0])], dim=1)
