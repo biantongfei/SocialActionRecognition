@@ -835,7 +835,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
     performance_model = {}
     num_workers = 8
     if 'gcn_' in model:
-        batch_size = gcn_batch_size
+        batch_size = wandb.config.batch_size
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
         num_workers = 1
@@ -861,7 +861,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
     elif model == 'r3d':
         net = R3D(framework=framework)
     net.to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=wandb.config.learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     train_loader = Attack_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
@@ -1029,6 +1029,8 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {"values": [30, 40, 50, 60, 70, 80]},
+            'learning_rate': {"values": [1e-1, 1e-2, 1e-3, 1e-4]},
+            'batch_size': {"values": [32, 64, 128]},
             'loss_weight': {"values": [0.5, 1, 2]},
             'times': {'values': [ii for ii in range(10)]},
         }
