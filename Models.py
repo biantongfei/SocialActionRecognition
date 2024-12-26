@@ -377,7 +377,6 @@ class GNN(nn.Module):
         if self.body_part[0]:
             x_body, edge_index_body, batch_body = data[0][0].to(dtype=dtype, device=device), data[1][0].to(
                 device=device), data[2][0].to(device)
-            print(x_body.shape, edge_index_body.shape, batch_body.shape)
             x_body = self.GCN_body(x=x_body, edge_index=edge_index_body, batch=batch_body).to(dtype=dtype,
                                                                                               device=device)
             # x_body = global_mean_pool(x_body, batch_body)
