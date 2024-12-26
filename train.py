@@ -37,13 +37,14 @@ sweep_config = {
         'goal': 'maximize',
     },
     'parameters': {
-        'epochs': {"values": [20, 30, 40, 50, 60, 70]},
+        'epochs': {"values": [20, 30, 40, 50]},
         'loss_type': {"values": ['sum']},
         'times': {'values': [ii for ii in range(5)]},
-        'keypoints_hidden_dim': {"values": [8, 32]},
+        'keypoints_hidden_dim': {"values": [16]},
     }
 }
-sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
+# sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
+sweep_id = '6o7l4xbz'
 wandb.agent(sweep_id, function=train)
 
 # sweep_config = {

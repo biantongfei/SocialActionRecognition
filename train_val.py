@@ -1029,7 +1029,7 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {"values": [20, 30, 40, 50, 60, 70]},
-            'loss_weight': {"values": [0.2, 0.4, 0.6, 0.8, 1]},
+            'loss_weight': {"values": [0.5, 1, 2]},
             'times': {'values': [ii for ii in range(10)]},
         }
     }
