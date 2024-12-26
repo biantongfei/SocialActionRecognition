@@ -1028,7 +1028,7 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [20, 30, 40, 50, 60, 70]},
+            'epochs': {"values": [30, 40, 50, 60, 70, 80]},
             'loss_weight': {"values": [0.5, 1, 2]},
             'times': {'values': [ii for ii in range(10)]},
         }
