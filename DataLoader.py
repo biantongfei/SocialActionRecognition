@@ -144,6 +144,7 @@ class Attack_DataLoader(DataLoader):
         batch = [
             torch.zeros((len(data) * int(self.sequence_length / self.frame_sample_hop) * harper_body_point_num)).to(
                 torch.int64)]
+        print(x_tensors_list[0].shape)
         point_nums = [harper_body_point_num]
         edge_nums = [2 * self.body_l_pair_num + harper_body_point_num]
         attack_current_label, attack_future_label = [], []
