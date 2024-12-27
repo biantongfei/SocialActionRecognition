@@ -996,6 +996,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
     wandb_log['avg_f1'] = total_f1 / len(tasks)
     wandb_log['avg_acc'] = total_acc / len(tasks)
     wandb_log['params'] = params
+    wandb.log(wandb_log)
     model_name = 'HarperAttack_fbe%s.pt' % (frame_before_event)
     # torch.save(net.state_dict(), 'models/%s' % model_name)
     # artifact = wandb.Artifact(model_name, type="model")
