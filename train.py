@@ -43,8 +43,7 @@ sweep_config = {
         'keypoints_hidden_dim': {"values": [16]},
     }
 }
-# sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
-sweep_id = '6o7l4xbz'
+sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
 wandb.agent(sweep_id, function=train)
 
 # sweep_config = {
