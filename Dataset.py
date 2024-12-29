@@ -441,7 +441,7 @@ class HARPER_Dataset(Dataset):
         self.features = []
         self.distances = []
         self.labels = []
-        self.not_interact_downsample_rate = 1
+        self.not_interact_downsample_rate = 0.1
         self.get_pose_sequences()
 
     def __getitem__(self, item):
@@ -606,7 +606,7 @@ def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
 
 
 if __name__ == '__main__':
-    trainset, valset, testset = get_harper_dataset(10, 5)
+    trainset, valset, testset = get_harper_dataset(10, 10)
     attack_current_dict = {}
     attack_future_dict = {}
     for attack in attack_class:

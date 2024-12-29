@@ -1030,9 +1030,9 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {"values": [30, 40, 50, 60, 70, 80]},
-            'learning_rate': {"values": [1e-1, 1e-2, 1e-3, 1e-4]},
+            'learning_rate': {"values": [1e-1, 1e-2, 1e-3]},
             'batch_size': {"values": [32, 64, 128]},
-            'loss_weight': {"values": [0.5, 1, 2]},
+            'loss_weight': {"values": [1]},
             'times': {'values': [ii for ii in range(10)]},
         }
     }
