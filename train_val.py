@@ -993,8 +993,8 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
         total_f1 += f1
     print(result_str + 'Params: %d' % params)
     performance_model['params'] = params
-    wandb_log['avg_f1'] = total_f1 / len(tasks)
-    wandb_log['avg_acc'] = total_acc / len(tasks)
+    wandb_log['avg_f1'] = total_f1 / len(tasks) / 2
+    wandb_log['avg_acc'] = total_acc / len(tasks) / 2
     wandb_log['params'] = params
     wandb.log(wandb_log)
     model_name = 'HarperAttack_fbe%s.pt' % (frame_before_event)

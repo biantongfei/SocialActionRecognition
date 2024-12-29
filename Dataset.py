@@ -441,7 +441,7 @@ class HARPER_Dataset(Dataset):
         self.features = []
         self.distances = []
         self.labels = []
-        self.not_interact_downsample_rate = 0.1
+        self.not_interact_downsample_rate = 1
         self.get_pose_sequences()
 
     def __getitem__(self, item):
@@ -525,7 +525,7 @@ class HARPER_Dataset(Dataset):
                                 attack_current_label = attack_label if frame_index + self.sequence_length > interact_start_frame and frame_index < interact_end_frame else 3
                                 attack_current_label = self.check_current_attack(attack_current_label, frame_index,
                                                                                  frames)
-                                attack_future_label = attack_label if frame_index + self.sequence_length + self.frames_before_event > interact_start_frame and frame_index + self.sequence_length <= interact_start_frame else 3
+                                attack_future_label = attack_label if frame_index + self.sequence_length + self.frames_before_event > interact_start_frame and frame_index + self.sequence_length < interact_end_frame else 3
                                 attack_future_label = self.check_future_attack(attack_future_label, frame_index,
                                                                                frames)
                                 # action_label = feature_json[
