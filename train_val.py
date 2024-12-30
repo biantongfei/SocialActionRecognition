@@ -121,10 +121,6 @@ def dynamic_weight_average(prev_losses, curr_losses, temp=2.0):
 
 def train_jpl(model, body_part, framework, frame_sample_hop, sequence_length, trainset, valset, testset):
     run = wandb.init()
-    # sequence_length = wandb.config.sequence_length
-    # print(
-    #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
-    #                                                               wandb.config.times))
     tasks = [framework] if framework in ['intention', 'attitude', 'action'] else ['intention', 'attitude', 'action']
     performance_model = {}
     num_workers = 8
@@ -1030,8 +1026,8 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {"values": [30, 40, 50, 60, 70, 80]},
-            'learning_rate': {"values": [1e-1, 1e-2, 1e-3]},
-            'batch_size': {"values": [32, 64, 128]},
+            'learning_rate': {"values": [1e-2]},
+            'batch_size': {"values": [32]},
             'loss_weight': {"values": [1]},
             'times': {'values': [ii for ii in range(10)]},
         }

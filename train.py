@@ -2,7 +2,7 @@ from train_val import train_jpl, send_email, train_harper
 from Dataset import get_jpl_dataset
 import wandb
 
-body_part = [True, True, True]
+body_part = [True, False, False]
 model = 'msgcn'
 # framework = 'intention'
 # framework = 'attitude'
@@ -10,7 +10,7 @@ model = 'msgcn'
 # framework = 'parallel'
 # framework = 'tree'
 framework = 'chain'
-frame_sample_hop = 1
+frame_sample_hop = 3
 sequence_length = 30
 
 # JPL Dataset
@@ -31,18 +31,22 @@ def train():
 
 
 sweep_config = {
-    'method': 'grid',
-    'metric': {
-        'name': 'avg_f1',
-        'goal': 'maximize',
-    },
-    'parameters': {
-        'epochs': {"values": [20, 30, 40, 50]},
-        'loss_type': {"values": ['sum']},
-        'times': {'values': [ii for ii in range(5)]},
-        'keypoints_hidden_dim': {"values": [16]},
+        # 'method': 'bayes',
+        # 'method': 'random',
+        'method': 'grid',
+        'metric': {
+            'name': 'avg_f1',
+            'goal': 'maximize',
+        },
+        'parameters': {
+            'epochs': {"values": [50]},
+            # 'epochs': {"values": [1]},
+            'loss_type': {"values": ['sum']},
+            'keypoint_hidden_dim': {'values': [16]},
+            'time_hidden_dim': {'values': [8]},
+            'times': {'values': [ii for ii in range(10)]},
+        }
     }
-}
 sweep_id = wandb.sweep(sweep_config, project='SocialEgoNet_JPL_fps%d' % int(sequence_length / frame_sample_hop))
 wandb.agent(sweep_id, function=train)
 

@@ -295,7 +295,7 @@ if __name__ == '__main__':
             'keypoint_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [4, 8, 16]},
             'fc_hidden1': {'values': [64]},
-            'fc_hidden2': {'values': [8, 16]},
+            'fc_hidden2': {'values': [16]},
             'student_body_part': {'values': [student_body_part]},
             'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
             'student_sequence_length': {'values': [student_sequence_length]},
