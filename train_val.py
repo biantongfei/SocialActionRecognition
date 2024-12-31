@@ -1006,7 +1006,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
 
 
 if __name__ == '__main__':
-    frame_before_event = 5
+    frame_before_event = 10
     sequence_length = 10
     trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
                                                    frames_before_event=frame_before_event)
@@ -1025,7 +1025,7 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [30, 40, 50, 60, 70, 80]},
+            'epochs': {"values": [50]},
             'learning_rate': {"values": [1e-2]},
             'batch_size': {"values": [32]},
             'loss_weight': {"values": [1]},
