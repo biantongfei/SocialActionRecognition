@@ -613,6 +613,7 @@ class HARPER_Dataset(Dataset):
             x_move = torch.full((self.sequence_length, harper_body_point_num, 1), (random.random() - 0.5) * 2)
             y_move = torch.full((self.sequence_length, harper_body_point_num, 1), (random.random() - 0.5) * 2)
             keypoints = x_tensor.clone()
+            print(keypoints.shape)
             keypoints[:, :, 0] = keypoints[:, :, 0] + x_move
             keypoints[:, :, 1] = keypoints[:, :, 1] + y_move
             self.features.append([keypoints])
