@@ -590,7 +590,7 @@ class HARPER_Dataset(Dataset):
                                 down_sample_count += self.down_sample_rate
 
     def add_gaussian_noise(self, x_tensor, distance, attack_current_label, attack_future_label):
-        sigma_list = [0.01, 0.02, 0.05]
+        sigma_list = [0.005, 0.01, 0.02]
         augment_times = 3
         for sigma_index, sigma in enumerate(sigma_list):
             for i in range(augment_times):
@@ -613,8 +613,8 @@ class HARPER_Dataset(Dataset):
             x_move = torch.full((1, harper_body_point_num), (random.random() - 0.5) * 2)
             y_move = torch.full((1, harper_body_point_num), (random.random() - 0.5) * 2)
             keypoints = x_tensor.clone()
-            keypoints[:, 0] = keypoints[:, 0] + x_move
-            keypoints[:, 1] = keypoints[:, 1] + y_move
+            keypoints[0] = keypoints[0] + x_move
+            keypoints[1] = keypoints[1] + y_move
             self.features.append([keypoints])
             self.distances.append(distance)
             self.labels.append((attack_current_label, attack_future_label))
