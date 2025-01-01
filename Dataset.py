@@ -601,7 +601,7 @@ class HARPER_Dataset(Dataset):
                 x_gaussion_noise = np.random.normal(0, sigma, size=(self.sequence_length, harper_body_point_num, 1))
                 y_gaussion_noise = np.random.normal(0, sigma, size=(self.sequence_length, harper_body_point_num, 1))
                 score_gaussion_noise = np.zeros((self.sequence_length, harper_body_point_num, 1))
-                gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                gaussion_noise = np.concatenate((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise), axis=2)
                 keypoints = torch.Tensor((np.array(x_tensor) + gaussion_noise))
                 self.features.append([keypoints])
                 self.distances.append(distance)
