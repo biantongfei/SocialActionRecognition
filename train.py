@@ -42,7 +42,7 @@ sweep_config = {
             'epochs': {"values": [50]},
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['sum']},
-            'keypoint_hidden_dim': {'values': [16]},
+            'keypoints_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [8]},
             'times': {'values': [ii for ii in range(10)]},
         }
