@@ -1025,9 +1025,9 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [50]},
+            'epochs': {"values": [30, 40, 50]},
             'learning_rate': {"values": [1e-2]},
-            'batch_size': {"values": [32]},
+            'batch_size': {"values": [128]},
             'loss_weight': {"values": [1]},
             'times': {'values': [ii for ii in range(10)]},
         }
