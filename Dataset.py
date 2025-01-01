@@ -102,7 +102,8 @@ class JPL_Dataset(Dataset):
         self.out_files = []
         index = 0
         for file in self.files:
-            for hop in range(self.frame_sample_hop):
+            # for hop in range(self.frame_sample_hop):
+            for hop in range(1):
                 if self.model in ['stgcn', 'msgcn', 'dgstgcn']:
                     x, label = self.get_stgraph_data_from_file(file, hop)
                     self.features.append(x)
