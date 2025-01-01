@@ -1005,8 +1005,8 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
 if __name__ == '__main__':
     sequence_length = 10
     for frame_before_event in [5, 10]:
-        # for augment_method in ['original', 'noise', 'move', 'noise+move']:
-        for augment_method in ['noise']:
+        for augment_method in ['original', 'noise', 'move', 'noise+move']:
+        # for augment_method in ['noise']:
             trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
                                                            frames_before_event=frame_before_event,
                                                            augment_method=augment_method)
