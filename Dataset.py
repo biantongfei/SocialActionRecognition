@@ -541,8 +541,8 @@ class HARPER_Dataset(Dataset):
                                 if self.train:
                                     self.add_gaussian_noise(x_tensor, distance, attack_current_label,
                                                             attack_future_label)
-                                    self.random_move(x_tensor, distance, attack_current_label,
-                                                     attack_future_label)
+                                    # self.random_move(x_tensor, distance, attack_current_label,
+                                    #                  attack_future_label)
 
                 else:
                     down_sample_count = 0
