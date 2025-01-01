@@ -119,7 +119,7 @@ class Attack_Classifier(nn.Module):
                                                     )
 
     def forward(self, y):
-        if self.framework in ['attack']:
+        if 'attack' in self.framework:
             y1 = self.attack_current_head(y)
             if 'parallel' in self.framework:
                 y2 = self.attack_future_head(y)

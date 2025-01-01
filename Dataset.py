@@ -547,6 +547,10 @@ class HARPER_Dataset(Dataset):
                                     if 'move' in self.augment_method:
                                         self.random_move(x_tensor, distance, attack_current_label,
                                                          attack_future_label)
+                                    x_tensor[:, :, :2] = -x_tensor[:, :, :2]
+                                    self.features.append([x_tensor])
+                                    self.distances.append(distance)
+                                    self.labels.append((attack_current_label, attack_future_label))
 
                 else:
                     down_sample_count = 0
@@ -602,7 +606,7 @@ class HARPER_Dataset(Dataset):
                 self.features.append([keypoints])
                 self.distances.append(distance)
                 self.labels.append((attack_current_label, attack_future_label))
-                keypoints[:, :2] = -keypoints[:, :2]
+                keypoints[:, :, :2] = -keypoints[:, :, :2]
                 self.features.append([keypoints])
                 self.distances.append(distance)
                 self.labels.append((attack_current_label, attack_future_label))
@@ -613,13 +617,12 @@ class HARPER_Dataset(Dataset):
             x_move = torch.full((self.sequence_length, harper_body_point_num), (random.random() - 0.5) * 2)
             y_move = torch.full((self.sequence_length, harper_body_point_num), (random.random() - 0.5) * 2)
             keypoints = x_tensor.clone()
-            print(keypoints.shape)
             keypoints[:, :, 0] = keypoints[:, :, 0] + x_move
             keypoints[:, :, 1] = keypoints[:, :, 1] + y_move
             self.features.append([keypoints])
             self.distances.append(distance)
             self.labels.append((attack_current_label, attack_future_label))
-            keypoints[:, :2] = -keypoints[:, :2]
+            keypoints[:, :, :2] = -keypoints[:, :, :2]
             self.features.append([keypoints])
             self.distances.append(distance)
             self.labels.append((attack_current_label, attack_future_label))

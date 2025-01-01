@@ -1005,7 +1005,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
 if __name__ == '__main__':
     sequence_length = 10
     for frame_before_event in [5]:
-        # for augment_method in ['noise', 'move', 'noise+move']:
+        # for augment_method in ['original','noise', 'move', 'noise+move']:
         for augment_method in ['move']:
             trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
                                                            frames_before_event=frame_before_event,
@@ -1014,8 +1014,8 @@ if __name__ == '__main__':
 
             def train():
                 p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event,
-                                   sequence_length=sequence_length,
-                                   body_part=[True, False, False], trainset=trainset, valset=valset, testset=testset)
+                                   sequence_length=sequence_length, body_part=[True, False, False], trainset=trainset,
+                                   valset=valset, testset=testset)
 
 
             sweep_config = {
