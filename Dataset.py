@@ -539,10 +539,10 @@ class HARPER_Dataset(Dataset):
                                 self.distances.append(distance)
                                 self.labels.append((attack_current_label, attack_future_label))
                                 if self.train:
-                                    x_tensor[:, :2] = -x_tensor[:, :2]
-                                    self.features.append([x_tensor])
-                                    self.distances.append(distance)
-                                    self.labels.append((attack_current_label, attack_future_label))
+                                    self.add_gaussian_noise(x_tensor, distance, attack_current_label,
+                                                            attack_future_label)
+                                    self.random_move(x_tensor, distance, attack_current_label,
+                                                     attack_future_label)
 
                 else:
                     down_sample_count = 0
@@ -584,6 +584,40 @@ class HARPER_Dataset(Dataset):
                                 self.labels.append(
                                     (contact_label, intent_label, attitude_label, attack_label, action_label))
                                 down_sample_count += self.down_sample_rate
+
+    def add_gaussian_noise(self, x_tensor, distance, attack_current_label, attack_future_label):
+        sigma_list = [0.01, 0.02, 0.05]
+        augment_times = 3
+        for sigma_index, sigma in enumerate(sigma_list):
+            for i in range(augment_times):
+                x_gaussion_noise = np.random.normal(0, sigma, size=(harper_body_point_num, 1))
+                y_gaussion_noise = np.random.normal(0, sigma, size=(harper_body_point_num, 1))
+                score_gaussion_noise = np.zeros((harper_body_point_num, 1))
+                gaussion_noise = np.hstack((x_gaussion_noise, y_gaussion_noise, score_gaussion_noise))
+                keypoints = torch.Tensor((np.array(x_tensor) + gaussion_noise))
+                self.features.append([keypoints])
+                self.distances.append(distance)
+                self.labels.append((attack_current_label, attack_future_label))
+                keypoints[:, :2] = -keypoints[:, :2]
+                self.features.append([keypoints])
+                self.distances.append(distance)
+                self.labels.append((attack_current_label, attack_future_label))
+
+    def random_move(self, x_tensor, distance, attack_current_label, attack_future_label):
+        augment_times = 10
+        for _ in range(augment_times):
+            x_move = torch.full((1, harper_body_point_num), (random.random() - 0.5) * 2)
+            y_move = torch.full((1, harper_body_point_num), (random.random() - 0.5) * 2)
+            keypoints = x_tensor.clone()
+            keypoints[:, 0] = keypoints[:, 0] + x_move
+            keypoints[:, 1] = keypoints[:, 1] + y_move
+            self.features.append([keypoints])
+            self.distances.append(distance)
+            self.labels.append((attack_current_label, attack_future_label))
+            keypoints[:, :2] = -keypoints[:, :2]
+            self.features.append([keypoints])
+            self.distances.append(distance)
+            self.labels.append((attack_current_label, attack_future_label))
 
 
 def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
