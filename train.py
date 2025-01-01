@@ -3,7 +3,7 @@ from Dataset import get_jpl_dataset
 import wandb
 
 body_part = [True, False, False]
-model = 'msgcn'
+model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
 # framework = 'action'
