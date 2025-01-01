@@ -2,7 +2,7 @@ from train_val import train_jpl, send_email, train_harper
 from Dataset import get_jpl_dataset
 import wandb
 
-body_part = [True, True, True]
+body_part = [True, False, False]
 model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
