@@ -610,8 +610,8 @@ class HARPER_Dataset(Dataset):
     def random_move(self, x_tensor, distance, attack_current_label, attack_future_label):
         augment_times = 10
         for _ in range(augment_times):
-            x_move = torch.full((self.sequence_length, harper_body_point_num, 1), (random.random() - 0.5) * 2)
-            y_move = torch.full((self.sequence_length, harper_body_point_num, 1), (random.random() - 0.5) * 2)
+            x_move = torch.full((self.sequence_length, harper_body_point_num), (random.random() - 0.5) * 2)
+            y_move = torch.full((self.sequence_length, harper_body_point_num), (random.random() - 0.5) * 2)
             keypoints = x_tensor.clone()
             print(keypoints.shape)
             keypoints[:, :, 0] = keypoints[:, :, 0] + x_move
