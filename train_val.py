@@ -821,17 +821,14 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
     return performance_model
 
 
-def train_attack(model, frame_before_event, sequence_length, framework, body_part, trainset, valset, testset):
+def train_attack(model, frame_before_event, sequence_length, body_part, trainset, valset, testset):
     run = wandb.init()
-    # sequence_length = wandb.config.sequence_length
-    # print(
-    #     'hyperparameters--> fc2: %d, loss_type: %s, times: %d' % (wandb.config.fc_hidden2, wandb.config.loss_type,
-    #                                                               wandb.config.times))
+    framework = wandb.config.framework
     tasks = ['attack']
     performance_model = {}
     num_workers = 8
     if 'gcn_' in model:
-        batch_size = wandb.config.batch_size
+        batch_size = gcn_batch_size
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
         num_workers = 1
@@ -845,19 +842,19 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
         batch_size = r3d_batch_size
     if 'gcn_' in model:
         net = GNN(body_part=body_part, framework=framework, model=model, sequence_length=sequence_length,
-                  frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=4, fc_hidden1=64, fc_hidden2=16,
+                  frame_sample_hop=1, keypoint_hidden_dim=16, time_hidden_dim=8, fc_hidden1=64, fc_hidden2=16,
                   is_harper=True, is_attack=True)
     elif model == 'stgcn':
         net = STGCN(body_part=body_part, framework=framework)
     elif model == 'msgcn':
         net = MSGCN(body_part=body_part, framework=framework,
-                    keypoint_hidden_dim=wandb.config.keypoints_hidden_dim)
+                    keypoint_hidden_dim=16)
     elif model == 'dgstgcn':
         net = DGSTGCN(body_part=body_part, framework=framework)
     elif model == 'r3d':
         net = R3D(framework=framework)
     net.to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=wandb.config.learning_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     train_loader = Attack_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
@@ -875,11 +872,11 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
             attack_current_labels, attack_future_labels = attack_current_labels.to(dtype=torch.long,
                                                                                    device=device), attack_future_labels.to(
                 dtype=torch.long, device=device)
-            if framework == 'attack':
+            if 'attack' in framework:
                 attack_current_outputs, attack_future_outputs = net(inputs)
                 loss_1 = functional.cross_entropy(attack_current_outputs, attack_current_labels)
                 loss_2 = functional.cross_entropy(attack_future_outputs, attack_future_labels)
-                total_loss = loss_1 + wandb.config.loss_weight * loss_2
+                total_loss = loss_1 + loss_2
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
@@ -894,7 +891,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
             attack_current_labels, attack_future_labels = attack_current_labels.to(dtype=torch.long,
                                                                                    device=device), attack_future_labels.to(
                 dtype=torch.long, device=device)
-            if framework == 'attack':
+            if 'attack' in framework:
                 attack_current_outputs, attack_future_outputs = net(inputs)
             if 'attack' in tasks:
                 attack_current_outputs = torch.softmax(attack_current_outputs, dim=1)
@@ -944,7 +941,7 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
         progress_bar.update(1)
         inputs, (attack_current_labels, attack_future_labels) = data
         attack_current_labels, attack_future_labels = attack_current_labels.to(device), attack_future_labels.to(device)
-        if framework == 'attack':
+        if 'attack' in framework:
             attack_current_outputs, attack_future_outputs = net(inputs)
         if 'attack' in tasks:
             attack_current_outputs = torch.softmax(attack_current_outputs, dim=1)
@@ -1006,31 +1003,34 @@ def train_attack(model, frame_before_event, sequence_length, framework, body_par
 
 
 if __name__ == '__main__':
-    frame_before_event = 5
     sequence_length = 10
-    trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
-                                                   frames_before_event=frame_before_event)
+    for frame_before_event in [5]:
+        # for augment_method in ['original', 'noise', 'move', 'noise+move']:
+        for augment_method in ['move']:
+            trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
+                                                           frames_before_event=frame_before_event,
+                                                           augment_method=augment_method)
 
 
-    def train():
-        p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event, sequence_length=sequence_length,
-                           framework='attack', body_part=[True, False, False], trainset=trainset, valset=valset,
-                           testset=testset)
+            def train():
+                p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event,
+                                   sequence_length=sequence_length,
+                                   body_part=[True, False, False], trainset=trainset, valset=valset, testset=testset)
 
 
-    sweep_config = {
-        'method': 'grid',
-        'metric': {
-            'name': 'avg_f1',
-            'goal': 'maximize',
-        },
-        'parameters': {
-            'epochs': {"values": [30, 40, 50]},
-            'learning_rate': {"values": [1e-2]},
-            'batch_size': {"values": [128]},
-            'loss_weight': {"values": [1]},
-            'times': {'values': [ii for ii in range(10)]},
-        }
-    }
-    sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_fbe%d' % frame_before_event)
-    wandb.agent(sweep_id, function=train)
+            sweep_config = {
+                'method': 'grid',
+                'metric': {
+                    'name': 'avg_f1',
+                    'goal': 'maximize',
+                },
+                'parameters': {
+                    'epochs': {"values": [30, 40, 50]},
+                    'augment_method': {'values': [augment_method]},
+                    'framework': {'values': ['attack_parallel', 'attack_chain']},
+                    'frame_before_event': {'values': [frame_before_event]},
+                    'times': {'values': [ii for ii in range(10)]},
+                }
+            }
+            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER')
+            wandb.agent(sweep_id, function=train)

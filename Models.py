@@ -109,18 +109,22 @@ class Attack_Classifier(nn.Module):
         self.attack_current_head = nn.Sequential(nn.ReLU(),
                                                  nn.Linear(in_feature_size, attack_class_num)
                                                  )
-        self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                nn.Linear(in_feature_size, attack_class_num)
-                                                )
-        # self.attack_future_head = nn.Sequential(nn.ReLU(),
-        #                                         nn.Linear(in_feature_size + attack_class_num, attack_class_num)
-        #                                         )
+        if 'parallel' in framework:
+            self.attack_future_head = nn.Sequential(nn.ReLU(),
+                                                    nn.Linear(in_feature_size, attack_class_num)
+                                                    )
+        elif 'chain' in framework:
+            self.attack_future_head = nn.Sequential(nn.ReLU(),
+                                                    nn.Linear(in_feature_size + attack_class_num, attack_class_num)
+                                                    )
 
     def forward(self, y):
         if self.framework in ['attack']:
             y1 = self.attack_current_head(y)
-            y2 = self.attack_future_head(y)
-            # y2 = self.attack_future_head(torch.cat((y, y1), dim=1))
+            if 'parallel' in self.framework:
+                y2 = self.attack_future_head(y)
+            elif 'chain' in self.framework:
+                y2 = self.attack_future_head(torch.cat((y, y1), dim=1))
             return y1, y2
 
 

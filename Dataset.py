@@ -431,13 +431,15 @@ class ImagesDataset(Dataset):
 
 
 class HARPER_Dataset(Dataset):
-    def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle=False, train=False):
+    def __init__(self, data_path, files, sequence_length, frames_before_event, multi_angle=False, train=False,
+                 augment_method='original'):
         self.data_path = data_path
         self.files = files
         self.sequence_length = sequence_length
         self.frames_before_event = frames_before_event
         self.multi_angle = multi_angle
         self.train = train
+        self.augment_method = augment_method
         self.features = []
         self.distances = []
         self.labels = []
@@ -539,10 +541,12 @@ class HARPER_Dataset(Dataset):
                                 self.distances.append(distance)
                                 self.labels.append((attack_current_label, attack_future_label))
                                 if self.train:
-                                    self.add_gaussian_noise(x_tensor, distance, attack_current_label,
-                                                            attack_future_label)
-                                    # self.random_move(x_tensor, distance, attack_current_label,
-                                    #                  attack_future_label)
+                                    if 'noise' in self.augment_method:
+                                        self.add_gaussian_noise(x_tensor, distance, attack_current_label,
+                                                                attack_future_label)
+                                    if 'move' in self.augment_method:
+                                        self.random_move(x_tensor, distance, attack_current_label,
+                                                         attack_future_label)
 
                 else:
                     down_sample_count = 0
@@ -620,7 +624,7 @@ class HARPER_Dataset(Dataset):
             self.labels.append((attack_current_label, attack_future_label))
 
 
-def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
+def get_harper_dataset(sequence_length, frames_before_event, augment_method, multi_angle=False):
     print('Loading data from HARPER dataset')
     data_path = '../HARPER/'
     train_files = os.listdir(data_path + 'train/pose_sequences/')
@@ -628,7 +632,7 @@ def get_harper_dataset(sequence_length, frames_before_event, multi_angle=False):
     test_files = os.listdir(data_path + 'test/pose_sequences/')
     trainset = HARPER_Dataset(data_path=data_path + 'train/pose_sequences/', files=train_files,
                               sequence_length=sequence_length, frames_before_event=frames_before_event,
-                              multi_angle=multi_angle, train=True)
+                              multi_angle=multi_angle, train=True, augment_method=augment_method)
     valset = HARPER_Dataset(data_path=data_path + 'validation/pose_sequences/', files=val_files,
                             sequence_length=sequence_length, frames_before_event=frames_before_event,
                             multi_angle=multi_angle)
