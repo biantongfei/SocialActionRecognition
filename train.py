@@ -2,7 +2,7 @@ from train_val import train_jpl, send_email, train_harper
 from Dataset import get_jpl_dataset
 import wandb
 
-body_part = [True, False, False]
+body_part = [True, True, True]
 model = 'gcn_lstm'
 # framework = 'intention'
 # framework = 'attitude'
@@ -40,7 +40,6 @@ sweep_config = {
         },
         'parameters': {
             'epochs': {"values": [50]},
-            # 'epochs': {"values": [1]},
             'loss_type': {"values": ['sum']},
             'keypoints_hidden_dim': {'values': [16]},
             'time_hidden_dim': {'values': [8]},
