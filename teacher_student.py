@@ -283,23 +283,23 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [30, 40, 50, 60]},
+            'epochs': {"values": [40, 50, 60]},
             # 'epochs': {"values": [1]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.5, 0.75, 1, 1.5, 2]},
+            'loss_weight': {'values': [0.5, 1, 2, 3]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
             'learning_rate': {'values': [1e-2]},
             # 'learning_rate': {'values': [1e-3]},
             'keypoint_hidden_dim': {'values': [16]},
-            'time_hidden_dim': {'values': [4, 8, 16]},
+            'time_hidden_dim': {'values': [2, 4, 8]},
             'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [16]},
             'student_body_part': {'values': [student_body_part]},
             'student_frame_sample_hop': {'values': [student_frame_sample_hop]},
             'student_sequence_length': {'values': [student_sequence_length]},
-            'times': {'values': [ii for ii in range(5)]},
+            'times': {'values': [ii for ii in range(10)]},
         }
     }
     sweep_id = wandb.sweep(sweep_config, project='MS-SEN_JPL')
