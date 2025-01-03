@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 
 performance = {}
-with open('wandb_export_2025-01-02T16_32_51.036+00_00.csv') as csvfile:
+with open('wandb_export_2025-01-03T19_27_18.440+00_00.csv') as csvfile:
     for row in csv.DictReader(csvfile):
         key = 'e%s_time%s_w%s' % (
             row['epochs'], row['time_hidden_dim'], row['loss_weight'])
