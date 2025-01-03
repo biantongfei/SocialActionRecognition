@@ -1239,5 +1239,5 @@ if __name__ == '__main__':
                     'times': {'values': [ii for ii in range(10)]},
                 }
             }
-            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
+            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER')
             wandb.agent(sweep_id, function=train)
