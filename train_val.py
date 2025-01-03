@@ -891,7 +891,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
             torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
-        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
+        result_str = 'training result--> epoch: %d, ' % epoch
         if 'attack' in tasks:
             attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
                 attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
@@ -926,7 +926,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
                 score, pred = torch.max(attack_future_outputs, dim=1)
                 attack_future_y_true += attack_future_labels.tolist()
                 attack_future_y_pred += pred.tolist()
-        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
+        result_str = 'validating result--> epoch: %d, ' % epoch
         wandb_log = {'epoch': epoch}
         if 'attack' in tasks:
             attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
@@ -997,6 +997,8 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         total_f1 += f1
         attack_acc += acc
         attack_f1 += f1
+        print(attack_current_y_true)
+        print(attack_current_y_pred)
         wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
             probs=None,
             y_true=attack_current_y_true,
@@ -1016,10 +1018,12 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         total_f1 += f1
         attack_acc += acc
         attack_f1 += f1
+        print(attack_future_y_true)
+        print(attack_future_y_pred)
         wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
             probs=None,
-            y_true=attack_current_y_true,
-            preds=attack_current_y_pred,
+            y_true=attack_future_y_true,
+            preds=attack_future_y_pred,
             class_names=attack_class
         )})
     print(result_str + 'Params: %d' % params)
@@ -1065,7 +1069,7 @@ if __name__ == '__main__':
                 },
                 'parameters': {
                     # 'epochs': {"values": [10, 20, 30, 40]},
-                    'epochs': {"values": [10]},
+                    'epochs': {"values": [40]},
                     'augment_method': {'values': [augment_method]},
                     'framework': {'values': ['attack_parallel']},
                     # 'framework': {'values': ['attack_parallel', 'attack_chain']},
