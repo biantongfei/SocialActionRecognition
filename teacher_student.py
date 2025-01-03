@@ -91,6 +91,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
+    int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     while epoch <= wandb.config.epochs:
         student_net.train()
         print('Training student model')
@@ -117,7 +118,6 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             loss_5 = F.kl_div(student_att_log_soft, teacher_att_soft, reduction="batchmean") * (T ** 2)
             loss_6 = F.kl_div(student_act_log_soft, teacher_act_soft, reduction="batchmean") * (T ** 2)
             loss_kd = loss_4 + loss_5 + loss_6
-
             if wandb.config.loss_type == 'sum':
                 total_loss = loss_ce + loss_kd
             elif wandb.config.loss_type == 'weighted':
@@ -126,8 +126,37 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
+            int_y_true += int_labels.tolist()
+            int_y_pred += student_int_outputs.tolist()
+            att_y_true += att_labels.tolist()
+            att_y_pred += student_att_outputs.tolist()
+            act_y_true += act_labels.tolist()
+            act_y_pred += student_act_outputs.tolist()
         scheduler.step()
         progress_bar.close()
+        result_str = 'training result--> student_model: %s, epoch: %d, ' % (student_model, epoch)
+        wandb_log = {'epoch': epoch}
+        int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+        int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+        int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+        result_str += 'int_acc: %.2f, int_f1: %.2f, ' % (int_acc * 100, int_f1 * 100)
+        wandb_log['train_int_acc'] = int_acc
+        wandb_log['train_int_f1'] = int_f1
+        att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+        att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+        att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+        result_str += 'att_acc: %.2f, att_f1: %.2f, ' % (att_acc * 100, att_f1 * 100)
+        wandb_log['train_att_acc'] = att_acc
+        wandb_log['train_att_f1'] = att_f1
+        act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+        act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+        act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+        result_str += 'act_acc: %.2f, act_f1: %.2f, ' % (act_acc * 100, act_f1 * 100)
+        wandb_log['train_act_acc'] = act_acc
+        wandb_log['train_act_f1'] = act_f1
+        result_str += 'avg_acc: %.2f, avg_f1: %.2f, ' % (
+            (int_acc + att_acc + act_acc) * 100 / 3, (int_f1 + att_f1 + act_f1) * 100 / 3)
+        print(result_str + 'loss: %.4f' % total_loss)
         print('Validating student model')
         int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
         student_net.eval()
@@ -149,8 +178,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             pred = act_outputs.argmax(dim=1)
             act_y_true += act_labels.tolist()
             act_y_pred += pred.tolist()
-        result_str = 'student_model: %s, epoch: %d, ' % (student_model, epoch)
-        wandb_log = {'epoch': epoch}
+        result_str = 'validating result--> student_model: %s, epoch: %d, ' % (student_model, epoch)
         int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
         int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
         int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
