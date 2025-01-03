@@ -593,6 +593,8 @@ class HARPER_Dataset(Dataset):
                                 down_sample_count += self.down_sample_rate
 
     def reverse_keypoints(self, x_tensor):
+        for point in [0, 1, 2, 3, 4]:
+            x_tensor[:, point, 0] = -x_tensor[:, point, 0]
         symmetrical_points_list = [[5, 9], [6, 10], [7, 11], [8, 12], [13, 17], [14, 18], [15, 19], [16, 20]]
         for points in symmetrical_points_list:
             t = x_tensor[:, points[0], 0]
