@@ -83,7 +83,6 @@ def train_student(student_model, student_trainset, student_valset, student_tests
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
-
     student_train_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_trainset, batch_size=batch_size,
                                            sequence_length=student_sequence_length,
                                            frame_sample_hop=student_frame_sample_hop, drop_last=False, shuffle=False,
@@ -127,11 +126,15 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             optimizer.step()
             torch.cuda.empty_cache()
             int_y_true += int_labels.tolist()
-            int_y_pred += student_int_outputs.tolist()
+            pred = student_int_outputs.argmax(dim=1)
+            int_y_pred += pred.tolist()
+            att_labels, student_att_outputs = filter_not_interacting_sample(att_labels, student_att_outputs)
             att_y_true += att_labels.tolist()
-            att_y_pred += student_att_outputs.tolist()
+            pred = student_att_outputs.argmax(dim=1)
+            att_y_pred += pred.tolist()
             act_y_true += act_labels.tolist()
-            act_y_pred += student_act_outputs.tolist()
+            pred = student_act_outputs.argmax(dim=1)
+            act_y_pred += pred.tolist()
         scheduler.step()
         progress_bar.close()
         result_str = 'training result--> student_model: %s, epoch: %d, ' % (student_model, epoch)
@@ -288,10 +291,10 @@ if __name__ == '__main__':
     student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', student_body_part,
                                                                         student_frame_sample_hop,
                                                                         student_sequence_length,
-                                                                        augment_method='mixed', randnum=randnum)
+                                                                        augment_method='ori', randnum=randnum)
 
     print('Loading data for teacher')
-    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
+    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='ori',
                                        subset='train', randnum=randnum, fixed_files=student_trainset.out_files)
     calculate_teacher_outputs('msgcn', teacher_trainset, teacher_batch_size, 30, 1)
     del teacher_trainset
