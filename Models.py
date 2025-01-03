@@ -107,17 +107,17 @@ class Attack_Classifier(nn.Module):
         super().__init__()
         self.framework = framework
         self.attack_current_head = nn.Sequential(nn.ReLU(),
-                                                 nn.Dropout(0.5),
+                                                 nn.Dropout(0.3),
                                                  nn.Linear(in_feature_size, attack_class_num)
                                                  )
         if 'parallel' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    nn.Dropout(0.5),
+                                                    nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size, attack_class_num)
                                                     )
         elif 'chain' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    nn.Dropout(0.5),
+                                                    nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size + attack_class_num, attack_class_num)
                                                     )
 
@@ -368,17 +368,17 @@ class GNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, self.fc_hidden1),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden1),
             nn.Linear(self.fc_hidden1, self.fc_hidden2),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden2),
         )
         self.classifier = Attack_Classifier(framework, self.fc_hidden2) if is_attack else Classifier(framework,
                                                                                                      self.fc_hidden2)
         self.train_classifier = train_classifier
-        self.Dropout=nn.Dropout(0.5)
+        self.Dropout=nn.Dropout(0.3)
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()
 
