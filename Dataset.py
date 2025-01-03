@@ -546,10 +546,10 @@ class HARPER_Dataset(Dataset):
                                     if 'move' in self.augment_method:
                                         self.random_move(x_tensor, distance, attack_current_label,
                                                          attack_future_label)
-                                    # x_tensor[:, :, 0] = -x_tensor[:, :, 0]
-                                    # self.features.append([x_tensor])
-                                    # self.distances.append(distance)
-                                    # self.labels.append((attack_current_label, attack_future_label))
+                                    x_tensor = self.reverse_keypoints(x_tensor)
+                                    self.features.append([x_tensor])
+                                    self.distances.append(distance)
+                                    self.labels.append((attack_current_label, attack_future_label))
 
                 else:
                     down_sample_count = 0
@@ -591,6 +591,14 @@ class HARPER_Dataset(Dataset):
                                 self.labels.append(
                                     (contact_label, intent_label, attitude_label, attack_label, action_label))
                                 down_sample_count += self.down_sample_rate
+
+    def reverse_keypoints(self, x_tensor):
+        symmetrical_points_list = [[5, 9], [6, 10], [7, 11], [8, 12], [13, 17], [14, 18], [15, 19], [16, 20]]
+        for points in symmetrical_points_list:
+            t = x_tensor[:, points[0], 0]
+            x_tensor[:, points[0], 0] = -x_tensor[:, points[1], 0]
+            x_tensor[:, points[1], 0] = -t
+        return x_tensor
 
     def add_gaussian_noise(self, x_tensor, distance, attack_current_label, attack_future_label):
         sigma_list = [0.01, 0.005, 0.001]
