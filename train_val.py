@@ -889,7 +889,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
             total_loss.backward()
             optimizer.step()
             torch.cuda.empty_cache()
-            scheduler.step()
+        scheduler.step()
         progress_bar.close()
         result_str = 'training result--> epoch: %d, ' % epoch
         if 'attack' in tasks:
