@@ -853,7 +853,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     elif model == 'r3d':
         net = R3D(framework=framework)
     net.to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
+    optimizer = torch.optim.Adam(net.parameters(), lr=wandb.config.leanring_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     train_loader = Attack_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
@@ -1043,35 +1043,34 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
 
 if __name__ == '__main__':
     sequence_length = 10
-    for frame_before_event in [5]:
-        for augment_method in ['original']:
-            # for augment_method in ['noise']:
-            trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
-                                                           frames_before_event=frame_before_event,
-                                                           augment_method=augment_method)
+    frame_before_event = 5
+    augment_method = 'original'
+    trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
+                                                   frames_before_event=frame_before_event,
+                                                   augment_method=augment_method)
 
 
-            def train():
-                p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event,
-                                   sequence_length=sequence_length, body_part=[True, False, False], trainset=trainset,
-                                   valset=valset, testset=testset)
+    def train():
+        p_m = train_attack(model='gcn_lstm', frame_before_event=frame_before_event,
+                           sequence_length=sequence_length, body_part=[True, False, False], trainset=trainset,
+                           valset=valset, testset=testset)
 
 
-            sweep_config = {
-                'method': 'grid',
-                'metric': {
-                    'name': 'avg_f1',
-                    'goal': 'maximize',
-                },
-                'parameters': {
-                    # 'epochs': {"values": [10, 20, 30, 40]},
-                    'epochs': {"values": [40]},
-                    'augment_method': {'values': [augment_method]},
-                    'framework': {'values': ['attack_parallel']},
-                    # 'framework': {'values': ['attack_parallel', 'attack_chain']},
-                    'frame_before_event': {'values': [frame_before_event]},
-                    'times': {'values': [ii for ii in range(1)]},
-                }
-            }
-            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
-            wandb.agent(sweep_id, function=train)
+    sweep_config = {
+        'method': 'grid',
+        'metric': {
+            'name': 'avg_f1',
+            'goal': 'maximize',
+        },
+        'parameters': {
+            'epochs': {"values": [40]},
+            'learning_rate': {'values': [1e-1, 1e-2]},
+            'augment_method': {'values': [augment_method]},
+            'framework': {'values': ['attack_parallel']},
+            # 'framework': {'values': ['attack_parallel', 'attack_chain']},
+            'frame_before_event': {'values': [frame_before_event]},
+            'times': {'values': [ii for ii in range(10)]},
+        }
+    }
+    sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
+    wandb.agent(sweep_id, function=train)
