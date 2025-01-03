@@ -535,6 +535,7 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
                                      drop_last=False, batch_size=16, num_workers=1, contact=True)
         net.train()
         print('Training')
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, contact_y_true, contact_y_pred = [], [], [], [], [], [], [], []
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
@@ -594,6 +595,89 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
             torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
+        int_outputs = torch.softmax(int_outputs, dim=1)
+        score, pred = torch.max(int_outputs, dim=1)
+        # int_pred = int_outputs.argmax(dim=1)
+        int_y_true += int_labels.tolist()
+        int_y_pred += pred.tolist()
+        att_outputs = torch.softmax(att_outputs, dim=1)
+        att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+        score, pred = torch.max(att_outputs, dim=1)
+        # att_pred = att_outputs.argmax(dim=1)
+        att_y_true += att_labels.tolist()
+        att_y_pred += pred.tolist()
+        if not pretrained or new_classifier:
+            act_outputs = torch.softmax(act_outputs, dim=1)
+            score, pred = torch.max(act_outputs, dim=1)
+            # act_pred = act_outputs.argmax(dim=1)
+            act_y_true += act_labels.tolist()
+            act_y_pred += pred.tolist()
+            contact_outputs = torch.softmax(contact_outputs, dim=1)
+            score, pred = torch.max(contact_outputs, dim=1)
+            # contact_pred = contact_outputs.argmax(dim=1)
+            contact_y_true += contact_labels.tolist()
+            contact_y_pred += pred.tolist()
+        result_str = 'training result--> model: %s, epoch: %d, ' % (model, epoch)
+        wandb_log = {'epoch': epoch}
+        if 'intention' in tasks:
+            int_outputs = torch.softmax(int_outputs, dim=1)
+            score, pred = torch.max(int_outputs, dim=1)
+            # int_pred = int_outputs.argmax(dim=1)
+            int_y_true += int_labels.tolist()
+            int_y_pred += pred.tolist()
+            int_y_true, int_y_pred = torch.Tensor(int_y_true), torch.Tensor(int_y_pred)
+            if model == 'perframe':
+                int_y_true, int_y_pred = transform_preframe_result(int_y_true, int_y_pred, sequence_length)
+            int_acc = int_y_pred.eq(int_y_true).sum().float().item() / int_y_pred.size(dim=0)
+            int_f1 = f1_score(int_y_true, int_y_pred, average='weighted')
+            result_str += 'int_acc: %.2f, int_f1: %.2f, ' % (int_acc * 100, int_f1 * 100)
+            wandb_log['train_int_acc'] = int_acc
+            wandb_log['train_int_f1'] = int_f1
+        if 'attitude' in tasks:
+            att_outputs = torch.softmax(att_outputs, dim=1)
+            att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+            score, pred = torch.max(att_outputs, dim=1)
+            # att_pred = att_outputs.argmax(dim=1)
+            att_y_true += att_labels.tolist()
+            att_y_pred += pred.tolist()
+            att_y_true, att_y_pred = torch.Tensor(att_y_true), torch.Tensor(att_y_pred)
+            if model == 'perframe':
+                att_y_true, att_y_pred = transform_preframe_result(att_y_true, att_y_pred, sequence_length)
+            att_acc = att_y_pred.eq(att_y_true).sum().float().item() / att_y_pred.size(dim=0)
+            att_f1 = f1_score(att_y_true, att_y_pred, average='weighted')
+            result_str += 'att_acc: %.2f, att_f1: %.2f, ' % (att_acc * 100, att_f1 * 100)
+            wandb_log['train_att_acc'] = att_acc
+            wandb_log['train_att_f1'] = att_f1
+        if 'action' in tasks:
+            act_outputs = torch.softmax(act_outputs, dim=1)
+            score, pred = torch.max(act_outputs, dim=1)
+            # act_pred = act_outputs.argmax(dim=1)
+            act_y_true += act_labels.tolist()
+            act_y_pred += pred.tolist()
+            act_y_true, act_y_pred = torch.Tensor(act_y_true), torch.Tensor(act_y_pred)
+            if model == 'perframe':
+                act_y_true, act_y_pred = transform_preframe_result(act_y_true, act_y_pred, sequence_length)
+            act_acc = act_y_pred.eq(act_y_true).sum().float().item() / act_y_pred.size(dim=0)
+            act_f1 = f1_score(act_y_true, act_y_pred, average='weighted')
+            result_str += 'act_acc: %.2f, act_f1: %.2f, ' % (act_acc * 100, act_f1 * 100)
+            wandb_log['train_act_acc'] = act_acc
+            wandb_log['train_act_f1'] = act_f1
+        if 'contact' in tasks:
+            contact_outputs = torch.softmax(contact_outputs, dim=1)
+            score, pred = torch.max(contact_outputs, dim=1)
+            # contact_pred = contact_outputs.argmax(dim=1)
+            contact_y_true += contact_labels.tolist()
+            contact_y_pred += pred.tolist()
+            contact_y_true, contact_y_pred = torch.Tensor(contact_y_true), torch.Tensor(contact_y_pred)
+            if model == 'perframe':
+                contact_y_true, contact_y_pred = transform_preframe_result(contact_y_true, contact_y_pred,
+                                                                           sequence_length)
+            contact_acc = contact_y_pred.eq(contact_y_true).sum().float().item() / contact_y_pred.size(dim=0)
+            contact_f1 = f1_score(contact_y_true, contact_y_pred, average='weighted')
+            result_str += 'contact_acc: %.2f, contact_f1: %.2f, ' % (contact_acc * 100, contact_f1 * 100)
+            wandb_log['train_contact_acc'] = contact_acc
+            wandb_log['train_contact_f1'] = contact_f1
+        print(result_str + 'loss: %.4f' % total_loss)
         print('Validating')
         int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred, contact_y_true, contact_y_pred = [], [], [], [], [], [], [], []
         net.eval()
@@ -618,8 +702,29 @@ def train_harper(wandb, model, sequence_length, trainset, valset, testset):
                     int_outputs, att_outputs, _ = net(inputs)
             else:
                 int_outputs, att_outputs, act_outputs, contact_outputs = net(inputs)
-        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
-        wandb_log = {'epoch': epoch}
+            int_outputs = torch.softmax(int_outputs, dim=1)
+            score, pred = torch.max(int_outputs, dim=1)
+            # int_pred = int_outputs.argmax(dim=1)
+            int_y_true += int_labels.tolist()
+            int_y_pred += pred.tolist()
+            att_outputs = torch.softmax(att_outputs, dim=1)
+            att_labels, att_outputs = filter_not_interacting_sample(att_labels, att_outputs)
+            score, pred = torch.max(att_outputs, dim=1)
+            # att_pred = att_outputs.argmax(dim=1)
+            att_y_true += att_labels.tolist()
+            att_y_pred += pred.tolist()
+            if not pretrained or new_classifier:
+                act_outputs = torch.softmax(act_outputs, dim=1)
+                score, pred = torch.max(act_outputs, dim=1)
+                # act_pred = act_outputs.argmax(dim=1)
+                act_y_true += act_labels.tolist()
+                act_y_pred += pred.tolist()
+                contact_outputs = torch.softmax(contact_outputs, dim=1)
+                score, pred = torch.max(contact_outputs, dim=1)
+                # contact_pred = contact_outputs.argmax(dim=1)
+                contact_y_true += contact_labels.tolist()
+                contact_y_pred += pred.tolist()
+        result_str = 'validating result--> model: %s, epoch: %d, ' % (model, epoch)
         if 'intention' in tasks:
             int_outputs = torch.softmax(int_outputs, dim=1)
             score, pred = torch.max(int_outputs, dim=1)
@@ -864,6 +969,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     while epoch <= wandb.config.epochs:
         net.train()
         print('Training')
+        wandb_log = {'epoch': epoch}
         attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
@@ -901,11 +1007,15 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
             f1 = f1_score(attack_current_y_true, attack_current_y_pred, average='weighted')
             result_str += 'attack_current_acc: %.2f, attack_future_f1: %.2f, ' % (
                 acc * 100, f1 * 100)
+            wandb_log['train_attack_current_acc'] = acc
+            wandb_log['train_attack_current_f1'] = f1
             acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(
                 dim=0)
             f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
             result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (
                 acc * 100, f1 * 100)
+            wandb_log['train_attack_future_acc'] = acc
+            wandb_log['train_attack_future_f1'] = f1
         print(result_str + 'loss: %.4f' % total_loss)
         print('Validating')
         attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
@@ -927,7 +1037,6 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
                 attack_future_y_true += attack_future_labels.tolist()
                 attack_future_y_pred += pred.tolist()
         result_str = 'validating result--> epoch: %d, ' % epoch
-        wandb_log = {'epoch': epoch}
         if 'attack' in tasks:
             attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
                 attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
