@@ -58,7 +58,7 @@ harper_action_class = ['Walk_Crash', 'Walk_Stop', 'Walk_Avoid', 'Walk_Touch', 'W
 contact_class = ['No', 'Yes']
 harper_intent_class = ['No', 'Yes']
 attack_class = ['Attack', 'Normal', 'Danger', 'Not_Interacting']
-camera_name_list = ['Hand', 'FrontLeft', 'FrontRight', 'Left', 'Right', 'Back']
+camera_name_list = ['hand', 'frontleft', 'frontright', 'left', 'right', 'back']
 
 coco_body_point_num = 23
 head_point_num = 68
