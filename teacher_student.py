@@ -78,7 +78,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
                           keypoint_hidden_dim=wandb.config.keypoint_hidden_dim,
                           time_hidden_dim=wandb.config.time_hidden_dim, fc_hidden1=wandb.config.fc_hidden1,
                           fc_hidden2=wandb.config.fc_hidden2, is_harper=False)
-        batch_size = gcn_batch_size
+        batch_size = 32
     student_net.to(device)
     optimizer = torch.optim.Adam(student_net.parameters(), lr=learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
