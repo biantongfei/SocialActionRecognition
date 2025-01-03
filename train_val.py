@@ -853,7 +853,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     elif model == 'r3d':
         net = R3D(framework=framework)
     net.to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=wandb.config.leanring_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=wandb.config.learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     epoch = 1
     train_loader = Attack_DataLoader(model=model, dataset=trainset, batch_size=batch_size,
