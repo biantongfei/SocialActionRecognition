@@ -107,17 +107,17 @@ class Attack_Classifier(nn.Module):
         super().__init__()
         self.framework = framework
         self.attack_current_head = nn.Sequential(nn.ReLU(),
-                                                 nn.Dropout(0.3),
+                                                 # nn.Dropout(0.3),
                                                  nn.Linear(in_feature_size, attack_class_num)
                                                  )
         if 'parallel' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    nn.Dropout(0.3),
+                                                    # nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size, attack_class_num)
                                                     )
         elif 'chain' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    nn.Dropout(0.3),
+                                                    # nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size + attack_class_num, attack_class_num)
                                                     )
 
@@ -378,7 +378,7 @@ class GNN(nn.Module):
         self.classifier = Attack_Classifier(framework, self.fc_hidden2) if is_attack else Classifier(framework,
                                                                                                      self.fc_hidden2)
         self.train_classifier = train_classifier
-        self.Dropout=nn.Dropout(0.3)
+        self.Dropout = nn.Dropout(0.3)
         # self.other_parameters += self.attitude_head.parameters()
         # self.other_parameters += self.action_head.parameters()
 
@@ -445,7 +445,7 @@ class GNN(nn.Module):
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 x_time[i] = x_t.view(1, -1)[0]
             x = x_time.flatten(1)
-        x=self.Dropout(x)
+        # x = self.Dropout(x)
         y = self.fc(x)
         return self.classifier(y) if self.train_classifier else y
         # return y1, y2, y3, gcn_attention_weights
