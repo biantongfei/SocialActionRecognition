@@ -1174,10 +1174,10 @@ if __name__ == '__main__':
                     'goal': 'maximize',
                 },
                 'parameters': {
-                    'epochs': {"values": [40]},
+                    'epochs': {"values": [30, 40, 50, 60]},
                     'learning_rate': {'values': [1e-2]},
                     'augment_method': {'values': [augment_method]},
-                    'framework': {'values': ['attack_parallel','attack_chain']},
+                    'framework': {'values': ['attack_parallel', 'attack_chain']},
                     # 'framework': {'values': ['attack_parallel', 'attack_chain']},
                     'frame_before_event': {'values': [frame_before_event]},
                     'times': {'values': [ii for ii in range(10)]},
