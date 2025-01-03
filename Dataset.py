@@ -546,7 +546,7 @@ class HARPER_Dataset(Dataset):
                                     if 'move' in self.augment_method:
                                         self.random_move(x_tensor, distance, attack_current_label,
                                                          attack_future_label)
-                                    # x_tensor[:, :, :2] = -x_tensor[:, :, :2]
+                                    x_tensor[:, :, 0] = -x_tensor[:, :, 0]
                                     self.features.append([x_tensor])
                                     self.distances.append(distance)
                                     self.labels.append((attack_current_label, attack_future_label))
@@ -605,7 +605,7 @@ class HARPER_Dataset(Dataset):
                 self.features.append([keypoints])
                 self.distances.append(distance)
                 self.labels.append((attack_current_label, attack_future_label))
-                keypoints[:, :, :2] = -keypoints[:, :, :2]
+                keypoints[:, :, 0] = -keypoints[:, :, 0]
                 self.features.append([keypoints])
                 self.distances.append(distance)
                 self.labels.append((attack_current_label, attack_future_label))
@@ -621,7 +621,7 @@ class HARPER_Dataset(Dataset):
             self.features.append([keypoints])
             self.distances.append(distance)
             self.labels.append((attack_current_label, attack_future_label))
-            keypoints[:, :, :2] = -keypoints[:, :, :2]
+            keypoints[:, :, 0] = -keypoints[:, :, 0]
             self.features.append([keypoints])
             self.distances.append(distance)
             self.labels.append((attack_current_label, attack_future_label))

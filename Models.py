@@ -368,11 +368,11 @@ class GNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, self.fc_hidden1),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            # nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden1),
             nn.Linear(self.fc_hidden1, self.fc_hidden2),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            # nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden2),
         )
         self.classifier = Attack_Classifier(framework, self.fc_hidden2) if is_attack else Classifier(framework,
