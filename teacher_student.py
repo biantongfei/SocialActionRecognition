@@ -282,8 +282,8 @@ if __name__ == '__main__':
     randnum = random.randint(0, 100)
     # randnum = 25
 
-    student_body_part = [True, True, True]
-    student_frame_sample_hop = 3
+    student_body_part = [True, False, False]
+    student_frame_sample_hop = 1
     student_sequence_length = 30
 
     print('Loading data for student with body_part: %s, frame_sample_hop: %d' % (
@@ -291,10 +291,10 @@ if __name__ == '__main__':
     student_trainset, student_valset, student_testset = get_jpl_dataset('gcn_lstm', student_body_part,
                                                                         student_frame_sample_hop,
                                                                         student_sequence_length,
-                                                                        augment_method='ori', randnum=randnum)
+                                                                        augment_method='mixed', randnum=randnum)
 
     print('Loading data for teacher')
-    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='ori',
+    teacher_trainset = get_jpl_dataset('msgcn', [True, True, True], 1, 30, augment_method='mixed',
                                        subset='train', randnum=randnum, fixed_files=student_trainset.out_files)
     calculate_teacher_outputs('msgcn', teacher_trainset, teacher_batch_size, 30, 1)
     del teacher_trainset
@@ -314,17 +314,19 @@ if __name__ == '__main__':
             'goal': 'maximize',
         },
         'parameters': {
-            'epochs': {"values": [40, 50]},
-            # 'epochs': {"values": [1]},
+            # 'epochs': {"values": [40, 50]},
+            'epochs': {"values": [50]},
             'loss_type': {"values": ['weighted']},
             # 'loss_type': {"values": ['sum']},
-            'loss_weight': {'values': [0.5, 1, 2]},
+            # 'loss_weight': {'values': [0.5, 1, 2]},
+            'loss_weight': {'values': [0.5]},
             'T': {'values': [6]},
             # 'T': {'values': [3]},
             'learning_rate': {'values': [1e-2]},
             # 'learning_rate': {'values': [1e-3]},
             'keypoint_hidden_dim': {'values': [16]},
-            'time_hidden_dim': {'values': [2, 4]},
+            # 'time_hidden_dim': {'values': [2, 4]},
+            'time_hidden_dim': {'values': [4]},
             'fc_hidden1': {'values': [64]},
             'fc_hidden2': {'values': [16]},
             'student_body_part': {'values': [student_body_part]},
