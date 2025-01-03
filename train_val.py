@@ -981,6 +981,18 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     params = sum(p.numel() for p in net.parameters())
     total_f1, total_acc, attack_f1, attack_acc = 0, 0, 0, 0
     if 'attack' in tasks:
+        wandb.log({"confusion_matrix_attack_current": wandb.plot.confusion_matrix(
+            probs=None,
+            y_true=attack_current_y_true,
+            preds=attack_current_y_pred,
+            class_names=attack_class
+        )})
+        wandb.log({"confusion_matrix_attack_future": wandb.plot.confusion_matrix(
+            probs=None,
+            y_true=attack_future_y_true,
+            preds=attack_future_y_pred,
+            class_names=attack_class
+        )})
         attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
             attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
             attack_future_y_true), torch.Tensor(attack_future_y_pred)
@@ -997,14 +1009,6 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         total_f1 += f1
         attack_acc += acc
         attack_f1 += f1
-        print(attack_current_y_true)
-        print(attack_current_y_pred)
-        wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
-            probs=None,
-            y_true=attack_current_y_true,
-            preds=attack_current_y_pred,
-            class_names=attack_class
-        )})
         acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(dim=0)
         f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
         performance_model['attack_future_accuracy'] = acc
@@ -1018,14 +1022,6 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         total_f1 += f1
         attack_acc += acc
         attack_f1 += f1
-        print(attack_future_y_true)
-        print(attack_future_y_pred)
-        wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
-            probs=None,
-            y_true=attack_future_y_true,
-            preds=attack_future_y_pred,
-            class_names=attack_class
-        )})
     print(result_str + 'Params: %d' % params)
     performance_model['params'] = params
     wandb_log['avg_f1'] = total_f1 / len(tasks) / 2
@@ -1074,7 +1070,7 @@ if __name__ == '__main__':
                     'framework': {'values': ['attack_parallel']},
                     # 'framework': {'values': ['attack_parallel', 'attack_chain']},
                     'frame_before_event': {'values': [frame_before_event]},
-                    'times': {'values': [ii for ii in range(10)]},
+                    'times': {'values': [ii for ii in range(1)]},
                 }
             }
             sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
