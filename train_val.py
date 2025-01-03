@@ -1174,14 +1174,14 @@ if __name__ == '__main__':
                     'goal': 'maximize',
                 },
                 'parameters': {
-                    'epochs': {"values": [30, 40, 50, 60]},
+                    'epochs': {"values": [40]},
                     'learning_rate': {'values': [1e-2]},
                     'augment_method': {'values': [augment_method]},
-                    'framework': {'values': ['attack_parallel', 'attack_chain']},
+                    'framework': {'values': ['attack_parallel']},
                     # 'framework': {'values': ['attack_parallel', 'attack_chain']},
                     'frame_before_event': {'values': [frame_before_event]},
-                    'times': {'values': [ii for ii in range(10)]},
+                    'times': {'values': [ii for ii in range(1)]},
                 }
             }
-            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER')
+            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
             wandb.agent(sweep_id, function=train)
