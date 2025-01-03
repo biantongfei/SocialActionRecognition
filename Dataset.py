@@ -103,7 +103,7 @@ class JPL_Dataset(Dataset):
         index = 0
         for file in self.files:
             for hop in range(self.frame_sample_hop):
-            # for hop in range(1):
+                # for hop in range(1):
                 if self.model in ['stgcn', 'msgcn', 'dgstgcn']:
                     x, label = self.get_stgraph_data_from_file(file, hop)
                     self.features.append(x)
@@ -499,11 +499,10 @@ class HARPER_Dataset(Dataset):
                             down_sample_count = 0
                             for frame_index in range(0, int(
                                     list(frames.keys())[-1]) - self.sequence_length - self.frames_before_event):
-                                frame_num = 0
                                 useful_num = 0
                                 x_tensor = torch.zeros((self.sequence_length, harper_body_point_num, 3))
                                 distance = [-1 for _ in range(self.sequence_length)]
-                                while frame_num < self.sequence_length:
+                                for frame_num in range(self.sequence_length):
                                     if str(frame_index + frame_num) in frames.keys():
                                         frame_feature = np.array(frames[str(frame_index + frame_num)]['keypoints'])
                                         frame_feature[:, 0] = 2 * (frame_feature[:, 0] / frame_width - 0.5)
@@ -515,7 +514,6 @@ class HARPER_Dataset(Dataset):
                                     elif useful_num > 0:
                                         x_tensor[frame_num] = x_tensor[frame_num - 1]
                                         distance[frame_num] = distance[frame_num - 1]
-                                    frame_num += 1
                                 if useful_num == 0:
                                     continue
                                 # contact_label = feature_json[
@@ -548,7 +546,7 @@ class HARPER_Dataset(Dataset):
                                     if 'move' in self.augment_method:
                                         self.random_move(x_tensor, distance, attack_current_label,
                                                          attack_future_label)
-                                    x_tensor[:, :, :2] = -x_tensor[:, :, :2]
+                                    # x_tensor[:, :, :2] = -x_tensor[:, :, :2]
                                     self.features.append([x_tensor])
                                     self.distances.append(distance)
                                     self.labels.append((attack_current_label, attack_future_label))
