@@ -107,17 +107,17 @@ class Attack_Classifier(nn.Module):
         super().__init__()
         self.framework = framework
         self.attack_current_head = nn.Sequential(nn.ReLU(),
-                                                 # nn.Dropout(0.3),
+                                                 nn.Dropout(0.3),
                                                  nn.Linear(in_feature_size, attack_class_num)
                                                  )
         if 'parallel' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    # nn.Dropout(0.3),
+                                                    nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size, attack_class_num)
                                                     )
         elif 'chain' in framework:
             self.attack_future_head = nn.Sequential(nn.ReLU(),
-                                                    # nn.Dropout(0.3),
+                                                    nn.Dropout(0.3),
                                                     nn.Linear(in_feature_size + attack_class_num, attack_class_num)
                                                     )
 
@@ -368,11 +368,11 @@ class GNN(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.fc_input_size, self.fc_hidden1),
             nn.ReLU(),
-            # nn.Dropout(0.3),
+            nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden1),
             nn.Linear(self.fc_hidden1, self.fc_hidden2),
             nn.ReLU(),
-            # nn.Dropout(0.3),
+            nn.Dropout(0.3),
             nn.BatchNorm1d(self.fc_hidden2),
         )
         self.classifier = Attack_Classifier(framework, self.fc_hidden2) if is_attack else Classifier(framework,
@@ -422,7 +422,7 @@ class GNN(nn.Module):
         # x = x.reshape(-1, self.sequence_length, int(self.input_size / 3), self.keypoint_hidden_dim)
         # x = x.reshape(-1, self.sequence_length, self.keypoint_hidden_dim * int(self.input_size / 3))
         # gcn_attention_weights = torch.mean(gcn_attention_weights, dim=(0, 1))
-        # x=self.Dropout(x)
+        x=self.Dropout(x)
         if self.model == 'gcn_lstm':
             on, _ = self.time_model(x)
             on = on.view(on.shape[0], on.shape[1], 2, -1)
@@ -446,7 +446,7 @@ class GNN(nn.Module):
                 # x_t, new_edge_index, _, _, _, _ = self.pool(x_t, new_edge_index)
                 x_time[i] = x_t.view(1, -1)[0]
             x = x_time.flatten(1)
-        # x = self.Dropout(x)
+        x = self.Dropout(x)
         y = self.fc(x)
         return self.classifier(y) if self.train_classifier else y
         # return y1, y2, y3, gcn_attention_weights

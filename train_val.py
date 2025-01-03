@@ -990,7 +990,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     performance_model = {}
     num_workers = 8
     if 'gcn_' in model:
-        batch_size = gcn_batch_size
+        batch_size = 32
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
         num_workers = 1
