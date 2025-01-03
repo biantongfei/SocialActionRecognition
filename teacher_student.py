@@ -90,10 +90,10 @@ def train_student(student_model, student_trainset, student_valset, student_tests
     val_loader = Pose_DataLoader(model='gcn_lstm', dataset=student_valset, batch_size=128,
                                  sequence_length=student_sequence_length, frame_sample_hop=student_frame_sample_hop,
                                  drop_last=False, shuffle=False, num_workers=8)
-    int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
     while epoch <= wandb.config.epochs:
         student_net.train()
         print('Training student model')
+        int_y_true, int_y_pred, att_y_true, att_y_pred, act_y_true, act_y_pred = [], [], [], [], [], []
         progress_bar = tqdm(total=len(student_train_loader), desc='Progress')
         for index, student_data in enumerate(student_train_loader):
             progress_bar.update(1)
@@ -124,7 +124,6 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
-            torch.cuda.empty_cache()
             int_y_true += int_labels.tolist()
             pred = student_int_outputs.argmax(dim=1)
             int_y_pred += pred.tolist()
@@ -135,6 +134,7 @@ def train_student(student_model, student_trainset, student_valset, student_tests
             act_y_true += act_labels.tolist()
             pred = student_act_outputs.argmax(dim=1)
             act_y_pred += pred.tolist()
+            torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
         result_str = 'training result--> student_model: %s, epoch: %d, ' % (student_model, epoch)
