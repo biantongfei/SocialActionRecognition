@@ -1180,7 +1180,7 @@ if __name__ == '__main__':
                     'framework': {'values': ['attack_parallel']},
                     # 'framework': {'values': ['attack_parallel', 'attack_chain']},
                     'frame_before_event': {'values': [frame_before_event]},
-                    'times': {'values': [ii for ii in range(1)]},
+                    'times': {'values': [ii for ii in range(5)]},
                 }
             }
             sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
