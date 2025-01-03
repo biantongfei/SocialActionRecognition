@@ -828,7 +828,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     performance_model = {}
     num_workers = 8
     if 'gcn_' in model:
-        batch_size = gcn_batch_size
+        batch_size = 32
     elif model == 'stgcn':
         batch_size = stgcn_batch_size
         num_workers = 1
@@ -1004,8 +1004,8 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
 
 if __name__ == '__main__':
     sequence_length = 10
-    for frame_before_event in [5, 10]:
-        for augment_method in ['original', 'noise', 'move', 'noise+move']:
+    for frame_before_event in [5]:
+        for augment_method in ['noise','noise+move']:
         # for augment_method in ['noise']:
             trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
                                                            frames_before_event=frame_before_event,

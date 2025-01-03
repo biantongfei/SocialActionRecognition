@@ -595,7 +595,7 @@ class HARPER_Dataset(Dataset):
                                 down_sample_count += self.down_sample_rate
 
     def add_gaussian_noise(self, x_tensor, distance, attack_current_label, attack_future_label):
-        sigma_list = [0.005, 0.01, 0.02]
+        sigma_list = [0.01, 0.005, 0.001]
         augment_times = 3
         for sigma_index, sigma in enumerate(sigma_list):
             for i in range(augment_times):
