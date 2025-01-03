@@ -6,7 +6,7 @@ from draw_utils import plot_confusion_matrix
 from DataLoader import Pose_DataLoader, Attack_DataLoader
 from constants import dtype, device, avg_batch_size, perframe_batch_size, conv1d_batch_size, rnn_batch_size, \
     gcn_batch_size, stgcn_batch_size, msgcn_batch_size, learning_rate, tran_batch_size, intention_classes, \
-    attitude_classes, jpl_action_classes, dgstgcn_batch_size, r3d_batch_size
+    attitude_classes, jpl_action_classes, dgstgcn_batch_size, r3d_batch_size, attack_class
 
 import torch
 from torch.nn import functional
@@ -16,7 +16,6 @@ from torch import nn
 
 import numpy as np
 from sklearn.metrics import f1_score
-import csv
 import smtplib
 from email.mime.text import MIMEText
 from tqdm import tqdm
@@ -865,6 +864,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     while epoch <= wandb.config.epochs:
         net.train()
         print('Training')
+        attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
         progress_bar = tqdm(total=len(train_loader), desc='Progress')
         for data in train_loader:
             progress_bar.update(1)
@@ -874,6 +874,14 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
                 dtype=torch.long, device=device)
             if 'attack' in framework:
                 attack_current_outputs, attack_future_outputs = net(inputs)
+                attack_current_outputs = torch.softmax(attack_current_outputs, dim=1)
+                score, pred = torch.max(attack_current_outputs, dim=1)
+                attack_current_y_true += attack_current_labels.tolist()
+                attack_current_y_pred += pred.tolist()
+                attack_future_outputs = torch.softmax(attack_future_outputs, dim=1)
+                score, pred = torch.max(attack_future_outputs, dim=1)
+                attack_future_y_true += attack_future_labels.tolist()
+                attack_future_y_pred += pred.tolist()
                 loss_1 = functional.cross_entropy(attack_current_outputs, attack_current_labels)
                 loss_2 = functional.cross_entropy(attack_future_outputs, attack_future_labels)
                 total_loss = loss_1 + loss_2
@@ -883,6 +891,22 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
             torch.cuda.empty_cache()
         scheduler.step()
         progress_bar.close()
+        result_str = 'model: %s, epoch: %d, ' % (model, epoch)
+        if 'attack' in tasks:
+            attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
+                attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
+                attack_future_y_true), torch.Tensor(attack_future_y_pred)
+            acc = attack_current_y_pred.eq(attack_current_y_true).sum().float().item() / attack_current_y_pred.size(
+                dim=0)
+            f1 = f1_score(attack_current_y_true, attack_current_y_pred, average='weighted')
+            result_str += 'attack_current_acc: %.2f, attack_future_f1: %.2f, ' % (
+                acc * 100, f1 * 100)
+            acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(
+                dim=0)
+            f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
+            result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (
+                acc * 100, f1 * 100)
+        print(result_str + 'loss: %.4f' % total_loss)
         print('Validating')
         attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = [], [], [], []
         net.eval()
@@ -911,15 +935,13 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
             acc = attack_current_y_pred.eq(attack_current_y_true).sum().float().item() / attack_current_y_pred.size(
                 dim=0)
             f1 = f1_score(attack_current_y_true, attack_current_y_pred, average='weighted')
-            result_str += 'attack_current_acc: %.2f, attack_future_f1: %.2f, ' % (
-                acc * 100, f1 * 100)
+            result_str += 'attack_current_acc: %.2f, attack_future_f1: %.2f, ' % (acc * 100, f1 * 100)
             wandb_log['val_attack_current_acc'] = acc
             wandb_log['val_attack_current_f1'] = f1
             acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(
                 dim=0)
             f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
-            result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (
-                acc * 100, f1 * 100)
+            result_str += 'attack_future_acc: %.2f, attack_future_f1: %.2f, ' % (acc * 100, f1 * 100)
             wandb_log['val_attack_future_acc'] = acc
             wandb_log['val_attack_future_f1'] = f1
         print(result_str + 'loss: %.4f' % total_loss)
@@ -957,7 +979,7 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
     result_str = ''
     wandb_log = {}
     params = sum(p.numel() for p in net.parameters())
-    total_f1, total_acc = 0, 0
+    total_f1, total_acc, attack_f1, attack_acc = 0, 0, 0, 0
     if 'attack' in tasks:
         attack_current_y_true, attack_current_y_pred, attack_future_y_true, attack_future_y_pred = torch.Tensor(
             attack_current_y_true), torch.Tensor(attack_current_y_pred), torch.Tensor(
@@ -973,6 +995,14 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         wandb_log['test_attack_current_f1'] = f1
         total_acc += acc
         total_f1 += f1
+        attack_acc += acc
+        attack_f1 += f1
+        wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
+            probs=None,
+            y_true=attack_current_y_true,
+            preds=attack_current_y_pred,
+            class_names=attack_class
+        )})
         acc = attack_future_y_pred.eq(attack_future_y_true).sum().float().item() / attack_future_y_pred.size(dim=0)
         f1 = f1_score(attack_future_y_true, attack_future_y_pred, average='weighted')
         performance_model['attack_future_accuracy'] = acc
@@ -984,11 +1014,20 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
         wandb_log['test_attack_future_f1'] = f1
         total_acc += acc
         total_f1 += f1
+        attack_acc += acc
+        attack_f1 += f1
+        wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(
+            probs=None,
+            y_true=attack_current_y_true,
+            preds=attack_current_y_pred,
+            class_names=attack_class
+        )})
     print(result_str + 'Params: %d' % params)
     performance_model['params'] = params
     wandb_log['avg_f1'] = total_f1 / len(tasks) / 2
     wandb_log['avg_acc'] = total_acc / len(tasks) / 2
     wandb_log['params'] = params
+
     wandb.log(wandb_log)
     model_name = 'HarperAttack_fbe%s.pt' % (frame_before_event)
     # torch.save(net.state_dict(), 'models/%s' % model_name)
@@ -1005,8 +1044,8 @@ def train_attack(model, frame_before_event, sequence_length, body_part, trainset
 if __name__ == '__main__':
     sequence_length = 10
     for frame_before_event in [5]:
-        for augment_method in ['noise','noise+move']:
-        # for augment_method in ['noise']:
+        for augment_method in ['original']:
+            # for augment_method in ['noise']:
             trainset, valset, testset = get_harper_dataset(sequence_length=sequence_length,
                                                            frames_before_event=frame_before_event,
                                                            augment_method=augment_method)
@@ -1025,12 +1064,14 @@ if __name__ == '__main__':
                     'goal': 'maximize',
                 },
                 'parameters': {
-                    'epochs': {"values": [10, 20, 30, 40]},
+                    # 'epochs': {"values": [10, 20, 30, 40]},
+                    'epochs': {"values": [10]},
                     'augment_method': {'values': [augment_method]},
-                    'framework': {'values': ['attack_parallel', 'attack_chain']},
+                    'framework': {'values': ['attack_parallel']},
+                    # 'framework': {'values': ['attack_parallel', 'attack_chain']},
                     'frame_before_event': {'values': [frame_before_event]},
                     'times': {'values': [ii for ii in range(10)]},
                 }
             }
-            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER')
+            sweep_id = wandb.sweep(sweep_config, project='Attack_HARPER_test')
             wandb.agent(sweep_id, function=train)
