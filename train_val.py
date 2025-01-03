@@ -1064,7 +1064,7 @@ if __name__ == '__main__':
         },
         'parameters': {
             'epochs': {"values": [40]},
-            'learning_rate': {'values': [1e-1, 1e-2]},
+            'learning_rate': {'values': [1e-2]},
             'augment_method': {'values': [augment_method]},
             'framework': {'values': ['attack_parallel']},
             # 'framework': {'values': ['attack_parallel', 'attack_chain']},
